@@ -209,331 +209,78 @@ function setupCharCounter() {
 
 // ── Voice Grid ────────────────────────────────────────────
 function setupVoiceGrid() {
-  var previewAudio = null;
-  var playingBtn   = null;
+  var sel     = document.getElementById('ttsVoiceSelect');
+  var playBtn = document.getElementById('voicePlayBtn');
+  var descEl  = document.getElementById('voiceSelectDesc');
+  var audio   = document.getElementById('voicePreviewAudio');
+  if (!sel) return;
 
-  // Filter pills
-  document.querySelectorAll('#voiceFilterPills .vpill').forEach(function(pill) {
-    pill.addEventListener('click', function() {
-      document.querySelectorAll('#voiceFilterPills .vpill').forEach(function(p) { p.classList.remove('active'); });
-      pill.classList.add('active');
-      var filter = pill.dataset.filter;
-      document.querySelectorAll('#ttsVoiceGrid .voice-card').forEach(function(card) {
-        card.style.display = (filter === 'all' || card.dataset.lang === filter) ? '' : 'none';
-      });
-    });
+  // Voices with public preview
+  var HAS_PREVIEW = [
+    "21m00Tcm4TlvDq8ikWAM","9BWtsMINqrJLrRacOk9x","EXAVITQu4vr4xnSDxMaL",
+    "FGY2WhTYpPnrIDTdsKH5","XB0fDUnXU5powFXDhCwa","Xb7hH8MSUJpSbSDYk0k2",
+    "XrExE9yKIg1WjnnlVkGX","cgSgspJ2msm6clMCkdW9","pFZP5JQG7iQjIQuC4Bku",
+    "CwhRBWXzGAHq8TQ4Fs17","IKne3meq5aSn9XLyUdCD","JBFqnCBsd6RMkjVDRZzb",
+    "N2lVS1w4EtoT3dr4eOWO","SAz9YHcvj6GT2YYXdXww","TX3LPaxmHKxFdv7VOQHJ",
+    "bIHbv24MWmeRgasZH58o","cjVigY5qzO86Huf0OWal","iP95p4xoKVk53GoZ742B",
+    "nPczCjzI2devNBz1zQrb","onwK4e9ZLuTAKqWW03F9","pqHfZKP75CvOlQylNhV4"
+  ];
+
+  function updateDesc() {
+    var opt = sel.options[sel.selectedIndex];
+    ttsVoice = sel.value;
+    var label = opt ? opt.text : '';
+    var parts = label.split(' — ');
+    if (descEl) descEl.textContent = parts.length > 1 ? parts[1] : label;
+    // Update play button state
+    var canPreview = HAS_PREVIEW.indexOf(sel.value) >= 0;
+    if (playBtn) {
+      playBtn.classList.toggle('no-preview', !canPreview);
+      playBtn.title = canPreview ? 'Preview suara' : 'Preview tidak tersedia';
+    }
+  }
+
+  sel.addEventListener('change', function() {
+    // Stop any playing audio
+    if (audio && !audio.paused) { audio.pause(); audio.src = ''; }
+    if (playBtn) { playBtn.classList.remove('playing','loading'); playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>'; }
+    updateDesc();
   });
 
-  // Voice selection
-  document.querySelectorAll('#ttsVoiceGrid .voice-card').forEach(function(card) {
-    card.addEventListener('click', function(e) {
-      if (e.target.closest('.voice-preview-btn')) return;
-      document.querySelectorAll('#ttsVoiceGrid .voice-card').forEach(function(c) { c.classList.remove('active'); });
-      card.classList.add('active');
-      ttsVoice = card.dataset.voice;
-    });
-  });
+  if (playBtn) {
+    playBtn.addEventListener('click', function() {
+      if (playBtn.classList.contains('no-preview')) return;
+      var vid = sel.value;
 
-  var PLAY_ICON  = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg>';
-  var PAUSE_ICON = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/><rect x="7.5" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/></svg>';
-  var LOAD_ICON  = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 8"/></svg>';
-
-  document.querySelectorAll('.voice-preview-btn').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var voiceId = btn.dataset.vid;
-
-      if (playingBtn === btn) {
-        if (previewAudio) { previewAudio.pause(); previewAudio = null; }
-        btn.classList.remove('playing');
-        btn.innerHTML = PLAY_ICON;
-        playingBtn = null;
+      if (playBtn.classList.contains('playing')) {
+        audio.pause(); audio.src = '';
+        playBtn.classList.remove('playing');
+        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>';
         return;
       }
 
-      if (playingBtn) {
-        if (previewAudio) { previewAudio.pause(); previewAudio = null; }
-        playingBtn.classList.remove('playing', 'loading');
-        playingBtn.innerHTML = PLAY_ICON;
-        playingBtn = null;
-      }
+      playBtn.classList.add('loading');
+      playBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 8"/></svg>';
 
-      btn.classList.add('loading');
-      btn.innerHTML = LOAD_ICON;
-      playingBtn = btn;
-
-      var url = '/api/proxy?action=preview&voiceId=' + voiceId;
-      previewAudio = new Audio(url);
-      previewAudio.oncanplay = function() {
-        btn.classList.remove('loading');
-        btn.classList.add('playing');
-        btn.innerHTML = PAUSE_ICON;
-        previewAudio.play();
+      audio.src = '/api/proxy?action=preview&voiceId=' + vid;
+      audio.oncanplay = function() {
+        playBtn.classList.remove('loading');
+        playBtn.classList.add('playing');
+        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1" width="3.5" height="9" rx="1" fill="currentColor"/><rect x="6.5" y="1" width="3.5" height="9" rx="1" fill="currentColor"/></svg>';
+        audio.play();
       };
-      previewAudio.onended = function() {
-        btn.classList.remove('playing');
-        btn.innerHTML = PLAY_ICON;
-        previewAudio = null; playingBtn = null;
+      audio.onended = function() {
+        playBtn.classList.remove('playing');
+        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>';
       };
-      previewAudio.onerror = function() {
-        btn.classList.remove('loading', 'playing');
-        btn.innerHTML = PLAY_ICON;
-        playingBtn = null;
-        showToast('Preview tidak tersedia.', 'error');
+      audio.onerror = function() {
+        playBtn.classList.remove('loading','playing');
+        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>';
+        showToast('Preview tidak tersedia untuk voice ini.', 'error');
       };
-      previewAudio.load();
-    });
-  });
-}
-
-// ── Generate ──────────────────────────────────────────────
-function generate() {
-  if (activeTab === 'image') generateImage();
-  if (activeTab === 'video') generateVideo();
-  if (activeTab === 'music') generateSpeech();
-}
-
-async function generateImage() {
-  var prompt = $('imgPrompt').value.trim();
-  if (!prompt)              { showToast('Tulis deskripsi iklan dulu.', 'error'); return; }
-  if (!uploadedImageBase64) { showToast('Upload gambar referensi dulu.', 'error'); return; }
-  showState('loading'); resetProgress();
-  try {
-    updateSub('Mengupload gambar...');
-    var up = await proxyPost('upload', { imageBase64: uploadedImageBase64, mimeType: uploadedMimeType || 'image/jpeg', type: 'image' });
-    if (!up.url) throw new Error('Upload gagal.');
-
-    updateSub('Mengirim ke AI...');
-    var neg = $('imgNegPrompt') ? $('imgNegPrompt').value.trim() : '';
-    var str = $('imgStrength') ? parseFloat($('imgStrength').value) : 0.8;
-    var gen = await proxyPost('generate', { type:'image', model:imgModel, imageUrl:up.url, prompt:prompt, ratio:imgRatio, negPrompt:neg, strength:str, quantity:imgQty });
-    var taskIds = gen.taskIds || (gen.taskId ? [gen.taskId] : []);
-    if (!taskIds.length) throw new Error('taskId tidak ditemukan.');
-
-    updateSub('Menunggu ' + taskIds.length + ' gambar...');
-    var results = await Promise.allSettled(taskIds.map(function(id) { return pollStatus(id, gen.taskType || 'jobs'); }));
-    var urls = results.filter(function(r) { return r.status === 'fulfilled' && r.value; }).map(function(r) { return r.value; });
-    if (!urls.length) throw new Error('Semua generate gagal.');
-    showImageResult(urls);
-  } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
-}
-
-async function generateVideo() {
-  var prompt = $('vidPrompt').value.trim();
-  if (!prompt)    { showToast('Tulis deskripsi gerakan dulu.', 'error'); return; }
-  if (!vidBase64) { showToast('Upload gambar referensi dulu.', 'error'); return; }
-  showState('loading'); resetProgress();
-  try {
-    updateSub('Mengupload gambar...');
-    var up = await proxyPost('upload', { imageBase64: vidBase64, mimeType: vidMime || 'image/jpeg', type: 'video' });
-    if (!up.url) throw new Error('Upload gagal.');
-    updateSub('Mengirim ke AI video...');
-    var gen = await proxyPost('generate', { type:'video', model:vidModel, imageUrl:up.url, prompt:prompt, duration:vidDuration, resolution:vidResolution });
-    if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
-    updateSub('Rendering video...');
-    var videoUrl = await pollStatus(gen.taskId, 'jobs', 120);
-    showVideoResult(videoUrl);
-  } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
-}
-
-async function generateSpeech() {
-  var text = $('musicPrompt').value.trim();
-  if (!text) { showToast('Tulis teks narasi dulu.', 'error'); return; }
-  showState('loading'); resetProgress();
-  try {
-    updateSub('Mengirim ke ElevenLabs...');
-    var gen = await proxyPost('generate', { type:'speech', text:text, model:ttsModel, voice:ttsVoice, speed:ttsSpeed, stability:ttsStability });
-    if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
-    updateSub('Generating suara...');
-    var audioUrl = await pollStatus(gen.taskId, 'jobs', 30);
-    showSpeechResult(audioUrl);
-  } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
-}
-
-// ── Proxy ─────────────────────────────────────────────────
-async function proxyPost(action, body) {
-  var res = await fetch('/api/proxy?action=' + action, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  return await parseRes(res);
-}
-
-async function proxyGet(action, params) {
-  var qs = new URLSearchParams(Object.assign({ action: action }, params || {})).toString();
-  return await parseRes(await fetch('/api/proxy?' + qs));
-}
-
-async function parseRes(res) {
-  var ct = res.headers.get('content-type') || '';
-  if (!ct.includes('application/json')) {
-    var text = await res.text();
-    throw new Error('Server error (' + res.status + '): ' + text.slice(0, 150));
-  }
-  var data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Error ' + res.status);
-  return data;
-}
-
-async function pollStatus(taskId, type, maxAttempts) {
-  maxAttempts = maxAttempts || 60;
-  for (var i = 0; i < maxAttempts; i++) {
-    await sleep(i < 5 ? 2000 : i < 15 ? 3000 : 5000);
-    updateSub('Memproses... (' + (i+1) + '/' + maxAttempts + ')');
-    var data = await proxyGet('status', { taskId: taskId, type: type });
-    if (['success','SUCCESS','completed','COMPLETED'].indexOf(data.status) >= 0) {
-      var url = data.imageUrl || data.videoUrl;
-      if (!url) throw new Error('Hasil tidak ditemukan.');
-      return url;
-    }
-    if (data.isFail) throw new Error('Generate gagal. Coba ganti model.');
-  }
-  throw new Error('Timeout. Coba lagi.');
-}
-
-// ── Results ───────────────────────────────────────────────
-function showState(s) {
-  $('stateEmpty').style.display       = s === 'empty'   ? 'flex' : 'none';
-  $('stateLoading').style.display     = s === 'loading' ? 'flex' : 'none';
-  $('stateResultImg').style.display   = s === 'img'     ? 'flex' : 'none';
-  $('stateResultVid').style.display   = s === 'vid'     ? 'flex' : 'none';
-  $('stateResultMusic').style.display = s === 'music'   ? 'flex' : 'none';
-  $('btnGenerate').disabled = s === 'loading';
-}
-
-function resetProgress() {
-  var pb = $('progressBar');
-  pb.style.animation = 'none'; pb.offsetHeight; pb.style.animation = '';
-}
-
-function updateSub(t) { $('loadingSub').textContent = t; }
-
-function showImageResult(urls) {
-  var grid = $('imgResultGrid');
-  grid.innerHTML = '';
-  urls.forEach(function(url, i) {
-    var wrap = document.createElement('div');
-    wrap.className = 'result-item';
-    var img = document.createElement('img');
-    img.src = url; img.loading = 'lazy';
-    var overlay = document.createElement('div');
-    overlay.className = 'result-overlay';
-    overlay.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="white" stroke-width="1.5"/><path d="M8 11h6M11 8v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><span>Lihat</span>';
-    wrap.addEventListener('click', function() { openModal(urls, i); });
-    wrap.appendChild(img); wrap.appendChild(overlay);
-    grid.appendChild(wrap);
-  });
-  showState('img');
-  var name = document.querySelector('#imgModelList .model-row.active .model-row-name');
-  $('imgResultMeta').textContent = (name ? name.textContent : imgModel) + ' · ' + imgRatio + ' · ' + urls.length + ' gambar · ' + new Date().toLocaleTimeString('id-ID');
-  var dlAll = $('imgBtnDownloadAll');
-  dlAll.style.display = urls.length > 1 ? 'flex' : 'none';
-  dlAll.onclick = function() {
-    urls.forEach(function(url, i) {
-      setTimeout(function() {
-        var a = document.createElement('a'); a.href = url; a.download = 'adgen-' + (i+1) + '.jpg'; a.target = '_blank'; a.click();
-      }, i * 300);
-    });
-  };
-}
-
-function showVideoResult(videoUrl) {
-  $('vidResult').src = videoUrl;
-  showState('vid');
-  var name = document.querySelector('#vidModelList .model-row.active .model-row-name');
-  $('vidResultMeta').textContent = (name ? name.textContent : vidModel) + ' · ' + vidDuration + 's · ' + vidResolution + ' · ' + new Date().toLocaleTimeString('id-ID');
-  $('vidBtnDownload').onclick = function() {
-    var a = document.createElement('a'); a.href = videoUrl; a.download = 'adgen-video-' + Date.now() + '.mp4'; a.target = '_blank'; a.click();
-  };
-}
-
-function showSpeechResult(audioUrl) {
-  var list = $('musicResultList');
-  list.innerHTML = '';
-  var item = document.createElement('div');
-  item.className = 'music-track-item';
-  item.innerHTML = '<div class="music-track-info"><div class="music-track-title">Voice Over</div><div class="music-track-meta">ElevenLabs TTS</div></div>' +
-    '<audio controls src="' + audioUrl + '" style="flex:1; min-width:0"></audio>' +
-    '<a href="' + audioUrl + '" download="adgen-speech-' + Date.now() + '.mp3" target="_blank" class="btn-solid" style="flex-shrink:0;text-decoration:none;padding:6px 12px;font-size:12px;display:flex;align-items:center">' +
-    '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg></a>';
-  list.appendChild(item);
-  showState('music');
-  $('musicResultMeta').textContent = 'ElevenLabs · ' + new Date().toLocaleTimeString('id-ID');
-}
-
-// ── Modal ─────────────────────────────────────────────────
-function setupModal() {
-  var modal = $('previewModal');
-  var bg    = $('previewModalBg');
-  var img   = $('previewModalImg');
-  var close = $('previewClose');
-  var prev  = $('previewPrev');
-  var next  = $('previewNext');
-  var ctr   = $('previewCounter');
-  var dl    = $('previewDl');
-
-  function render() {
-    img.src = previewUrls[previewIdx];
-    ctr.textContent = (previewIdx + 1) + ' / ' + previewUrls.length;
-    prev.disabled = previewIdx === 0;
-    next.disabled = previewIdx === previewUrls.length - 1;
-    dl.onclick = function() { var a = document.createElement('a'); a.href = previewUrls[previewIdx]; a.download = 'adgen-' + Date.now() + '.jpg'; a.target = '_blank'; a.click(); };
-  }
-
-  function closeModal() { modal.style.display = 'none'; document.body.style.overflow = ''; }
-
-  close.addEventListener('click', closeModal);
-  bg.addEventListener('click', closeModal);
-  prev.addEventListener('click', function() { if (previewIdx > 0) { previewIdx--; render(); } });
-  next.addEventListener('click', function() { if (previewIdx < previewUrls.length - 1) { previewIdx++; render(); } });
-  document.addEventListener('keydown', function(e) {
-    if (modal.style.display === 'none') return;
-    if (e.key === 'Escape') closeModal();
-    if (e.key === 'ArrowLeft'  && previewIdx > 0)                         { previewIdx--; render(); }
-    if (e.key === 'ArrowRight' && previewIdx < previewUrls.length - 1)    { previewIdx++; render(); }
-  });
-
-  window.openModal = function(urls, idx) {
-    previewUrls = urls; previewIdx = idx;
-    render(); modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  };
-}
-
-// ── Toast ─────────────────────────────────────────────────
-var toastTO;
-function showToast(msg, type) {
-  var t = $('toast');
-  t.textContent = msg; t.className = 'toast show ' + (type || 'info');
-  clearTimeout(toastTO);
-  toastTO = setTimeout(function() { t.classList.remove('show'); }, 5000);
-}
-
-function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
-
-// ── Theme Toggle ──────────────────────────────────────────
-(function() {
-  var html    = document.documentElement;
-  var btn     = document.getElementById('themeToggle');
-  var sunIcon = btn ? btn.querySelector('.icon-sun')  : null;
-  var moonIcon = btn ? btn.querySelector('.icon-moon') : null;
-
-  var saved = localStorage.getItem('adgen_theme') || 'dark';
-  setTheme(saved);
-
-  if (btn) {
-    btn.addEventListener('click', function() {
-      setTheme(html.dataset.theme === 'dark' ? 'light' : 'dark');
+      audio.load();
     });
   }
 
-  function setTheme(t) {
-    html.dataset.theme = t;
-    localStorage.setItem('adgen_theme', t);
-    if (sunIcon && moonIcon) {
-      sunIcon.style.display  = t === 'dark'  ? 'block' : 'none';
-      moonIcon.style.display = t === 'light' ? 'block' : 'none';
-    }
-  }
-})();
+  updateDesc();
+}
