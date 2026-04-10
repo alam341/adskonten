@@ -6,7 +6,9 @@ let uploadedImageBase64 = null;
 let uploadedMimeType    = null;
 let selectedModel       = 'gpt-image/1.5-image-to-image';
 let selectedRatio       = '1:1';
-let selectedQty         = 1;
+let selectedQty = 1;
+let previewUrls = [];
+let previewIndex = 0;
 
 const $ = id => document.getElementById(id);
 
@@ -29,7 +31,18 @@ const btnRegenerate = $('btnRegenerate');
 const btnDownload   = $('btnDownload');
 const ratioGrid     = $('ratioGrid');
 const modelList     = $('modelList');
-const qtyBtns       = document.querySelectorAll('.qty-btn');
+const qtyInput      = $('qtyInput');
+const qtyDec        = $('qtyDec');
+const qtyInc        = $('qtyInc');
+const qtyDisplay    = $('qtyDisplay');
+const previewModal  = $('previewModal');
+const previewModalBg = $('previewModalBg');
+const previewModalImg = $('previewModalImg');
+const previewClose  = $('previewClose');
+const previewPrev   = $('previewPrev');
+const previewNext   = $('previewNext');
+const previewCounter = $('previewCounter');
+const previewDl     = $('previewDl');
 const stateEmpty    = $('stateEmpty');
 const stateLoading  = $('stateLoading');
 const stateResult   = $('stateResult');
@@ -43,6 +56,8 @@ const toast         = $('toast');
 document.addEventListener('DOMContentLoaded', () => {
   syncModel('gpt-image/1.5-image-to-image');
   showState('empty');
+  setupQty();
+  setupModal();
 });
 
 // ── Upload ────────────────────────────────────────────────
@@ -144,13 +159,56 @@ ratioGrid.querySelectorAll('.ratio-cell').forEach(btn => {
 });
 
 // ── Quantity ──────────────────────────────────────────────
-qtyBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    qtyBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedQty = parseInt(btn.dataset.qty);
+function setupQty() {
+  function update(val) {
+    selectedQty = Math.max(1, Math.min(20, parseInt(val) || 1));
+    qtyInput.value = selectedQty;
+    qtyDisplay.textContent = selectedQty;
+  }
+  qtyInput.addEventListener('input', () => update(qtyInput.value));
+  qtyInput.addEventListener('blur',  () => update(qtyInput.value));
+  qtyDec.addEventListener('click', () => update(selectedQty - 1));
+  qtyInc.addEventListener('click', () => update(selectedQty + 1));
+}
+
+// ── Preview Modal ──────────────────────────────────────────
+function setupModal() {
+  function open(urls, idx) {
+    previewUrls  = urls;
+    previewIndex = idx;
+    renderModal();
+    previewModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    previewModal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  function renderModal() {
+    previewModalImg.src = previewUrls[previewIndex];
+    previewCounter.textContent = (previewIndex + 1) + ' / ' + previewUrls.length;
+    previewPrev.disabled = previewIndex === 0;
+    previewNext.disabled = previewIndex === previewUrls.length - 1;
+    previewDl.onclick = () => {
+      const a = document.createElement('a');
+      a.href = previewUrls[previewIndex];
+      a.download = 'adgen-' + Date.now() + '.jpg';
+      a.target = '_blank'; a.click();
+    };
+  }
+  previewClose.addEventListener('click', close);
+  previewModalBg.addEventListener('click', close);
+  previewPrev.addEventListener('click', () => { if (previewIndex > 0) { previewIndex--; renderModal(); } });
+  previewNext.addEventListener('click', () => { if (previewIndex < previewUrls.length - 1) { previewIndex++; renderModal(); } });
+  document.addEventListener('keydown', e => {
+    if (previewModal.style.display === 'none') return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft' && previewIndex > 0) { previewIndex--; renderModal(); }
+    if (e.key === 'ArrowRight' && previewIndex < previewUrls.length - 1) { previewIndex++; renderModal(); }
   });
-});
+  // expose open globally for result grid clicks
+  window._openPreview = open;
+}
 
 // ── Generate ──────────────────────────────────────────────
 btnGenerate.addEventListener('click', generate);
@@ -280,17 +338,18 @@ function showResult(urls) {
     const img = document.createElement('img');
     img.src = url;
     img.alt = `Result ${i + 1}`;
+    img.loading = 'lazy';
 
-    const btn = document.createElement('button');
-    btn.className = 'result-dl-btn';
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg> Download`;
-    btn.onclick = () => {
-      const a = document.createElement('a');
-      a.href = url; a.download = `adgen-${Date.now()}-${i+1}.jpg`; a.target = '_blank'; a.click();
-    };
+    // Click to preview
+    wrap.addEventListener('click', () => window._openPreview(urls, i));
+
+    // Overlay hint
+    const overlay = document.createElement('div');
+    overlay.className = 'result-overlay';
+    overlay.innerHTML = `<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="white" stroke-width="1.5"/><path d="M8 11h6M11 8v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><span>Lihat</span>`;
 
     wrap.appendChild(img);
-    wrap.appendChild(btn);
+    wrap.appendChild(overlay);
     resultGrid.appendChild(wrap);
   });
 
