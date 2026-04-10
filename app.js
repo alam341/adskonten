@@ -1,4 +1,4 @@
-/* AdGen — App Logic */
+/* AdGen — Complete App */
 
 var uploadedImageBase64 = null;
 var uploadedMimeType    = null;
@@ -7,7 +7,7 @@ var vidMime             = null;
 var imgModel            = 'gpt-image/1.5-image-to-image';
 var vidModel            = 'kling-2.6/image-to-video';
 var ttsModel            = 'elevenlabs/text-to-speech-multilingual-v2';
-var ttsVoice            = '21m00Tcm4TlvDq8ikWAM'; // Rachel default
+var ttsVoice            = '21m00Tcm4TlvDq8ikWAM';
 var ttsSpeed            = 1.0;
 var ttsStability        = 0.5;
 var imgRatio            = '1:1';
@@ -33,17 +33,17 @@ document.addEventListener('DOMContentLoaded', function() {
   setupQty();
   setupNegToggle('imgNegTrigger','imgNegArrow','imgNegBody');
   setupStrengthSlider('imgStrength','imgStrengthVal');
-  setupStrengthSlider('ttsSpeed','ttsSpeedVal', function(v){ ttsSpeed=parseFloat(v.toFixed(2)); }, function(v){ return v+'x'; });
+  setupStrengthSlider('ttsSpeed','ttsSpeedVal', function(v){ ttsSpeed=v; }, function(v){ return parseFloat(v).toFixed(1)+'x'; });
   setupStrengthSlider('ttsStability','ttsStabilityVal', function(v){ ttsStability=v; });
-  setupVoiceGrid();
+  setupVoiceDropdown();
   setupModal();
   setupCharCounter();
   showState('empty');
 
-  $('imgBtnRegenerate').addEventListener('click', generate);
-  $('vidBtnRegenerate').addEventListener('click', generate);
-  $('musicBtnRegenerate').addEventListener('click', generate);
-  $('btnGenerate').addEventListener('click', generate);
+  $('imgBtnRegenerate') && $('imgBtnRegenerate').addEventListener('click', generate);
+  $('vidBtnRegenerate') && $('vidBtnRegenerate').addEventListener('click', generate);
+  $('musicBtnRegenerate') && $('musicBtnRegenerate').addEventListener('click', generate);
+  $('btnGenerate') && $('btnGenerate').addEventListener('click', generate);
 });
 
 // ── Tabs ──────────────────────────────────────────────────
@@ -54,9 +54,9 @@ function setupTabs() {
       document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === activeTab); });
       document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = p.dataset.panel === activeTab ? 'block' : 'none'; });
       var labels = { image: 'Generate Gambar', video: 'Generate Video', music: 'Generate Speech' };
-      $('btnGenerateLabel').textContent = labels[activeTab] || 'Generate';
+      $('btnGenerateLabel') && ($('btnGenerateLabel').textContent = labels[activeTab] || 'Generate');
       var titles = { image: 'Generate Konten Iklan — Gambar', video: 'Generate Konten Iklan — Video', music: 'Generate Narasi / Voice Over' };
-      if ($('emptyTitle')) $('emptyTitle').textContent = titles[activeTab] || '';
+      $('emptyTitle') && ($('emptyTitle').textContent = titles[activeTab] || '');
       showState('empty');
     });
   });
@@ -64,12 +64,12 @@ function setupTabs() {
 
 // ── Upload ────────────────────────────────────────────────
 function setupUpload(prefix, setBase64, setMime, ratioGridId, setRatio) {
-  var zone    = $(prefix + 'UploadZone');
-  var input   = $(prefix + 'Input');
-  var empty   = $(prefix + 'UploadEmpty');
-  var filled  = $(prefix + 'UploadFilled');
-  var preview = $(prefix + 'Preview');
-  var remove  = $(prefix + 'Remove');
+  var zone    = $(prefix+'UploadZone');
+  var input   = $(prefix+'Input');
+  var empty   = $(prefix+'UploadEmpty');
+  var filled  = $(prefix+'UploadFilled');
+  var preview = $(prefix+'Preview');
+  var remove  = $(prefix+'Remove');
   if (!zone) return;
 
   zone.addEventListener('click', function(e) {
@@ -82,7 +82,7 @@ function setupUpload(prefix, setBase64, setMime, ratioGridId, setRatio) {
   input.addEventListener('change', function(e) {
     var f = e.target.files[0];
     if (!f) return;
-    if (f.size > 10 * 1024 * 1024) { showToast('File terlalu besar. Maks 10MB.', 'error'); return; }
+    if (f.size > 10*1024*1024) { showToast('File terlalu besar. Maks 10MB.', 'error'); return; }
     setMime(f.type);
     var r = new FileReader();
     r.onload = function(ev) {
@@ -94,13 +94,8 @@ function setupUpload(prefix, setBase64, setMime, ratioGridId, setRatio) {
         var img = new Image();
         img.onload = function() {
           var ratio = img.naturalWidth / img.naturalHeight;
-          var best = '1:1';
-          if (ratio < 0.58)      best = '9:16';
-          else if (ratio < 0.85) best = '4:5';
-          else if (ratio < 1.15) best = '1:1';
-          else if (ratio < 1.45) best = '3:2';
-          else                   best = '16:9';
-          document.querySelectorAll('#' + ratioGridId + ' .ratio-cell').forEach(function(b) {
+          var best = ratio < 0.58 ? '9:16' : ratio < 0.85 ? '4:5' : ratio < 1.15 ? '1:1' : ratio < 1.45 ? '3:2' : '16:9';
+          document.querySelectorAll('#'+ratioGridId+' .ratio-cell').forEach(function(b) {
             b.classList.toggle('active', b.dataset.ratio === best);
           });
           setRatio(best);
@@ -170,7 +165,7 @@ function setupNegToggle(triggerId, arrowId, bodyId) {
   trigger.addEventListener('click', function() {
     var open = body.style.display !== 'none';
     body.style.display = open ? 'none' : 'block';
-    arrow.classList.toggle('open', !open);
+    if (arrow) arrow.classList.toggle('open', !open);
   });
 }
 
@@ -179,95 +174,90 @@ function setupStrengthSlider(rangeId, valId, onChange, formatter) {
   if (!el || !valEl) return;
   el.addEventListener('input', function() {
     var v = parseFloat(el.value);
-    valEl.textContent = formatter ? formatter(v.toFixed(1)) : v.toFixed(2);
+    valEl.textContent = formatter ? formatter(v) : v.toFixed(2);
     if (onChange) onChange(v);
   });
 }
 
 function setupQty() {
-  var input = $('imgQtyInput');
-  var dec   = $('imgQtyDec');
-  var inc   = $('imgQtyInc');
-  var disp  = $('imgQtyDisplay');
+  var input = $('imgQtyInput'), dec = $('imgQtyDec'), inc = $('imgQtyInc'), disp = $('imgQtyDisplay');
   if (!input) return;
   function update(val) {
     var v = Math.max(1, Math.min(20, parseInt(val) || 1));
     input.value = v; if (disp) disp.textContent = v; imgQty = v;
   }
-  input.addEventListener('input', function() { update(input.value); });
-  input.addEventListener('blur',  function() { update(input.value); });
-  dec.addEventListener('click', function() { update(parseInt(input.value) - 1); });
-  inc.addEventListener('click', function() { update(parseInt(input.value) + 1); });
+  input.addEventListener('input',  function() { update(input.value); });
+  input.addEventListener('blur',   function() { update(input.value); });
+  dec.addEventListener('click',    function() { update(parseInt(input.value)-1); });
+  inc.addEventListener('click',    function() { update(parseInt(input.value)+1); });
 }
 
 function setupCharCounter() {
-  var ta = $('musicPrompt');
-  var cc = $('ttsCharCount');
+  var ta = $('musicPrompt'), cc = $('ttsCharCount');
   if (!ta || !cc) return;
   ta.addEventListener('input', function() { cc.textContent = ta.value.length + ' karakter'; });
 }
 
-// ── Voice Grid ────────────────────────────────────────────
-function setupVoiceGrid() {
-  var sel     = document.getElementById('ttsVoiceSelect');
-  var playBtn = document.getElementById('voicePlayBtn');
-  var descEl  = document.getElementById('voiceSelectDesc');
-  var audio   = document.getElementById('voicePreviewAudio');
+// ── Voice Dropdown ────────────────────────────────────────
+function setupVoiceDropdown() {
+  var sel     = $('ttsVoiceSelect');
+  var playBtn = $('voicePlayBtn');
+  var descEl  = $('voiceSelectDesc');
+  var audio   = $('voicePreviewAudio');
   if (!sel) return;
 
-  // All voices can be previewed via kie.ai CDN
-  var HAS_PREVIEW = null; // null = all voices
+  var PLAY_ICON  = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg>';
+  var PAUSE_ICON = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/><rect x="7.5" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/></svg>';
+  var LOAD_ICON  = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 8"/></svg>';
 
   function updateDesc() {
     var opt = sel.options[sel.selectedIndex];
     ttsVoice = sel.value;
-    var label = opt ? opt.text : '';
-    var parts = label.split(' — ');
-    if (descEl) descEl.textContent = parts.length > 1 ? parts[1] : label;
-    // Update play button state
-    var canPreview = true; // all voices have preview
-    if (playBtn) {
-      playBtn.classList.toggle('no-preview', !canPreview);
-      playBtn.title = canPreview ? 'Preview suara' : 'Preview tidak tersedia';
+    if (descEl) {
+      var label = opt ? opt.text : '';
+      var parts = label.split(' \u2014 ');
+      descEl.textContent = parts.length > 1 ? parts[1] : label;
     }
   }
 
   sel.addEventListener('change', function() {
-    // Stop any playing audio
     if (audio && !audio.paused) { audio.pause(); audio.src = ''; }
-    if (playBtn) { playBtn.classList.remove('playing','loading'); playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>'; }
+    if (playBtn) {
+      playBtn.classList.remove('playing','loading');
+      playBtn.innerHTML = PLAY_ICON + ' Preview Suara';
+    }
     updateDesc();
   });
 
   if (playBtn) {
     playBtn.addEventListener('click', function() {
-      if (playBtn.classList.contains('no-preview')) return;
       var vid = sel.value;
+      if (!vid) return;
 
       if (playBtn.classList.contains('playing')) {
         audio.pause(); audio.src = '';
         playBtn.classList.remove('playing');
-        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>';
+        playBtn.innerHTML = PLAY_ICON + ' Preview Suara';
         return;
       }
 
       playBtn.classList.add('loading');
-      playBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 8"/></svg>';
+      playBtn.innerHTML = LOAD_ICON + ' Loading...';
 
       audio.src = '/api/proxy?action=preview&voiceId=' + vid;
       audio.oncanplay = function() {
         playBtn.classList.remove('loading');
         playBtn.classList.add('playing');
-        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1" width="3.5" height="9" rx="1" fill="currentColor"/><rect x="6.5" y="1" width="3.5" height="9" rx="1" fill="currentColor"/></svg>';
+        playBtn.innerHTML = PAUSE_ICON + ' Stop';
         audio.play();
       };
       audio.onended = function() {
         playBtn.classList.remove('playing');
-        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>';
+        playBtn.innerHTML = PLAY_ICON + ' Preview Suara';
       };
       audio.onerror = function() {
         playBtn.classList.remove('loading','playing');
-        playBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>';
+        playBtn.innerHTML = PLAY_ICON + ' Preview Suara';
         showToast('Preview tidak tersedia untuk voice ini.', 'error');
       };
       audio.load();
@@ -277,6 +267,236 @@ function setupVoiceGrid() {
   updateDesc();
 }
 
+// ── Generate ──────────────────────────────────────────────
+function generate() {
+  if (activeTab === 'image') generateImage();
+  if (activeTab === 'video') generateVideo();
+  if (activeTab === 'music') generateSpeech();
+}
+
+async function generateImage() {
+  var prompt = $('imgPrompt') ? $('imgPrompt').value.trim() : '';
+  if (!prompt)              { showToast('Tulis deskripsi iklan dulu.', 'error'); return; }
+  if (!uploadedImageBase64) { showToast('Upload gambar referensi dulu.', 'error'); return; }
+  showState('loading'); resetProgress();
+  try {
+    updateSub('Mengupload gambar...');
+    var up = await proxyPost('upload', { imageBase64: uploadedImageBase64, mimeType: uploadedMimeType || 'image/jpeg', type: 'image' });
+    if (!up.url) throw new Error('Upload gagal.');
+    updateSub('Mengirim ke AI...');
+    var neg = $('imgNegPrompt') ? $('imgNegPrompt').value.trim() : '';
+    var str = $('imgStrength') ? parseFloat($('imgStrength').value) : 0.8;
+    var gen = await proxyPost('generate', { type:'image', model:imgModel, imageUrl:up.url, prompt:prompt, ratio:imgRatio, negPrompt:neg, strength:str, quantity:imgQty });
+    var taskIds = gen.taskIds || (gen.taskId ? [gen.taskId] : []);
+    if (!taskIds.length) throw new Error('taskId tidak ditemukan.');
+    updateSub('Menunggu '+taskIds.length+' gambar...');
+    var results = await Promise.allSettled(taskIds.map(function(id) { return pollStatus(id, gen.taskType||'jobs'); }));
+    var urls = results.filter(function(r) { return r.status==='fulfilled' && r.value; }).map(function(r) { return r.value; });
+    if (!urls.length) throw new Error('Semua generate gagal.');
+    showImageResult(urls);
+  } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
+}
+
+async function generateVideo() {
+  var prompt = $('vidPrompt') ? $('vidPrompt').value.trim() : '';
+  if (!prompt)    { showToast('Tulis deskripsi gerakan dulu.', 'error'); return; }
+  if (!vidBase64) { showToast('Upload gambar referensi dulu.', 'error'); return; }
+  showState('loading'); resetProgress();
+  try {
+    updateSub('Mengupload gambar...');
+    var up = await proxyPost('upload', { imageBase64: vidBase64, mimeType: vidMime||'image/jpeg', type: 'video' });
+    if (!up.url) throw new Error('Upload gagal.');
+    updateSub('Mengirim ke AI video...');
+    var gen = await proxyPost('generate', { type:'video', model:vidModel, imageUrl:up.url, prompt:prompt, duration:vidDuration, resolution:vidResolution });
+    if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
+    updateSub('Rendering video...');
+    var videoUrl = await pollStatus(gen.taskId, 'jobs', 120);
+    showVideoResult(videoUrl);
+  } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
+}
+
+async function generateSpeech() {
+  var text = $('musicPrompt') ? $('musicPrompt').value.trim() : '';
+  if (!text) { showToast('Tulis teks narasi dulu.', 'error'); return; }
+  showState('loading'); resetProgress();
+  try {
+    updateSub('Mengirim ke ElevenLabs...');
+    var gen = await proxyPost('generate', { type:'speech', text:text, model:ttsModel, voice:ttsVoice, speed:ttsSpeed, stability:ttsStability, languageCode:'' });
+    if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
+    updateSub('Generating suara...');
+    var audioUrl = await pollStatus(gen.taskId, 'jobs', 30);
+    showSpeechResult(audioUrl);
+  } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
+}
+
+// ── Proxy ─────────────────────────────────────────────────
+async function proxyPost(action, body) {
+  var res = await fetch('/api/proxy?action='+action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return await parseRes(res);
+}
+
+async function proxyGet(action, params) {
+  var qs = new URLSearchParams(Object.assign({ action: action }, params || {})).toString();
+  return await parseRes(await fetch('/api/proxy?'+qs));
+}
+
+async function parseRes(res) {
+  var ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    var text = await res.text();
+    throw new Error('Server error ('+res.status+'): '+text.slice(0,150));
+  }
+  var data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error '+res.status);
+  return data;
+}
+
+async function pollStatus(taskId, type, maxAttempts) {
+  maxAttempts = maxAttempts || 60;
+  for (var i = 0; i < maxAttempts; i++) {
+    await sleep(i < 5 ? 2000 : i < 15 ? 3000 : 5000);
+    updateSub('Memproses... ('+(i+1)+'/'+maxAttempts+')');
+    var data = await proxyGet('status', { taskId: taskId, type: type });
+    if (['success','SUCCESS','completed','COMPLETED'].indexOf(data.status) >= 0) {
+      var url = data.imageUrl || data.videoUrl;
+      if (!url) throw new Error('Hasil tidak ditemukan.');
+      return url;
+    }
+    if (data.isFail) throw new Error('Generate gagal. Coba ganti model.');
+  }
+  throw new Error('Timeout. Coba lagi.');
+}
+
+// ── Results ───────────────────────────────────────────────
+function showState(s) {
+  $('stateEmpty')       && ($('stateEmpty').style.display       = s==='empty'   ? 'flex':'none');
+  $('stateLoading')     && ($('stateLoading').style.display     = s==='loading' ? 'flex':'none');
+  $('stateResultImg')   && ($('stateResultImg').style.display   = s==='img'     ? 'flex':'none');
+  $('stateResultVid')   && ($('stateResultVid').style.display   = s==='vid'     ? 'flex':'none');
+  $('stateResultMusic') && ($('stateResultMusic').style.display = s==='music'   ? 'flex':'none');
+  $('btnGenerate')      && ($('btnGenerate').disabled           = s==='loading');
+}
+
+function resetProgress() {
+  var pb = $('progressBar');
+  if (!pb) return;
+  pb.style.animation = 'none'; pb.offsetHeight; pb.style.animation = '';
+}
+
+function updateSub(t) { $('loadingSub') && ($('loadingSub').textContent = t); }
+
+function showImageResult(urls) {
+  var grid = $('imgResultGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  urls.forEach(function(url, i) {
+    var wrap = document.createElement('div');
+    wrap.className = 'result-item';
+    var img = document.createElement('img');
+    img.src = url; img.loading = 'lazy';
+    var overlay = document.createElement('div');
+    overlay.className = 'result-overlay';
+    overlay.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="white" stroke-width="1.5"/><path d="M8 11h6M11 8v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><span>Lihat</span>';
+    wrap.addEventListener('click', function() { openModal(urls, i); });
+    wrap.appendChild(img); wrap.appendChild(overlay);
+    grid.appendChild(wrap);
+  });
+  showState('img');
+  var name = document.querySelector('#imgModelList .model-row.active .model-row-name');
+  $('imgResultMeta') && ($('imgResultMeta').textContent = (name?name.textContent:imgModel)+' · '+imgRatio+' · '+urls.length+' gambar · '+new Date().toLocaleTimeString('id-ID'));
+  var dlAll = $('imgBtnDownloadAll');
+  if (dlAll) {
+    dlAll.style.display = urls.length > 1 ? 'flex' : 'none';
+    dlAll.onclick = function() {
+      urls.forEach(function(url, i) {
+        setTimeout(function() {
+          var a = document.createElement('a'); a.href = url; a.download = 'adgen-'+(i+1)+'.jpg'; a.target='_blank'; a.click();
+        }, i*300);
+      });
+    };
+  }
+}
+
+function showVideoResult(videoUrl) {
+  var v = $('vidResult');
+  if (v) v.src = videoUrl;
+  showState('vid');
+  var name = document.querySelector('#vidModelList .model-row.active .model-row-name');
+  $('vidResultMeta') && ($('vidResultMeta').textContent = (name?name.textContent:vidModel)+' · '+vidDuration+'s · '+vidResolution+' · '+new Date().toLocaleTimeString('id-ID'));
+  var dl = $('vidBtnDownload');
+  if (dl) dl.onclick = function() { var a=document.createElement('a'); a.href=videoUrl; a.download='adgen-video-'+Date.now()+'.mp4'; a.target='_blank'; a.click(); };
+}
+
+function showSpeechResult(audioUrl) {
+  var list = $('musicResultList');
+  if (!list) return;
+  list.innerHTML = '';
+  var item = document.createElement('div');
+  item.className = 'music-track-item';
+  item.innerHTML = '<div class="music-track-info"><div class="music-track-title">Voice Over</div><div class="music-track-meta">ElevenLabs · '+ttsVoice+'</div></div>'+
+    '<audio controls src="'+audioUrl+'" style="flex:1;min-width:0"></audio>'+
+    '<a href="'+audioUrl+'" download="adgen-speech-'+Date.now()+'.mp3" target="_blank" class="btn-solid" style="flex-shrink:0;text-decoration:none;padding:6px 12px;font-size:12px;display:flex;align-items:center">'+
+    '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg></a>';
+  list.appendChild(item);
+  showState('music');
+  $('musicResultMeta') && ($('musicResultMeta').textContent = 'ElevenLabs · '+new Date().toLocaleTimeString('id-ID'));
+}
+
+// ── Modal ─────────────────────────────────────────────────
+function setupModal() {
+  var modal = $('previewModal');
+  var bg    = $('previewModalBg');
+  var img   = $('previewModalImg');
+  var close = $('previewClose');
+  var prev  = $('previewPrev');
+  var next  = $('previewNext');
+  var ctr   = $('previewCounter');
+  var dl    = $('previewDl');
+  if (!modal) return;
+
+  function render() {
+    img.src = previewUrls[previewIdx];
+    if (ctr) ctr.textContent = (previewIdx+1)+' / '+previewUrls.length;
+    if (prev) prev.disabled = previewIdx === 0;
+    if (next) next.disabled = previewIdx === previewUrls.length-1;
+    if (dl) dl.onclick = function() { var a=document.createElement('a'); a.href=previewUrls[previewIdx]; a.download='adgen-'+Date.now()+'.jpg'; a.target='_blank'; a.click(); };
+  }
+
+  function closeModal() { modal.style.display='none'; document.body.style.overflow=''; }
+
+  close && close.addEventListener('click', closeModal);
+  bg    && bg.addEventListener('click', closeModal);
+  prev  && prev.addEventListener('click', function() { if (previewIdx>0) { previewIdx--; render(); } });
+  next  && next.addEventListener('click', function() { if (previewIdx<previewUrls.length-1) { previewIdx++; render(); } });
+  document.addEventListener('keydown', function(e) {
+    if (!modal || modal.style.display==='none') return;
+    if (e.key==='Escape') closeModal();
+    if (e.key==='ArrowLeft'  && previewIdx>0)                       { previewIdx--; render(); }
+    if (e.key==='ArrowRight' && previewIdx<previewUrls.length-1)    { previewIdx++; render(); }
+  });
+
+  window.openModal = function(urls, idx) {
+    previewUrls = urls; previewIdx = idx;
+    render(); modal.style.display='flex';
+    document.body.style.overflow='hidden';
+  };
+}
+
+// ── Toast ─────────────────────────────────────────────────
+var toastTO;
+function showToast(msg, type) {
+  var t = $('toast');
+  if (!t) return;
+  t.textContent = msg; t.className = 'toast show '+(type||'info');
+  clearTimeout(toastTO);
+  toastTO = setTimeout(function() { t.classList.remove('show'); }, 5000);
+}
+
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 
 // ── Theme Toggle ──────────────────────────────────────────
 (function() {
@@ -288,16 +508,14 @@ function setupVoiceGrid() {
   var saved = localStorage.getItem('adgen_theme') || 'dark';
   setTheme(saved);
 
-  if (btn) {
-    btn.addEventListener('click', function() {
-      setTheme(html.dataset.theme === 'dark' ? 'light' : 'dark');
-    });
-  }
+  if (btn) btn.addEventListener('click', function() {
+    setTheme(html.dataset.theme === 'dark' ? 'light' : 'dark');
+  });
 
   function setTheme(t) {
     html.dataset.theme = t;
     localStorage.setItem('adgen_theme', t);
-    if (sunIcon)  sunIcon.style.display  = t === 'dark'  ? 'block' : 'none';
-    if (moonIcon) moonIcon.style.display = t === 'light' ? 'block' : 'none';
+    if (sunIcon)  sunIcon.style.display  = t==='dark'  ? 'block' : 'none';
+    if (moonIcon) moonIcon.style.display = t==='light' ? 'block' : 'none';
   }
 })();
