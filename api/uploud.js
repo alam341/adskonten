@@ -1,49 +1,42 @@
-// api/upload.js
-// Proxy untuk upload gambar ke kie.ai
-// API key aman di server, tidak terekspos ke browser
+// api/upload.js — CommonJS, Vercel Serverless Function
 
-export const config = {
-  api: { bodyParser: { sizeLimit: '12mb' } },
-};
+module.exports = async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const apiKey = process.env.KIE_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key belum dikonfigurasi di server.' });
+    return res.status(500).json({ error: 'KIE_API_KEY belum diset di Vercel Environment Variables.' });
   }
 
   try {
     const { imageBase64, mimeType } = req.body;
     if (!imageBase64) return res.status(400).json({ error: 'imageBase64 diperlukan.' });
 
-    // Convert base64 ke binary
+    // Bersihkan data URL prefix jika ada
     const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
     const binaryData = Buffer.from(base64Data, 'base64');
     const type = mimeType || 'image/jpeg';
     const ext  = type.split('/')[1] || 'jpg';
 
-    // Build FormData manual (Node.js tidak punya FormData native di semua versi)
-    const boundary = '----AdGenBoundary' + Date.now().toString(16);
-    const bodyParts = [
-      `--${boundary}\r\n`,
-      `Content-Disposition: form-data; name="file"; filename="image.${ext}"\r\n`,
-      `Content-Type: ${type}\r\n\r\n`,
-    ];
-
-    const header = Buffer.from(bodyParts.join(''));
+    // Build multipart/form-data manual
+    const boundary = 'AdGenBoundary' + Date.now();
+    const header   = Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="image.${ext}"\r\nContent-Type: ${type}\r\n\r\n`
+    );
     const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
     const body   = Buffer.concat([header, binaryData, footer]);
 
     const uploadRes = await fetch('https://api.kie.ai/api/v1/files/upload', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        'Content-Length': body.length,
       },
       body,
     });
@@ -55,8 +48,13 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({ url: data.data?.url });
+
   } catch (err) {
-    console.error('[upload]', err);
+    console.error('[upload error]', err);
     return res.status(500).json({ error: err.message });
   }
-}
+};
+
+module.exports.config = {
+  api: { bodyParser: { sizeLimit: '15mb' } },
+};
