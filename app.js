@@ -215,16 +215,8 @@ function setupVoiceGrid() {
   var audio   = document.getElementById('voicePreviewAudio');
   if (!sel) return;
 
-  // Voices with public preview
-  var HAS_PREVIEW = [
-    "21m00Tcm4TlvDq8ikWAM","9BWtsMINqrJLrRacOk9x","EXAVITQu4vr4xnSDxMaL",
-    "FGY2WhTYpPnrIDTdsKH5","XB0fDUnXU5powFXDhCwa","Xb7hH8MSUJpSbSDYk0k2",
-    "XrExE9yKIg1WjnnlVkGX","cgSgspJ2msm6clMCkdW9","pFZP5JQG7iQjIQuC4Bku",
-    "CwhRBWXzGAHq8TQ4Fs17","IKne3meq5aSn9XLyUdCD","JBFqnCBsd6RMkjVDRZzb",
-    "N2lVS1w4EtoT3dr4eOWO","SAz9YHcvj6GT2YYXdXww","TX3LPaxmHKxFdv7VOQHJ",
-    "bIHbv24MWmeRgasZH58o","cjVigY5qzO86Huf0OWal","iP95p4xoKVk53GoZ742B",
-    "nPczCjzI2devNBz1zQrb","onwK4e9ZLuTAKqWW03F9","pqHfZKP75CvOlQylNhV4"
-  ];
+  // All voices can be previewed via kie.ai CDN
+  var HAS_PREVIEW = null; // null = all voices
 
   function updateDesc() {
     var opt = sel.options[sel.selectedIndex];
@@ -233,7 +225,7 @@ function setupVoiceGrid() {
     var parts = label.split(' — ');
     if (descEl) descEl.textContent = parts.length > 1 ? parts[1] : label;
     // Update play button state
-    var canPreview = HAS_PREVIEW.indexOf(sel.value) >= 0;
+    var canPreview = true; // all voices have preview
     if (playBtn) {
       playBtn.classList.toggle('no-preview', !canPreview);
       playBtn.title = canPreview ? 'Preview suara' : 'Preview tidak tersedia';
