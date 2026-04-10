@@ -216,9 +216,19 @@ module.exports = async function handler(req, res) {
       const { voiceId } = req.query;
       if (!voiceId) return res.status(400).json({ error: 'voiceId diperlukan.' });
 
-      const previewUrl = `https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`;
-      const audioRes = await fetch(previewUrl);
-      if (!audioRes.ok) return res.status(404).json({ error: 'Preview tidak tersedia.' });
+      // Try kie.ai CDN first, fallback to ElevenLabs public storage
+      const urls = [
+        `https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`,
+        `https://storage.googleapis.com/eleven-public-prod/premade/voices/${voiceId}/preview.mp3`,
+      ];
+      let audioRes = null;
+      for (const url of urls) {
+        try {
+          const r = await fetch(url);
+          if (r.ok) { audioRes = r; break; }
+        } catch(e) {}
+      }
+      if (!audioRes) return res.status(404).json({ error: 'Preview tidak tersedia.' });
 
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Cache-Control', 'public, max-age=604800');
