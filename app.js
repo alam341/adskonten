@@ -81,6 +81,30 @@ function readFile(f) {
     previewImg.src = uploadedImageBase64;
     uploadEmpty.style.display  = 'none';
     uploadFilled.style.display = 'block';
+
+    // Auto-detect ratio dari dimensi gambar
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const ratio = w / h;
+      let best = '1:1';
+      if (ratio < 0.6)       best = '2:3';   // sangat portrait
+      else if (ratio < 0.85) best = '4:5';   // portrait
+      else if (ratio < 1.15) best = '1:1';   // square
+      else if (ratio < 1.45) best = '3:2';   // landscape
+      else                   best = '16:9';  // wide
+      // Khusus 9:16 (stories) — jika sangat tinggi
+      if (ratio < 0.58)      best = '9:16';
+
+      // Set active ratio button
+      ratioGrid.querySelectorAll('.ratio-cell').forEach(b => {
+        const isMatch = b.dataset.ratio === best;
+        b.classList.toggle('active', isMatch);
+        if (isMatch) selectedRatio = best;
+      });
+    };
+    img.src = uploadedImageBase64;
   };
   r.readAsDataURL(f);
 }
