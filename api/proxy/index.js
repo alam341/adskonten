@@ -65,7 +65,7 @@ module.exports = async function handler(req, res) {
               style:            0,
               speed:            typeof speed === 'number' ? speed : 1.0,
               timestamps:       false,
-              language_code:    languageCode || '',
+              language_code:    '', // must be empty for multilingual-v2
             },
           }),
         });
@@ -181,16 +181,22 @@ module.exports = async function handler(req, res) {
         if (data?.resultJson) {
           try {
             const result = JSON.parse(data.resultJson);
-            const firstUrl = result?.resultUrls?.[0] || result?.images?.[0] || result?.image_url || result?.audio_url || result?.url || null;
+            // resultJson format: { resultUrls: [...] } for image/audio/video
+            const firstUrl = result?.resultUrls?.[0] || result?.audio_url || result?.audioUrl ||
+              result?.images?.[0] || result?.image_url || result?.url || null;
             if (firstUrl) {
               if (firstUrl.includes('.mp4') || firstUrl.includes('.webm')) videoUrl = firstUrl;
-              else if (firstUrl.includes('.mp3') || firstUrl.includes('.wav') || firstUrl.includes('.ogg') || firstUrl.includes('audio')) imageUrl = firstUrl;
               else imageUrl = firstUrl;
             }
           } catch(e) {}
         }
         if (!imageUrl && !videoUrl) {
-          const tries = [data?.output?.image_url, data?.output?.url, data?.output?.images?.[0], data?.imageUrl, data?.image_url, data?.url];
+          const tries = [
+            data?.output?.audio_url, data?.output?.audioUrl,
+            data?.output?.image_url, data?.output?.url,
+            data?.output?.images?.[0], data?.imageUrl,
+            data?.image_url, data?.audioUrl, data?.audio_url, data?.url
+          ];
           const found = tries.find(c => typeof c === 'string' && c.startsWith('http'));
           if (found) {
             if (found.includes('.mp4') || found.includes('.webm')) videoUrl = found;
