@@ -394,3 +394,27 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 [data-theme="light"] .val-badge { color: #5548d8; background: rgba(85,72,216,0.1); }
 [data-theme="light"] .music-track-title { color: #111118; }
 [data-theme="light"] .music-track-meta { color: #888898; }
+
+/* ── Voice play button improvements ── */
+.voice-play-btn {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 9px !important;
+  font-size: 14px;
+}
+[data-theme="light"] .voice-play-btn {
+  background: rgba(85,72,216,0.12) !important;
+  border-color: rgba(85,72,216,0.3) !important;
+  color: #5548d8 !important;
+}
+[data-theme="light"] .voice-play-btn:hover {
+  background: rgba(85,72,216,0.2) !important;
+}
+[data-theme="light"] .voice-play-btn.no-preview {
+  opacity: 0.25 !important;
+}
+[data-theme="light"] .voice-select {
+  color: #111118;
+  background-color: #ffffff;
+  border-color: #d0d0dc;
+}
