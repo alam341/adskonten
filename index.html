@@ -75,7 +75,7 @@
           <div class="panel-label">Model AI</div>
           <div class="model-list" id="modelList">
 
-            <label class="model-row" data-model="gpt-image/1.5-image-to-image">
+            <label class="model-row active" data-model="gpt-image/1.5-image-to-image">
               <input type="radio" name="model" value="gpt-image/1.5-image-to-image" checked hidden />
               <div class="model-row-dot"></div>
               <div class="model-row-body">
@@ -119,8 +119,8 @@
               </div>
             </label>
 
-            <label class="model-row" data-model="nano-banana">
-              <input type="radio" name="model" value="nano-banana" hidden />
+            <label class="model-row" data-model="google/nano-banana">
+              <input type="radio" name="model" value="google/nano-banana" hidden />
               <div class="model-row-dot"></div>
               <div class="model-row-body">
                 <div class="model-row-top">
@@ -196,6 +196,18 @@
           </div>
         </div>
 
+        <div class="divider"></div>
+
+        <!-- Quantity -->
+        <div class="panel-group">
+          <div class="panel-label">Jumlah Generate</div>
+          <div class="qty-grid">
+            <button class="qty-btn active" data-qty="1">1</button>
+            <button class="qty-btn" data-qty="2">2</button>
+            <button class="qty-btn" data-qty="3">3</button>
+            <button class="qty-btn" data-qty="4">4</button>
+          </div>
+        </div>
 
       </div>
 
@@ -222,21 +234,21 @@
           </svg>
         </div>
         <h2 class="empty-title">Generate Konten Iklan AI</h2>
-        <p class="empty-desc">Upload gambar referensi, isi prompt, pilih model &amp; ukuran,<br/>lalu klik Generate.</p>
+        <p class="empty-desc">Upload gambar referensi, isi prompt, pilih model &amp; ukuran,<br/>tentukan jumlah, lalu klik Generate.</p>
         <div class="empty-steps">
           <div class="step-item">
             <div class="step-num">1</div>
-            <span>Upload gambar produk / referensi</span>
+            <span>Upload gambar produk</span>
           </div>
           <div class="step-arrow">→</div>
           <div class="step-item">
             <div class="step-num">2</div>
-            <span>Tulis deskripsi konten iklan</span>
+            <span>Tulis deskripsi iklan</span>
           </div>
           <div class="step-arrow">→</div>
           <div class="step-item">
             <div class="step-num">3</div>
-            <span>Klik Generate &amp; download</span>
+            <span>Generate &amp; download</span>
           </div>
         </div>
       </div>
@@ -265,14 +277,14 @@
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Ulang
             </button>
-            <button class="btn-solid" id="btnDownload">
+            <button class="btn-solid" id="btnDownload" style="display:none">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
-              Download
+              Download Semua
             </button>
           </div>
         </div>
-        <div class="result-img-area" id="resultImgArea">
-          <img id="resultImg" src="" alt="Generated ad" />
+        <div class="result-img-area">
+          <div class="result-grid" id="resultGrid"></div>
         </div>
       </div>
 
