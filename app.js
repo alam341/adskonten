@@ -4,7 +4,7 @@
 
 let uploadedImageBase64 = null;
 let uploadedMimeType    = null;
-let selectedModel       = 'gpt-image/1-5-image-to-image';
+let selectedModel       = 'gpt-image/1.5-image-to-image';
 let selectedRatio       = '1:1';
 
 const $ = id => document.getElementById(id);
@@ -39,7 +39,7 @@ const toast         = $('toast');
 
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
-  syncModel('gpt-image/1-5-image-to-image');
+  syncModel('gpt-image/1.5-image-to-image');
   showState('empty');
 });
 
@@ -152,7 +152,7 @@ async function generate() {
 
     // 3. Poll
     updateSub('Menunggu hasil...');
-    const resultUrl = await pollStatus(genRes.taskId);
+    const resultUrl = await pollStatus(genRes.taskId, genRes.type);
 
     showResult(resultUrl);
   } catch (err) {
