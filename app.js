@@ -300,7 +300,7 @@ async function generateImage() {
   showState('loading'); resetProgress();
   try {
     updateSub('Mengupload gambar...');
-    var up = await proxyPost('upload', { imageBase64: uploadedImageBase64, mimeType: uploadedMimeType || 'image/jpeg' });
+    var up = await proxyPost('upload', { imageBase64: uploadedImageBase64, mimeType: uploadedMimeType || 'image/jpeg', type: 'image' });
     if (!up.url) throw new Error('Upload gagal.');
 
     updateSub('Mengirim ke AI...');
@@ -325,7 +325,7 @@ async function generateVideo() {
   showState('loading'); resetProgress();
   try {
     updateSub('Mengupload gambar...');
-    var up = await proxyPost('upload', { imageBase64: vidBase64, mimeType: vidMime || 'image/jpeg' });
+    var up = await proxyPost('upload', { imageBase64: vidBase64, mimeType: vidMime || 'image/jpeg', type: 'video' });
     if (!up.url) throw new Error('Upload gagal.');
     updateSub('Mengirim ke AI video...');
     var gen = await proxyPost('generate', { type:'video', model:vidModel, imageUrl:up.url, prompt:prompt, duration:vidDuration, resolution:vidResolution });
