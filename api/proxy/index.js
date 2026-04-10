@@ -98,9 +98,9 @@ module.exports = async function handler(req, res) {
       });
 
       const data = await kieRes.json();
-      if (!kieRes.ok) return res.status(kieRes.status).json({ error: data.msg || 'Generate gagal.' });
+      if (!kieRes.ok) return res.status(kieRes.status).json({ error: 'Generate error: ' + JSON.stringify(data) + ' | body: ' + JSON.stringify(kieBody) });
 
-      const taskId = data.data?.taskId || data.data?.id || data.data?.recordId;
+      const taskId = data.data?.taskId || data.data?.id || data.data?.recordId; if (!taskId) return res.status(500).json({ error: 'taskId kosong. Response: ' + JSON.stringify(data) });
       return res.status(200).json({ taskId });
     }
 
