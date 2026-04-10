@@ -205,46 +205,21 @@ module.exports = async function handler(req, res) {
 
 
     // ── VOICE PREVIEW ─────────────────────────────────────
-    // Redirect langsung ke public ElevenLabs storage URL
-    // Premade voices: storage.googleapis.com/eleven-public-prod/premade/voices/{id}/
-    // Community voices: storage.googleapis.com/eleven-public-prod/{uid}/{id}/
     if (action === 'preview') {
       if (req.method !== 'GET') return res.status(405).end();
       const { voiceId } = req.query;
       if (!voiceId) return res.status(400).json({ error: 'voiceId diperlukan.' });
 
-      // Map voice ID ke public preview URL
-      // Premade voices punya URL di eleven-public-prod/premade
-      const PREMADE_PREVIEWS = {
-        '21m00Tcm4TlvDq8ikWAM': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/b4928a68-c03b-411f-8533-3d5c299fd451.mp3',
-        'AZnzlk1XvdvUeBnXmlld': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/AZnzlk1XvdvUeBnXmlld/69c5370b-3f42-4b3b-8f55-28f63c6c7f61.mp3',
-        'EXAVITQu4vr4xnSDxMaL': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/815e6566-cf7e-4af1-93be-aca03e30ef9c.mp3',
-        'ErXwobaYiN019PkySvjV': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/9b0e0ba4-77f4-4e61-9b8e-cfb8cc862be6.mp3',
-        'MF3mGyEYCl7XYWbV9V6O': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/MF3mGyEYCl7XYWbV9V6O/17769c2b-b0b7-4168-8959-d0dc62a34e59.mp3',
-        'TxGEqnHWrfWFTfGW9XjX': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/TxGEqnHWrfWFTfGW9XjX/51f28ccb-2b6e-4778-b8e5-66cfde47cd5e.mp3',
-        'VR6AewLTigWG4xSOukaG': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/VR6AewLTigWG4xSOukaG/71a3e3e4-e73a-45c9-9ee4-cf8148498d60.mp3',
-        'pNInz6obpgDQGcFmaJgB': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/pNInz6obpgDQGcFmaJgB/13c3b50a-a7af-4d76-a3d6-e78ceb64a169.mp3',
-        'yoZ06aMxZJJ28mfd3POQ': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/yoZ06aMxZJJ28mfd3POQ/3f4bbc80-c23a-411e-a886-c7e24b75f9ae.mp3',
-        'onwK4e9ZLuTAKqWW03F9': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/onwK4e9ZLuTAKqWW03F9/ba5f8d96-f0e4-4e81-a5a7-c9e3ae3e8c57.mp3',
-        'N2lVS1w4EtoT3dr4eOWO': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/N2lVS1w4EtoT3dr4eOWO/d50b9cdb-ef55-4cf3-94fc-4a1af29a65b3.mp3',
-        'XrExE9yKIg1WjnnlVkGX': 'https://storage.googleapis.com/eleven-public-prod/premade/voices/XrExE9yKIg1WjnnlVkGX/6fda4fc7-ac5a-4bcb-99e8-b432b3b60d0c.mp3',
-      };
+      const previewUrl = `https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`;
+      const audioRes = await fetch(previewUrl);
+      if (!audioRes.ok) return res.status(404).json({ error: 'Preview tidak tersedia.' });
 
-      const previewUrl = PREMADE_PREVIEWS[voiceId];
-
-      if (previewUrl) {
-        // Proxy audio supaya tidak ada CORS issue
-        const audioRes = await fetch(previewUrl);
-        if (!audioRes.ok) return res.status(502).json({ error: 'Gagal fetch audio.' });
-        res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Cache-Control', 'public, max-age=604800');
-        const buf = await audioRes.arrayBuffer();
-        return res.status(200).send(Buffer.from(buf));
-      }
-
-      // Community voices — tidak ada public preview, return 404 gracefully
-      return res.status(404).json({ error: 'Preview tidak tersedia untuk voice ini.' });
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      const buf = await audioRes.arrayBuffer();
+      return res.status(200).send(Buffer.from(buf));
     }
+
 
     return res.status(400).json({ error: 'Action tidak dikenal: ' + action });
 
