@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AdGen — AI Ad Generator</title>
+  <title>AdGen — AI Content Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -20,6 +20,22 @@
         <span class="logo-sub">by kie.ai</span>
       </div>
     </div>
+    <div class="nav-center">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="image">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 9l3-3 2.5 2.5L10 5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Gambar
+        </button>
+        <button class="tab-btn" data-tab="video">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 5.5l3-2v7l-3-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Video
+        </button>
+        <button class="tab-btn" data-tab="music">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 4v2a3 3 0 0 0 6 0V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 9c.5 2 2.5 3.5 5 3.5s4.5-1.5 5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Speech
+        </button>
+      </div>
+    </div>
     <div class="nav-right">
       <a href="https://docs.kie.ai" target="_blank" class="nav-link">Docs ↗</a>
     </div>
@@ -28,188 +44,492 @@
   <!-- APP LAYOUT -->
   <div class="app-layout">
 
-    <!-- LEFT SIDEBAR -->
+    <!-- ============ SIDEBAR ============ -->
     <aside class="sidebar">
       <div class="sidebar-inner">
 
-        <!-- Upload -->
-        <div class="panel-group">
-          <div class="panel-label">Gambar Referensi</div>
-          <div class="upload-zone" id="uploadZone">
-            <input type="file" id="imageInput" accept="image/*" hidden />
-            <div class="upload-empty" id="uploadEmpty">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <p class="upload-empty-label">Upload atau drag & drop</p>
-              <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+        <!-- ===== TAB: GAMBAR ===== -->
+        <div class="tab-panel" data-panel="image">
+
+          <div class="panel-group">
+            <div class="panel-label">Gambar Referensi</div>
+            <div class="upload-zone" id="imgUploadZone">
+              <input type="file" id="imgInput" accept="image/*" hidden />
+              <div class="upload-empty" id="imgUploadEmpty">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="upload-empty-label">Upload atau drag & drop</p>
+                <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+              </div>
+              <div class="upload-filled" id="imgUploadFilled" style="display:none">
+                <img id="imgPreview" src="" alt="preview" />
+                <button class="remove-btn" id="imgRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              </div>
             </div>
-            <div class="upload-filled" id="uploadFilled" style="display:none">
-              <img id="previewImg" src="" alt="preview" />
-              <button class="remove-btn" id="removeImg">
-                <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-              </button>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Prompt</div>
+            <textarea id="imgPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan konten iklan yang ingin dibuat..."></textarea>
+          </div>
+
+          <div class="panel-group">
+            <button class="collapse-btn" id="imgNegTrigger">
+              <span>Negative Prompt</span>
+              <svg class="collapse-arrow" id="imgNegArrow" width="14" height="14" viewBox="0 0 14 14"><path d="M3.5 5.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div id="imgNegBody" style="display:none; padding-top:8px">
+              <textarea id="imgNegPrompt" class="textarea-field" rows="2" placeholder="blurry, ugly, low quality..."></textarea>
             </div>
           </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Model AI</div>
+            <div class="model-list" id="imgModelList">
+              <label class="model-row active" data-model="gpt-image/1.5-image-to-image">
+                <input type="radio" name="imgModel" value="gpt-image/1.5-image-to-image" checked hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">GPT Image 1.5</span><span class="badge badge-purple">Teks</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="flux-kontext-pro">
+                <input type="radio" name="imgModel" value="flux-kontext-pro" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Flux Kontext Pro</span><span class="badge badge-blue">Brand</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="grok-imagine/image-to-image">
+                <input type="radio" name="imgModel" value="grok-imagine/image-to-image" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="google/nano-banana">
+                <input type="radio" name="imgModel" value="google/nano-banana" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Nano Banana</span><span class="badge badge-green">Cepat</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="nano-banana-2">
+                <input type="radio" name="imgModel" value="nano-banana-2" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Nano Banana 2</span><span class="badge badge-teal">Seimbang</span></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel-group" id="imgStrengthGroup" style="display:none">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Strength</span>
+              <span class="val-badge" id="imgStrengthVal">0.80</span>
+            </div>
+            <input type="range" id="imgStrength" min="0" max="1" step="0.05" value="0.8" class="slider" />
+            <div class="slider-ends"><span>Mirip asli</span><span>Bebas</span></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Ukuran</div>
+            <div class="ratio-grid" id="imgRatioGrid">
+              <button class="ratio-cell active" data-ratio="1:1"><div class="rv rv-1-1"></div><span>1:1</span><small>Feed</small></button>
+              <button class="ratio-cell" data-ratio="9:16"><div class="rv rv-9-16"></div><span>9:16</span><small>Stories</small></button>
+              <button class="ratio-cell" data-ratio="16:9"><div class="rv rv-16-9"></div><span>16:9</span><small>Banner</small></button>
+              <button class="ratio-cell" data-ratio="4:5"><div class="rv rv-4-5"></div><span>4:5</span><small>Portrait</small></button>
+              <button class="ratio-cell" data-ratio="3:2"><div class="rv rv-3-2"></div><span>3:2</span><small>Wide</small></button>
+              <button class="ratio-cell" data-ratio="2:3"><div class="rv rv-2-3"></div><span>2:3</span><small>Tall</small></button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Jumlah Generate</span>
+              <span class="val-badge" id="imgQtyDisplay">1</span>
+            </div>
+            <div class="qty-row">
+              <button class="qty-dec" id="imgQtyDec">−</button>
+              <input type="number" id="imgQtyInput" class="qty-input" value="1" min="1" max="20" />
+              <button class="qty-inc" id="imgQtyInc">+</button>
+            </div>
+            <div class="qty-hint">Maks 20 gambar sekaligus</div>
+          </div>
+
         </div>
 
-        <!-- Prompt -->
-        <div class="panel-group">
-          <div class="panel-label">Prompt</div>
-          <textarea id="promptInput" class="textarea-field" rows="5" placeholder="Deskripsikan konten iklan yang ingin dibuat&#10;&#10;Contoh: iklan skincare untuk IG Stories, latar elegan, teks '50% OFF', clean & modern..."></textarea>
+        <!-- ===== TAB: VIDEO ===== -->
+        <div class="tab-panel" data-panel="video" style="display:none">
+
+          <div class="panel-group">
+            <div class="panel-label">Gambar Referensi</div>
+            <div class="upload-zone" id="vidUploadZone">
+              <input type="file" id="vidInput" accept="image/*" hidden />
+              <div class="upload-empty" id="vidUploadEmpty">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="upload-empty-label">Upload gambar untuk dijadikan video</p>
+                <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+              </div>
+              <div class="upload-filled" id="vidUploadFilled" style="display:none">
+                <img id="vidPreview" src="" alt="preview" />
+                <button class="remove-btn" id="vidRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Prompt Gerakan</div>
+            <textarea id="vidPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan gerakan yang diinginkan...&#10;&#10;Contoh: kamera perlahan zoom in ke produk, cahaya berkilau dari kiri, efek partikel mengambang..."></textarea>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Model Video</div>
+            <div class="model-list" id="vidModelList">
+              <label class="model-row active" data-model="kling-2.6/image-to-video">
+                <input type="radio" name="vidModel" value="kling-2.6/image-to-video" checked hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Kling 2.6</span><span class="badge badge-purple">Realistis</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="grok-imagine/image-to-video">
+                <input type="radio" name="vidModel" value="grok-imagine/image-to-video" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="wan-2.6/image-to-video">
+                <input type="radio" name="vidModel" value="wan-2.6/image-to-video" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Wan 2.6</span><span class="badge badge-teal">Cepat</span></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Durasi</div>
+            <div class="ratio-grid" id="vidDurationGrid" style="grid-template-columns: repeat(3, 1fr)">
+              <button class="ratio-cell active" data-dur="5"><span>5s</span></button>
+              <button class="ratio-cell" data-dur="10"><span>10s</span></button>
+              <button class="ratio-cell" data-dur="15"><span>15s</span></button>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Resolusi</div>
+            <div class="ratio-grid" style="grid-template-columns: repeat(3, 1fr)">
+              <button class="ratio-cell" data-res="480p"><span>480p</span></button>
+              <button class="ratio-cell active" data-res="720p"><span>720p</span></button>
+              <button class="ratio-cell" data-res="1080p"><span>1080p</span></button>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Negative Prompt -->
-        <div class="panel-group">
-          <button class="collapse-btn" id="negTrigger">
-            <span>Negative Prompt</span>
-            <svg class="collapse-arrow" id="negArrow" width="14" height="14" viewBox="0 0 14 14"><path d="M3.5 5.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <div id="negBody" style="display:none; padding-top:8px">
-            <textarea id="negInput" class="textarea-field" rows="3" placeholder="blurry, ugly, low quality, watermark..."></textarea>
+        <!-- ===== TAB: SPEECH ===== -->
+        <div class="tab-panel" data-panel="music" style="display:none">
+
+          <div class="panel-group">
+            <div class="panel-label">Teks Narasi</div>
+            <textarea id="musicPrompt" class="textarea-field" rows="6" placeholder="Ketik teks yang ingin diubah jadi suara...&#10;&#10;Contoh: Primagold, susu kambing etawa terbaik untuk kesehatan sendi Anda. Dapatkan sekarang hanya 115 ribu, dapat 4 box!"></textarea>
+            <div class="qty-hint" id="ttsCharCount" style="text-align:right; margin-top:4px">0 karakter</div>
           </div>
-        </div>
 
-        <div class="divider"></div>
+          <div class="divider"></div>
 
-        <!-- Model -->
-        <div class="panel-group">
-          <div class="panel-label">Model AI</div>
-          <div class="model-list" id="modelList">
-
-            <label class="model-row active" data-model="gpt-image/1.5-image-to-image">
-              <input type="radio" name="model" value="gpt-image/1.5-image-to-image" checked hidden />
-              <div class="model-row-dot"></div>
-              <div class="model-row-body">
-                <div class="model-row-top">
-                  <span class="model-row-name">GPT Image 1.5</span>
-                  <span class="badge badge-purple">Teks</span>
+          <div class="panel-group">
+            <div class="panel-label">Model</div>
+            <div class="model-list" id="ttsModelList">
+              <label class="model-row active" data-model="elevenlabs/text-to-speech-turbo-2-5">
+                <input type="radio" name="ttsModel" value="elevenlabs/text-to-speech-turbo-2-5" checked hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Turbo 2.5</span><span class="badge badge-green">Cepat</span></div>
+                  <div class="model-row-price" style="font-size:11px;color:#44444e">ElevenLabs · Paling cepat</div>
                 </div>
-              </div>
-            </label>
-
-            <label class="model-row" data-model="flux-kontext-pro">
-              <input type="radio" name="model" value="flux-kontext-pro" hidden />
-              <div class="model-row-dot"></div>
-              <div class="model-row-body">
-                <div class="model-row-top">
-                  <span class="model-row-name">Flux Kontext Pro</span>
-                  <span class="badge badge-blue">Brand</span>
+              </label>
+              <label class="model-row" data-model="elevenlabs/text-to-speech-multilingual-v2">
+                <input type="radio" name="ttsModel" value="elevenlabs/text-to-speech-multilingual-v2" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Multilingual v2</span><span class="badge badge-purple">Kualitas</span></div>
+                  <div class="model-row-price" style="font-size:11px;color:#44444e">ElevenLabs · Support Bahasa Indonesia</div>
                 </div>
-              </div>
-            </label>
+              </label>
+            </div>
+          </div>
 
-            <label class="model-row" data-model="qwen/image-to-image">
-              <input type="radio" name="model" value="qwen/image-to-image" hidden />
-              <div class="model-row-dot"></div>
-              <div class="model-row-body">
-                <div class="model-row-top">
-                  <span class="model-row-name">Qwen Image</span>
-                  <span class="badge badge-orange">Kreatif</span>
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Suara (Voice)</span>
+              <div class="voice-filter-pills" id="voiceFilterPills">
+                <button class="vpill active" data-filter="all">Semua</button>
+                <button class="vpill" data-filter="🇮🇩">🇮🇩 Indo</button>
+                <button class="vpill" data-filter="🇺🇸">🇺🇸 EN</button>
+                <button class="vpill" data-filter="🌍">🌍 Multi</button>
+              </div>
+            </div>
+            <div class="voice-grid" id="ttsVoiceGrid">
+              <div class="voice-card  active" data-voice="3mAVBNEqop5UbHtD8oxQ" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Zephlyn</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
                 </div>
+                <div class="voice-card-desc">Narasi & berita, tenang</div>
               </div>
-            </label>
-
-            <label class="model-row" data-model="grok-imagine/image-to-image">
-              <input type="radio" name="model" value="grok-imagine/image-to-image" hidden />
-              <div class="model-row-dot"></div>
-              <div class="model-row-body">
-                <div class="model-row-top">
-                  <span class="model-row-name">Grok Imagine</span>
-                  <span class="badge badge-pink">Sinematik</span>
+              <div class="voice-card" data-voice="5EcwHcWuVGGxY91hupUf" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Blasto</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
                 </div>
+                <div class="voice-card-desc">Young, captivating</div>
               </div>
-            </label>
-
-            <label class="model-row" data-model="google/nano-banana">
-              <input type="radio" name="model" value="google/nano-banana" hidden />
-              <div class="model-row-dot"></div>
-              <div class="model-row-body">
-                <div class="model-row-top">
-                  <span class="model-row-name">Nano Banana</span>
-                  <span class="badge badge-green">Cepat</span>
+              <div class="voice-card" data-voice="yLyL4E4r0QfLyYpCwPir" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Sikedewi</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
                 </div>
+                <div class="voice-card-desc">Wanita muda, jernih</div>
               </div>
-            </label>
-
-            <label class="model-row" data-model="nano-banana-2">
-              <input type="radio" name="model" value="nano-banana-2" hidden />
-              <div class="model-row-dot"></div>
-              <div class="model-row-body">
-                <div class="model-row-top">
-                  <span class="model-row-name">Nano Banana 2</span>
-                  <span class="badge badge-teal">Seimbang</span>
+              <div class="voice-card" data-voice="7ExgohZ4jKVjuJLwSEWl" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Nova</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
                 </div>
+                <div class="voice-card-desc">Hangat, company profile</div>
               </div>
-            </label>
-
+              <div class="voice-card" data-voice="I7sakys8pBZ1Z5f0UhT9" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Putri Maharani</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
+                </div>
+                <div class="voice-card-desc">Ekspresif, narasi</div>
+              </div>
+              <div class="voice-card" data-voice="gP7FRCgEZ8Lr3rnyGgpw" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Andra</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
+                </div>
+                <div class="voice-card-desc">Middle-aged Jawa, narasi</div>
+              </div>
+              <div class="voice-card" data-voice="IMaRqUzeNVCT6ks9SI4Y" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Bambang</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
+                </div>
+                <div class="voice-card-desc">Conversational, Jawa</div>
+              </div>
+              <div class="voice-card" data-voice="F414PgPuQGviai32J141" data-lang="🇮🇩">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇮🇩</span>
+                    <span class="voice-card-name">Hendro Atmoko</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <span class="voice-no-preview" title="Preview tidak tersedia">—</span>
+                </div>
+                <div class="voice-card-desc">Young Jawa, berita & film</div>
+              </div>
+              <div class="voice-card" data-voice="21m00Tcm4TlvDq8ikWAM" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Rachel</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="21m00Tcm4TlvDq8ikWAM" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Calm, conversational</div>
+              </div>
+              <div class="voice-card" data-voice="AZnzlk1XvdvUeBnXmlld" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Domi</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="AZnzlk1XvdvUeBnXmlld" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Strong, confident</div>
+              </div>
+              <div class="voice-card" data-voice="EXAVITQu4vr4xnSDxMaL" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Bella</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="EXAVITQu4vr4xnSDxMaL" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Soft, gentle</div>
+              </div>
+              <div class="voice-card" data-voice="ErXwobaYiN019PkySvjV" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Antoni</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="ErXwobaYiN019PkySvjV" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Well-rounded</div>
+              </div>
+              <div class="voice-card" data-voice="MF3mGyEYCl7XYWbV9V6O" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Elli</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="MF3mGyEYCl7XYWbV9V6O" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Emotional, youthful</div>
+              </div>
+              <div class="voice-card" data-voice="TxGEqnHWrfWFTfGW9XjX" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Josh</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="TxGEqnHWrfWFTfGW9XjX" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Deep, resonant</div>
+              </div>
+              <div class="voice-card" data-voice="VR6AewLTigWG4xSOukaG" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Arnold</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="VR6AewLTigWG4xSOukaG" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Crisp, authoritative</div>
+              </div>
+              <div class="voice-card" data-voice="pNInz6obpgDQGcFmaJgB" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Adam</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="pNInz6obpgDQGcFmaJgB" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Deep, mature</div>
+              </div>
+              <div class="voice-card" data-voice="yoZ06aMxZJJ28mfd3POQ" data-lang="🇺🇸">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🇺🇸</span>
+                    <span class="voice-card-name">Sam</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="yoZ06aMxZJJ28mfd3POQ" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Raspy, intense</div>
+              </div>
+              <div class="voice-card" data-voice="onwK4e9ZLuTAKqWW03F9" data-lang="🌍">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🌍</span>
+                    <span class="voice-card-name">Daniel</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="onwK4e9ZLuTAKqWW03F9" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">News presenter, multilingual</div>
+              </div>
+              <div class="voice-card" data-voice="N2lVS1w4EtoT3dr4eOWO" data-lang="🌍">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🌍</span>
+                    <span class="voice-card-name">Callum</span>
+                    <span class="badge badge-blue">Pria</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="N2lVS1w4EtoT3dr4eOWO" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Intense, dramatic</div>
+              </div>
+              <div class="voice-card" data-voice="XrExE9yKIg1WjnnlVkGX" data-lang="🌍">
+                <div class="voice-card-top">
+                  <div class="voice-card-info">
+                    <span class="voice-flag">🌍</span>
+                    <span class="voice-card-name">Matilda</span>
+                    <span class="badge badge-pink">Wanita</span>
+                  </div>
+                  <button class="voice-preview-btn" data-vid="XrExE9yKIg1WjnnlVkGX" title="Preview suara"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg></button>
+                </div>
+                <div class="voice-card-desc">Warm, authoritative</div>
+              </div>
+            </div>
+            <audio id="voicePreviewAudio" style="display:none"></audio>
           </div>
-        </div>
 
-        <!-- Strength (Qwen only) -->
-        <div class="panel-group" id="strengthGroup" style="display:none">
-          <div class="panel-label-row">
-            <span class="panel-label" style="margin:0">Strength</span>
-            <span class="val-badge" id="strengthVal">0.80</span>
-          </div>
-          <input type="range" id="strengthRange" min="0" max="1" step="0.05" value="0.8" class="slider" />
-          <div class="slider-ends">
-            <span>Mirip asli</span>
-            <span>Bebas kreatif</span>
-          </div>
-        </div>
+          <div class="divider"></div>
 
-        <div class="divider"></div>
-
-        <!-- Aspect Ratio -->
-        <div class="panel-group">
-          <div class="panel-label">Ukuran</div>
-          <div class="ratio-grid" id="ratioGrid">
-            <button class="ratio-cell active" data-ratio="1:1">
-              <div class="rv rv-1-1"></div>
-              <span>1:1</span>
-              <small>Feed</small>
-            </button>
-            <button class="ratio-cell" data-ratio="9:16">
-              <div class="rv rv-9-16"></div>
-              <span>9:16</span>
-              <small>Stories</small>
-            </button>
-            <button class="ratio-cell" data-ratio="16:9">
-              <div class="rv rv-16-9"></div>
-              <span>16:9</span>
-              <small>Banner</small>
-            </button>
-            <button class="ratio-cell" data-ratio="4:5">
-              <div class="rv rv-4-5"></div>
-              <span>4:5</span>
-              <small>Portrait</small>
-            </button>
-            <button class="ratio-cell" data-ratio="3:2">
-              <div class="rv rv-3-2"></div>
-              <span>3:2</span>
-              <small>Wide</small>
-            </button>
-            <button class="ratio-cell" data-ratio="2:3">
-              <div class="rv rv-2-3"></div>
-              <span>2:3</span>
-              <small>Tall</small>
-            </button>
+          <div class="panel-group">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Kecepatan</span>
+              <span class="val-badge" id="ttsSpeedVal">1.0x</span>
+            </div>
+            <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0" class="slider" />
+            <div class="slider-ends"><span>0.5x Lambat</span><span>2.0x Cepat</span></div>
           </div>
-        </div>
 
-        <div class="divider"></div>
+          <div class="panel-group">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Stabilitas</span>
+              <span class="val-badge" id="ttsStabilityVal">0.5</span>
+            </div>
+            <input type="range" id="ttsStability" min="0" max="1" step="0.05" value="0.5" class="slider" />
+            <div class="slider-ends"><span>Ekspresif</span><span>Stabil</span></div>
+          </div>
 
-        <!-- Quantity -->
-        <div class="panel-group">
-          <div class="panel-label-row">
-            <span class="panel-label" style="margin:0">Jumlah Generate</span>
-            <span class="val-badge" id="qtyDisplay">1</span>
-          </div>
-          <div class="qty-row">
-            <button class="qty-dec" id="qtyDec">−</button>
-            <input type="number" id="qtyInput" class="qty-input" value="1" min="1" max="20" />
-            <button class="qty-inc" id="qtyInc">+</button>
-          </div>
-          <div class="qty-hint">Maks 20 gambar sekaligus</div>
         </div>
 
       </div>
@@ -218,12 +538,12 @@
       <div class="sidebar-cta">
         <button class="btn-generate" id="btnGenerate">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Generate
+          <span id="btnGenerateLabel">Generate Gambar</span>
         </button>
       </div>
     </aside>
 
-    <!-- MAIN CANVAS -->
+    <!-- ============ CANVAS ============ -->
     <main class="canvas-area">
 
       <!-- Empty -->
@@ -233,27 +553,10 @@
             <rect x="8" y="8" width="48" height="48" rx="12" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.3"/>
             <path d="M20 44l12-16 12 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
             <circle cx="40" cy="26" r="5" stroke="currentColor" stroke-width="1.8" opacity="0.4"/>
-            <path d="M32 8v4M8 32h4M56 32h-4M32 56v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
           </svg>
         </div>
-        <h2 class="empty-title">Generate Konten Iklan AI</h2>
-        <p class="empty-desc">Upload gambar referensi, isi prompt, pilih model &amp; ukuran,<br/>tentukan jumlah, lalu klik Generate.</p>
-        <div class="empty-steps">
-          <div class="step-item">
-            <div class="step-num">1</div>
-            <span>Upload gambar produk</span>
-          </div>
-          <div class="step-arrow">→</div>
-          <div class="step-item">
-            <div class="step-num">2</div>
-            <span>Tulis deskripsi iklan</span>
-          </div>
-          <div class="step-arrow">→</div>
-          <div class="step-item">
-            <div class="step-num">3</div>
-            <span>Generate &amp; download</span>
-          </div>
-        </div>
+        <h2 class="empty-title" id="emptyTitle">Generate Konten Iklan AI</h2>
+        <p class="empty-desc" id="emptyDesc">Upload gambar, isi prompt, pilih model, lalu klik Generate.</p>
       </div>
 
       <!-- Loading -->
@@ -265,57 +568,82 @@
           </div>
         </div>
         <p class="loading-title">Generating...</p>
-        <p class="loading-sub" id="loadingSub">AI sedang memproses gambarmu</p>
-        <div class="progress-wrap">
-          <div class="progress-bar" id="progressBar"></div>
-        </div>
+        <p class="loading-sub" id="loadingSub">AI sedang memproses</p>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
       </div>
 
-      <!-- Result -->
-      <div class="state-result" id="stateResult" style="display:none">
+      <!-- Result: Gambar -->
+      <div class="state-result" id="stateResultImg" style="display:none">
         <div class="result-bar">
-          <span class="result-meta-text" id="resultMeta"></span>
+          <span class="result-meta-text" id="imgResultMeta"></span>
           <div class="result-btns">
-            <button class="btn-ghost" id="btnRegenerate">
+            <button class="btn-ghost" id="imgBtnRegenerate">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Ulang
             </button>
-            <button class="btn-solid" id="btnDownload" style="display:none">
+            <button class="btn-solid" id="imgBtnDownloadAll" style="display:none">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
               Download Semua
             </button>
           </div>
         </div>
         <div class="result-img-area">
-          <div class="result-grid" id="resultGrid"></div>
+          <div class="result-grid" id="imgResultGrid"></div>
         </div>
+      </div>
 
-      <!-- Preview Modal -->
-      <div class="preview-modal" id="previewModal" style="display:none">
-        <div class="preview-modal-bg" id="previewModalBg"></div>
-        <div class="preview-modal-inner">
-          <button class="preview-close" id="previewClose">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </button>
-          <button class="preview-nav prev" id="previewPrev">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <img class="preview-modal-img" id="previewModalImg" src="" alt="preview" />
-          <button class="preview-nav next" id="previewNext">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 4l5 5-5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <div class="preview-footer">
-            <span class="preview-counter" id="previewCounter">1 / 1</span>
-            <button class="preview-dl-btn" id="previewDl">
+      <!-- Result: Video -->
+      <div class="state-result" id="stateResultVid" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="vidResultMeta"></span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="vidBtnRegenerate">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Ulang
+            </button>
+            <button class="btn-solid" id="vidBtnDownload">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
               Download
             </button>
           </div>
         </div>
+        <div class="result-img-area" style="align-items:center; justify-content:center">
+          <video id="vidResult" controls style="max-width:100%; max-height:80vh; border-radius:12px"></video>
+        </div>
       </div>
+
+      <!-- Result: Music -->
+      <div class="state-result" id="stateResultMusic" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="musicResultMeta"></span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="musicBtnRegenerate">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Ulang
+            </button>
+          </div>
+        </div>
+        <div class="result-img-area">
+          <div class="music-result-list" id="musicResultList"></div>
+        </div>
       </div>
 
     </main>
+  </div>
+
+  <!-- Image Preview Modal -->
+  <div class="preview-modal" id="previewModal" style="display:none">
+    <div class="preview-modal-bg" id="previewModalBg"></div>
+    <div class="preview-modal-inner">
+      <button class="preview-close" id="previewClose"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <button class="preview-nav prev" id="previewPrev"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <img class="preview-modal-img" id="previewModalImg" src="" alt="preview" />
+      <button class="preview-nav next" id="previewNext"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 4l5 5-5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="preview-footer">
+        <span class="preview-counter" id="previewCounter">1 / 1</span>
+        <button class="preview-dl-btn" id="previewDl"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg> Download</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
