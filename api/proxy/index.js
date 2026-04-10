@@ -4,8 +4,20 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const apiKey = process.env.KIE_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY belum diset di Vercel.' });
+  // API key terpisah per fitur — fallback ke KIE_API_KEY jika yang spesifik tidak diset
+  const KEY_IMAGE  = process.env.KIE_API_KEY_IMAGE  || process.env.KIE_API_KEY;
+  const KEY_VIDEO  = process.env.KIE_API_KEY_VIDEO  || process.env.KIE_API_KEY;
+  const KEY_SPEECH = process.env.KIE_API_KEY_SPEECH || process.env.KIE_API_KEY;
+
+  if (!KEY_IMAGE && !KEY_VIDEO && !KEY_SPEECH) {
+    return res.status(500).json({ error: 'Tidak ada API key. Set KIE_API_KEY_IMAGE/VIDEO/SPEECH di Vercel.' });
+  }
+
+  function getKey(type) {
+    if (type === 'video')  return KEY_VIDEO  || KEY_IMAGE;
+    if (type === 'speech') return KEY_SPEECH || KEY_IMAGE;
+    return KEY_IMAGE;
+  }
 
   const action = req.query.action;
 
@@ -19,7 +31,7 @@ module.exports = async function handler(req, res) {
 
       const r = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${getKey('image')}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ base64Data: imageBase64, uploadPath: 'images' }),
       });
       const d = await r.json();
@@ -42,7 +54,7 @@ module.exports = async function handler(req, res) {
 
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${getKey('speech')}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: model || 'elevenlabs/text-to-speech-turbo-2-5',
             input: {
@@ -81,7 +93,7 @@ module.exports = async function handler(req, res) {
 
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${getKey('video')}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model, input }),
         });
         const d = await r.json();
@@ -100,7 +112,7 @@ module.exports = async function handler(req, res) {
       if (model === 'flux-kontext-pro' || model === 'flux-kontext-max') {
         const r = await fetch('https://api.kie.ai/api/v1/flux/kontext/generate', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${getKey('image')}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt, model, aspectRatio: ratio || '1:1', outputFormat: 'jpeg', promptUpsampling: false, safetyTolerance: 2, imageUrl }),
         });
         const d = await r.json();
@@ -133,7 +145,7 @@ module.exports = async function handler(req, res) {
       const tasks = await Promise.all(Array.from({ length: qty }, () =>
         fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${getKey('image')}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model, input }),
         }).then(r => r.json())
       ));
@@ -153,7 +165,9 @@ module.exports = async function handler(req, res) {
         ? `https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`
         : `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
 
-      const r = await fetch(kieUrl, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+      // Gunakan key sesuai type task
+      const statusKey = (type === 'flux') ? getKey('image') : (req.query.taskType === 'video' ? getKey('video') : KEY_IMAGE || KEY_VIDEO || KEY_SPEECH);
+      const r = await fetch(kieUrl, { headers: { 'Authorization': `Bearer ${statusKey}` } });
       const d = await r.json();
       if (!r.ok) return res.status(r.status).json({ error: 'Status error: ' + JSON.stringify(d) });
 
