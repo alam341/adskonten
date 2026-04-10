@@ -13,39 +13,34 @@ module.exports = async function handler(req, res) {
   const action = req.query.action;
 
   try {
+
     // ============================================
-    // ACTION: upload
+    // ACTION: upload — pakai Base64 JSON endpoint
     // ============================================
     if (action === 'upload') {
       if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-      const { imageBase64, mimeType } = req.body;
+      const { imageBase64 } = req.body;
       if (!imageBase64) return res.status(400).json({ error: 'imageBase64 diperlukan.' });
 
-      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
-      const binaryData = Buffer.from(base64Data, 'base64');
-      const type       = mimeType || 'image/jpeg';
-      const ext        = type.split('/')[1] || 'jpg';
-
-      const boundary = 'AdGenBoundary' + Date.now();
-      const header   = Buffer.from(
-        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="image.${ext}"\r\nContent-Type: ${type}\r\n\r\n`
-      );
-      const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
-      const body   = Buffer.concat([header, binaryData, footer]);
-
-      const kieRes = await fetch('https://api.kie.ai/api/v1/files/upload', {
+      const kieRes = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
-          'Content-Type':  `multipart/form-data; boundary=${boundary}`,
+          'Content-Type':  'application/json',
         },
-        body,
+        body: JSON.stringify({
+          base64Data: imageBase64,
+          uploadPath: 'images',
+        }),
       });
 
       const data = await kieRes.json();
       if (!kieRes.ok) return res.status(kieRes.status).json({ error: data.msg || 'Upload gagal.' });
-      return res.status(200).json({ url: data.data?.url });
+
+      const url = data.data?.downloadUrl || data.data?.fileUrl;
+      if (!url) return res.status(500).json({ error: 'Upload berhasil tapi URL tidak ditemukan.' });
+      return res.status(200).json({ url });
     }
 
     // ============================================
@@ -153,7 +148,6 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ status, imageUrl });
     }
 
-    // Unknown action
     return res.status(400).json({ error: `Action tidak dikenal: ${action}` });
 
   } catch (err) {
