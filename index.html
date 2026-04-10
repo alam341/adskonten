@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdGen — AI Ad Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <nav class="topnav">
+    <div class="nav-left">
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#7C6EFA"/><path d="M6 16L11 6L16 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13H14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span class="logo-name">AdGen</span>
+        <span class="logo-sub">by kie.ai</span>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a href="https://docs.kie.ai" target="_blank" class="nav-link">Docs ↗</a>
+    </div>
+  </nav>
+
+  <!-- APP LAYOUT -->
+  <div class="app-layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+
+        <!-- Upload -->
+        <div class="panel-group">
+          <div class="panel-label">Gambar Referensi</div>
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="imageInput" accept="image/*" hidden />
+            <div class="upload-empty" id="uploadEmpty">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <p class="upload-empty-label">Upload atau drag & drop</p>
+              <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+            </div>
+            <div class="upload-filled" id="uploadFilled" style="display:none">
+              <img id="previewImg" src="" alt="preview" />
+              <button class="remove-btn" id="removeImg">
+                <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt -->
+        <div class="panel-group">
+          <div class="panel-label">Prompt</div>
+          <textarea id="promptInput" class="textarea-field" rows="5" placeholder="Deskripsikan konten iklan yang ingin dibuat&#10;&#10;Contoh: iklan skincare untuk IG Stories, latar elegan, teks '50% OFF', clean & modern..."></textarea>
+        </div>
+
+        <!-- Negative Prompt -->
+        <div class="panel-group">
+          <button class="collapse-btn" id="negTrigger">
+            <span>Negative Prompt</span>
+            <svg class="collapse-arrow" id="negArrow" width="14" height="14" viewBox="0 0 14 14"><path d="M3.5 5.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div id="negBody" style="display:none; padding-top:8px">
+            <textarea id="negInput" class="textarea-field" rows="3" placeholder="blurry, ugly, low quality, watermark..."></textarea>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Model -->
+        <div class="panel-group">
+          <div class="panel-label">Model AI</div>
+          <div class="model-list" id="modelList">
+
+            <label class="model-row" data-model="gpt-image/1-5-image-to-image">
+              <input type="radio" name="model" value="gpt-image/1-5-image-to-image" checked hidden />
+              <div class="model-row-dot"></div>
+              <div class="model-row-body">
+                <div class="model-row-top">
+                  <span class="model-row-name">GPT Image 1.5</span>
+                  <span class="badge badge-purple">Teks</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="model-row" data-model="flux-kontext-pro">
+              <input type="radio" name="model" value="flux-kontext-pro" hidden />
+              <div class="model-row-dot"></div>
+              <div class="model-row-body">
+                <div class="model-row-top">
+                  <span class="model-row-name">Flux Kontext Pro</span>
+                  <span class="badge badge-blue">Brand</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="model-row" data-model="qwen/image-to-image">
+              <input type="radio" name="model" value="qwen/image-to-image" hidden />
+              <div class="model-row-dot"></div>
+              <div class="model-row-body">
+                <div class="model-row-top">
+                  <span class="model-row-name">Qwen Image</span>
+                  <span class="badge badge-orange">Kreatif</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="model-row" data-model="grok-imagine/image-to-image">
+              <input type="radio" name="model" value="grok-imagine/image-to-image" hidden />
+              <div class="model-row-dot"></div>
+              <div class="model-row-body">
+                <div class="model-row-top">
+                  <span class="model-row-name">Grok Imagine</span>
+                  <span class="badge badge-pink">Sinematik</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="model-row" data-model="nano-banana">
+              <input type="radio" name="model" value="nano-banana" hidden />
+              <div class="model-row-dot"></div>
+              <div class="model-row-body">
+                <div class="model-row-top">
+                  <span class="model-row-name">Nano Banana</span>
+                  <span class="badge badge-green">Cepat</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="model-row" data-model="nano-banana-2">
+              <input type="radio" name="model" value="nano-banana-2" hidden />
+              <div class="model-row-dot"></div>
+              <div class="model-row-body">
+                <div class="model-row-top">
+                  <span class="model-row-name">Nano Banana 2</span>
+                  <span class="badge badge-teal">Seimbang</span>
+                </div>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- Strength (Qwen only) -->
+        <div class="panel-group" id="strengthGroup" style="display:none">
+          <div class="panel-label-row">
+            <span class="panel-label" style="margin:0">Strength</span>
+            <span class="val-badge" id="strengthVal">0.80</span>
+          </div>
+          <input type="range" id="strengthRange" min="0" max="1" step="0.05" value="0.8" class="slider" />
+          <div class="slider-ends">
+            <span>Mirip asli</span>
+            <span>Bebas kreatif</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Aspect Ratio -->
+        <div class="panel-group">
+          <div class="panel-label">Ukuran</div>
+          <div class="ratio-grid" id="ratioGrid">
+            <button class="ratio-cell active" data-ratio="1:1">
+              <div class="rv rv-1-1"></div>
+              <span>1:1</span>
+              <small>Feed</small>
+            </button>
+            <button class="ratio-cell" data-ratio="9:16">
+              <div class="rv rv-9-16"></div>
+              <span>9:16</span>
+              <small>Stories</small>
+            </button>
+            <button class="ratio-cell" data-ratio="16:9">
+              <div class="rv rv-16-9"></div>
+              <span>16:9</span>
+              <small>Banner</small>
+            </button>
+            <button class="ratio-cell" data-ratio="4:5">
+              <div class="rv rv-4-5"></div>
+              <span>4:5</span>
+              <small>Portrait</small>
+            </button>
+            <button class="ratio-cell" data-ratio="3:2">
+              <div class="rv rv-3-2"></div>
+              <span>3:2</span>
+              <small>Wide</small>
+            </button>
+            <button class="ratio-cell" data-ratio="2:3">
+              <div class="rv rv-2-3"></div>
+              <span>2:3</span>
+              <small>Tall</small>
+            </button>
+          </div>
+        </div>
+
+
+      </div>
+
+      <!-- Generate CTA -->
+      <div class="sidebar-cta">
+        <button class="btn-generate" id="btnGenerate">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Generate
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CANVAS -->
+    <main class="canvas-area">
+
+      <!-- Empty -->
+      <div class="state-empty" id="stateEmpty">
+        <div class="empty-art">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <rect x="8" y="8" width="48" height="48" rx="12" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.3"/>
+            <path d="M20 44l12-16 12 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+            <circle cx="40" cy="26" r="5" stroke="currentColor" stroke-width="1.8" opacity="0.4"/>
+            <path d="M32 8v4M8 32h4M56 32h-4M32 56v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+          </svg>
+        </div>
+        <h2 class="empty-title">Generate Konten Iklan AI</h2>
+        <p class="empty-desc">Upload gambar referensi, isi prompt, pilih model &amp; ukuran,<br/>lalu klik Generate.</p>
+        <div class="empty-steps">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <span>Upload gambar produk / referensi</span>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <span>Tulis deskripsi konten iklan</span>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <span>Klik Generate &amp; download</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="state-loading" id="stateLoading" style="display:none">
+        <div class="spinner-wrap">
+          <div class="spinner-ring"></div>
+          <div class="spinner-logo">
+            <svg width="24" height="24" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#7C6EFA"/><path d="M6 16L11 6L16 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13H14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <p class="loading-title">Generating...</p>
+        <p class="loading-sub" id="loadingSub">AI sedang memproses gambarmu</p>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="state-result" id="stateResult" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="resultMeta"></span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="btnRegenerate">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Ulang
+            </button>
+            <button class="btn-solid" id="btnDownload">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Download
+            </button>
+          </div>
+        </div>
+        <div class="result-img-area" id="resultImgArea">
+          <img id="resultImg" src="" alt="Generated ad" />
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
