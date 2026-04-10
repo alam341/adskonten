@@ -379,7 +379,7 @@ async function generateVideo() {
 
     if (!genRes.taskId) throw new Error('taskId tidak ditemukan.');
     updateSub('Rendering video (bisa beberapa menit)...');
-    const videoUrl = await pollStatus(genRes.taskId, 'jobs', 120);
+    const videoUrl = await pollStatus(genRes.taskId, genRes.taskType || 'jobs', 120, 'video');
     showVideoResult(videoUrl);
   } catch(err) {
     console.error(err); showToast(err.message, 'error'); showState('empty');
@@ -435,11 +435,11 @@ async function parseRes(res) {
   return data;
 }
 
-async function pollStatus(taskId, type, maxAttempts = 60) {
+async function pollStatus(taskId, type, maxAttempts = 60, taskCategory = 'image') {
   for (let i = 0; i < maxAttempts; i++) {
     await sleep(i < 5 ? 2000 : i < 15 ? 3000 : 5000);
     updateSub(`Memproses... (${i + 1}/${maxAttempts})`);
-    const data = await proxyGet('status', { taskId, type });
+    const data = await proxyGet('status', { taskId, type, taskType: taskCategory });
     if (['success','SUCCESS','completed','COMPLETED'].includes(data.status)) {
       if (!data.imageUrl && !data.videoUrl) throw new Error('Hasil tidak ditemukan.');
       return data.imageUrl || data.videoUrl;
