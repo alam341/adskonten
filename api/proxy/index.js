@@ -36,10 +36,10 @@ module.exports = async function handler(req, res) {
       });
 
       const data = await kieRes.json();
-      if (!kieRes.ok) return res.status(kieRes.status).json({ error: data.msg || 'Upload gagal.' });
+      if (!kieRes.ok) return res.status(kieRes.status).json({ error: 'kie.ai error: ' + JSON.stringify(data) });
 
       const url = data.data?.downloadUrl || data.data?.fileUrl;
-      if (!url) return res.status(500).json({ error: 'Upload berhasil tapi URL tidak ditemukan.' });
+      if (!url) return res.status(500).json({ error: 'URL tidak ditemukan. Response: ' + JSON.stringify(data) });
       return res.status(200).json({ url });
     }
 
