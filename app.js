@@ -284,3 +284,28 @@ function setupVoiceGrid() {
 
   updateDesc();
 }
+
+
+// ── Theme Toggle ──────────────────────────────────────────
+(function() {
+  var html     = document.documentElement;
+  var btn      = document.getElementById('themeToggle');
+  var sunIcon  = btn ? btn.querySelector('.icon-sun')  : null;
+  var moonIcon = btn ? btn.querySelector('.icon-moon') : null;
+
+  var saved = localStorage.getItem('adgen_theme') || 'dark';
+  setTheme(saved);
+
+  if (btn) {
+    btn.addEventListener('click', function() {
+      setTheme(html.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+  }
+
+  function setTheme(t) {
+    html.dataset.theme = t;
+    localStorage.setItem('adgen_theme', t);
+    if (sunIcon)  sunIcon.style.display  = t === 'dark'  ? 'block' : 'none';
+    if (moonIcon) moonIcon.style.display = t === 'light' ? 'block' : 'none';
+  }
+})();
