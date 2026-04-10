@@ -189,7 +189,7 @@ function setupTtsLang() {
       ttsVoice = isID ? 'Andi' : 'Rachel';
       // Reset active state
       const activeList = isID ? 'ttsVoiceListID' : 'ttsVoiceListEN';
-      document.querySelectorAll(\`#\${activeList} .model-row\`).forEach((r, i) => r.classList.toggle('active', i === 0));
+      document.querySelectorAll(`#${activeList} .model-row`).forEach((r, i) => r.classList.toggle('active', i === 0));
       // Force model to multilingual for Indonesian
       if (isID) {
         ttsModel = 'elevenlabs/text-to-speech-multilingual-v2';
