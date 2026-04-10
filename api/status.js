@@ -1,21 +1,21 @@
-// api/status.js
-// Proxy untuk cek status task dari kie.ai
-// API key aman di server, tidak terekspos ke browser
+// api/status.js — CommonJS, Vercel Serverless Function
 
-export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const apiKey = process.env.KIE_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key belum dikonfigurasi di server.' });
+    return res.status(500).json({ error: 'KIE_API_KEY belum diset di Vercel Environment Variables.' });
   }
 
   const { taskId, model } = req.query;
-  if (!taskId || !model) {
-    return res.status(400).json({ error: 'taskId dan model diperlukan.' });
-  }
+  if (!taskId) return res.status(400).json({ error: 'taskId diperlukan.' });
+  if (!model)  return res.status(400).json({ error: 'model diperlukan.' });
 
   try {
     let kieUrl;
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     }
 
     const kieRes = await fetch(kieUrl, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: { 'Authorization': `Bearer ${apiKey}` },
     });
 
     const data = await kieRes.json();
@@ -39,17 +39,26 @@ export default async function handler(req, res) {
     }
 
     const d      = data.data;
-    const status = d?.status || d?.state;
+    const status = d?.status || d?.state || 'PENDING';
 
-    // Normalize image URL dari berbagai response shape
+    // Cari image URL dari berbagai kemungkinan response shape
     let imageUrl = null;
-    if (['SUCCESS', 'success', 'completed', 'COMPLETED'].includes(status)) {
+    const DONE = ['SUCCESS', 'success', 'completed', 'COMPLETED'];
+    if (DONE.includes(status)) {
       const tries = [
-        d?.output?.image_url, d?.output?.url, d?.output?.image,
-        d?.output?.images?.[0], d?.output?.images?.[0]?.url,
-        d?.imageUrl, d?.image_url, d?.url,
-        d?.images?.[0], d?.images?.[0]?.url,
-        d?.result?.image_url, d?.result?.url, d?.result?.images?.[0],
+        d?.output?.image_url,
+        d?.output?.url,
+        d?.output?.image,
+        d?.output?.images?.[0],
+        d?.output?.images?.[0]?.url,
+        d?.imageUrl,
+        d?.image_url,
+        d?.url,
+        d?.images?.[0],
+        d?.images?.[0]?.url,
+        d?.result?.image_url,
+        d?.result?.url,
+        d?.result?.images?.[0],
       ];
       imageUrl = tries.find(c => typeof c === 'string' && c.startsWith('http')) || null;
     }
@@ -57,7 +66,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ status, imageUrl });
 
   } catch (err) {
-    console.error('[status]', err);
+    console.error('[status error]', err);
     return res.status(500).json({ error: err.message });
   }
-}
+};
