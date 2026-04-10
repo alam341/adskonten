@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setupQty();
   setupNegToggle('imgNegTrigger','imgNegArrow','imgNegBody');
   setupStrengthSlider('imgStrength','imgStrengthVal');
-  setupStrengthSlider('ttsSpeed','ttsSpeedVal', function(v){ ttsSpeed=v; }, function(v){ return v+'x'; });
+  setupStrengthSlider('ttsSpeed','ttsSpeedVal', function(v){ ttsSpeed=parseFloat(v.toFixed(2)); }, function(v){ return v+'x'; });
   setupStrengthSlider('ttsStability','ttsStabilityVal', function(v){ ttsStability=v; });
   setupVoiceGrid();
   setupModal();
@@ -342,7 +342,7 @@ async function generateSpeech() {
   showState('loading'); resetProgress();
   try {
     updateSub('Mengirim ke ElevenLabs...');
-    var gen = await proxyPost('generate', { type:'speech', text:text, model:ttsModel, voice:ttsVoice, speed:ttsSpeed, stability:ttsStability, languageCode:'' });
+    var gen = await proxyPost('generate', { type:'speech', text:text, model:ttsModel, voice:ttsVoice, speed:ttsSpeed, stability:ttsStability });
     if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
     updateSub('Generating suara...');
     var audioUrl = await pollStatus(gen.taskId, 'jobs', 30);
