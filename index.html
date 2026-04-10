@@ -273,8 +273,8 @@
 
           <div class="panel-group">
             <div class="panel-label">Suara (Voice)</div>
-            <div class="voice-select-wrap">
-              <select id="ttsVoiceSelect" class="voice-select">
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+              <select id="ttsVoiceSelect" class="voice-select" style="flex:1; min-width:0; margin-bottom:0">
                 <optgroup label="Wanita">
               <option value="21m00Tcm4TlvDq8ikWAM" selected>Rachel — Calm, conversational</option>
               <option value="9BWtsMINqrJLrRacOk9x">Aria — Expressive, natural</option>
@@ -368,8 +368,8 @@
               <option value="hqfrgApggtO1785R4Fsn">Theodore HQ — Serene, grounded</option>
                 </optgroup>
               </select>
-              <button class="voice-play-btn" id="voicePlayBtn" title="Preview suara">
-                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polygon points="2,1 10,5.5 2,10" fill="currentColor"/></svg>
+              <button class="voice-play-btn" id="voicePlayBtn" title="Preview suara" style="flex-shrink:0; width:36px; height:36px; border-radius:8px; padding:0">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg>
               </button>
             </div>
             <div class="voice-select-desc" id="voiceSelectDesc">Calm, conversational</div>
