@@ -2,156 +2,167 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const apiKey = process.env.KIE_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'KIE_API_KEY belum diset di Vercel Environment Variables.' });
-  }
+  if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY belum diset di Vercel.' });
 
   const action = req.query.action;
 
   try {
 
-    // ============================================
-    // ACTION: upload — pakai Base64 JSON endpoint
-    // ============================================
+    // ── UPLOAD ──────────────────────────────────────────────
     if (action === 'upload') {
       if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
       const { imageBase64 } = req.body;
       if (!imageBase64) return res.status(400).json({ error: 'imageBase64 diperlukan.' });
 
-      const kieRes = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
+      const r = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type':  'application/json',
-        },
-        body: JSON.stringify({
-          base64Data: imageBase64,
-          uploadPath: 'images',
-        }),
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Data: imageBase64, uploadPath: 'images' }),
       });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Upload error: ' + JSON.stringify(d) });
 
-      const data = await kieRes.json();
-      if (!kieRes.ok) return res.status(kieRes.status).json({ error: 'kie.ai error: ' + JSON.stringify(data) });
-
-      const url = data.data?.downloadUrl || data.data?.fileUrl;
-      if (!url) return res.status(500).json({ error: 'URL tidak ditemukan. Response: ' + JSON.stringify(data) });
+      const url = d.data?.downloadUrl || d.data?.fileUrl || d.data?.url;
+      if (!url) return res.status(500).json({ error: 'URL tidak ditemukan: ' + JSON.stringify(d) });
       return res.status(200).json({ url });
     }
 
-    // ============================================
-    // ACTION: generate
-    // ============================================
+    // ── GENERATE ─────────────────────────────────────────────
     if (action === 'generate') {
       if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
       const { model, imageUrl, prompt, ratio, negPrompt, strength } = req.body;
-      if (!model || !prompt || !imageUrl) {
-        return res.status(400).json({ error: 'model, prompt, imageUrl diperlukan.' });
-      }
+      if (!model || !prompt || !imageUrl) return res.status(400).json({ error: 'model, prompt, imageUrl diperlukan.' });
 
-      let kieUrl, kieBody;
-
+      // Semua model pakai /jobs/createTask
+      // Flux Kontext masih pakai endpoint sendiri
       if (model === 'flux-kontext-pro' || model === 'flux-kontext-max') {
-        kieUrl  = 'https://api.kie.ai/api/v1/flux/kontext/generate';
-        kieBody = { prompt, model, aspectRatio: ratio || '1:1', outputFormat: 'jpeg', promptUpsampling: false, safetyTolerance: 2, imageUrl };
+        const r = await fetch('https://api.kie.ai/api/v1/flux/kontext/generate', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt, model,
+            aspectRatio: ratio || '1:1',
+            outputFormat: 'jpeg',
+            promptUpsampling: false,
+            safetyTolerance: 2,
+            imageUrl,
+          }),
+        });
+        const d = await r.json();
+        if (!r.ok) return res.status(r.status).json({ error: 'Flux error: ' + JSON.stringify(d) });
+        const taskId = d.data?.taskId || d.data?.id;
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada: ' + JSON.stringify(d) });
+        return res.status(200).json({ taskId, type: 'flux' });
       }
-      else if (model === 'gpt-image/1-5-image-to-image') {
-        const sizeMap = { '1:1': '1024x1024', '16:9': '1792x1024', '9:16': '1024x1792' };
-        kieUrl  = 'https://api.kie.ai/api/v1/4o-image/generate';
-        kieBody = { prompt, size: sizeMap[ratio] || '1024x1024', quality: 'high', nVariants: 1, image_url: imageUrl };
+
+      // Semua model lain pakai /jobs/createTask
+      let input = { prompt, aspect_ratio: ratio || '1:1' };
+
+      // GPT Image 1.5 — input_urls (array)
+      if (model === 'gpt-image/1.5-image-to-image') {
+        input.input_urls = [imageUrl];
+        input.quality    = 'medium';
       }
+      // Qwen
+      else if (model === 'qwen/image-to-image') {
+        input.image_url             = imageUrl;
+        input.strength              = typeof strength === 'number' ? strength : 0.8;
+        input.negative_prompt       = negPrompt || 'blurry, ugly, low quality';
+        input.num_inference_steps   = 30;
+        input.guidance_scale        = 2.5;
+        input.enable_safety_checker = true;
+        input.output_format         = 'png';
+      }
+      // Nano Banana 1 & 2
+      else if (model === 'nano-banana' || model === 'nano-banana-2') {
+        input.image_input = [imageUrl];
+        input.resolution  = '1K';
+        input.output_format = 'png';
+      }
+      // Grok Imagine
+      else if (model === 'grok-imagine/image-to-image') {
+        input.image_urls   = [imageUrl];
+        input.quality_mode = true;
+        delete input.aspect_ratio;
+      }
+      // Fallback
       else {
-        kieUrl = 'https://api.kie.ai/api/v1/jobs/createTask';
-        const input = { prompt, image_url: imageUrl, aspect_ratio: ratio || '1:1', output_format: 'png' };
-
-        if (model === 'qwen/image-to-image') {
-          input.strength              = typeof strength === 'number' ? strength : 0.8;
-          input.negative_prompt       = negPrompt || 'blurry, ugly, low quality';
-          input.num_inference_steps   = 30;
-          input.guidance_scale        = 2.5;
-          input.enable_safety_checker = true;
-        }
-        if (model.startsWith('nano-banana')) {
-          delete input.image_url;
-          input.image_input = [imageUrl];
-          input.resolution  = '1K';
-        }
-        if (model === 'grok-imagine/image-to-image') {
-          delete input.image_url;
-          delete input.aspect_ratio;
-          input.image_urls   = [imageUrl];
-          input.quality_mode = true;
-        }
-
-        kieBody = { model, input };
+        input.image_url     = imageUrl;
+        input.output_format = 'png';
       }
 
-      const kieRes = await fetch(kieUrl, {
+      const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(kieBody),
+        body: JSON.stringify({ model, input }),
       });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Generate error: ' + JSON.stringify(d) });
 
-      const data = await kieRes.json();
-      if (!kieRes.ok) return res.status(kieRes.status).json({ error: 'Generate error: ' + JSON.stringify(data) + ' | body: ' + JSON.stringify(kieBody) });
-
-      const taskId = data.data?.taskId || data.data?.id || data.data?.recordId; if (!taskId) return res.status(500).json({ error: 'taskId kosong. Response: ' + JSON.stringify(data) });
-      return res.status(200).json({ taskId });
+      const taskId = d.data?.taskId;
+      if (!taskId) return res.status(500).json({ error: 'taskId tidak ada: ' + JSON.stringify(d) });
+      return res.status(200).json({ taskId, type: 'jobs' });
     }
 
-    // ============================================
-    // ACTION: status
-    // ============================================
+    // ── STATUS ───────────────────────────────────────────────
     if (action === 'status') {
       if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-      const { taskId, model } = req.query;
-      if (!taskId || !model) return res.status(400).json({ error: 'taskId dan model diperlukan.' });
+      const { taskId, type } = req.query;
+      if (!taskId) return res.status(400).json({ error: 'taskId diperlukan.' });
 
       let kieUrl;
-      if (model === 'flux-kontext-pro' || model === 'flux-kontext-max') {
+      if (type === 'flux') {
         kieUrl = `https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`;
-      } else if (model === 'gpt-image/1-5-image-to-image') {
-        kieUrl = `https://api.kie.ai/api/v1/4o-image/detail?recordId=${taskId}`;
       } else {
-        kieUrl = `https://api.kie.ai/api/v1/jobs/task?taskId=${taskId}`;
+        // Semua market model pakai /jobs/recordInfo
+        kieUrl = `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
       }
 
-      const kieRes = await fetch(kieUrl, {
+      const r = await fetch(kieUrl, {
         headers: { 'Authorization': `Bearer ${apiKey}` },
       });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Status error: ' + JSON.stringify(d) });
 
-      const data = await kieRes.json();
-      if (!kieRes.ok) return res.status(kieRes.status).json({ error: data.msg || 'Status check gagal.' });
+      const data   = d.data;
+      const status = data?.state || data?.status || 'waiting';
 
-      const d      = data.data;
-      const status = d?.status || d?.state || 'PENDING';
-
+      // Parse image URL
       let imageUrl = null;
-      const DONE = ['SUCCESS', 'success', 'completed', 'COMPLETED'];
+      const DONE = ['success', 'SUCCESS', 'completed', 'COMPLETED'];
+      const FAIL = ['fail', 'FAIL', 'failed', 'FAILED', 'error', 'ERROR'];
+
       if (DONE.includes(status)) {
-        const tries = [
-          d?.output?.image_url, d?.output?.url, d?.output?.image,
-          d?.output?.images?.[0], d?.output?.images?.[0]?.url,
-          d?.imageUrl, d?.image_url, d?.url,
-          d?.images?.[0], d?.images?.[0]?.url,
-          d?.result?.image_url, d?.result?.url, d?.result?.images?.[0],
-        ];
-        imageUrl = tries.find(c => typeof c === 'string' && c.startsWith('http')) || null;
+        // Market models: resultJson adalah string JSON
+        if (data?.resultJson) {
+          try {
+            const result = JSON.parse(data.resultJson);
+            imageUrl = result?.resultUrls?.[0] || result?.images?.[0] || result?.image_url || null;
+          } catch(e) { /* ignore parse error */ }
+        }
+        // Flux Kontext
+        if (!imageUrl) {
+          const tries = [
+            data?.output?.image_url, data?.output?.url, data?.output?.images?.[0],
+            data?.imageUrl, data?.image_url, data?.url,
+          ];
+          imageUrl = tries.find(c => typeof c === 'string' && c.startsWith('http')) || null;
+        }
       }
 
       return res.status(200).json({ status, imageUrl });
     }
 
-    return res.status(400).json({ error: `Action tidak dikenal: ${action}` });
+    return res.status(400).json({ error: 'Action tidak dikenal: ' + action });
 
   } catch (err) {
-    console.error('[proxy error]', err);
+    console.error('[proxy]', err);
     return res.status(500).json({ error: err.message });
   }
 };
