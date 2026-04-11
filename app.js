@@ -771,6 +771,7 @@ async function startAnalyze() {
     var frameGrid = $('analyzeFrameGrid');
     var framesEl = $('analyzeFrames');
     var loadingEl = $('analyzeLoading');
+    var loadingText = $('analyzeLoadingText');
     var emptyEl = $('analyzeEmpty');
     var resultEl = $('analyzeResult');
     var btnStart = $('btnStartAnalyze');
