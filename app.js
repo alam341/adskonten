@@ -760,10 +760,8 @@ function setupAnalyzeTab() {
   });
 }
 
-// Called from tab switch and generate button
-(function() {
-
-  async function startAnalyze() {
+// ── Analyze functions ──
+async function startAnalyze() {
     var urlInput = $('analyzeVideoUrl');
     var videoUrl = urlInput ? urlInput.value.trim() : '';
     if (!analyzeVideoFile && !videoUrl) { showToast('Upload video atau paste link dulu.','error'); return; }
@@ -864,7 +862,6 @@ function setupAnalyzeTab() {
       video.load();
     });
   }
-})();
 
 // ── Welcome Screen ───────────────────────────────────────
 function showWelcomeScreen(username) {
