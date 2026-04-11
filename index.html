@@ -47,7 +47,11 @@
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M4 7.5h7M4 5h7M4 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Admin
       </button>
-<button class="nav-icon-btn" id="btnAnalyze" style="display:none">
+<button class="nav-icon-btn" id="btnCekIklan" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cek Iklan
+      </button>
+      <button class="nav-icon-btn" id="btnAnalyze" style="display:none">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 11L5 7l3 3 5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Analisis
       </button>
@@ -797,6 +801,61 @@
             <button class="btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('analyzeResultText').innerText);showToast('Disalin!','success')">📋 Copy Hasil</button>
           </div>
           <div id="analyzeResultText" style="font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cek Iklan View -->
+  <div class="history-view" id="cekIklanView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromCekIklan">← Kembali</button>
+      <h2 class="history-title">Cek Kualitas Iklan</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+        <div class="panel-group">
+          <div class="panel-label">Upload Gambar Iklan</div>
+          <div class="analyze-upload-zone" id="cekIklanUploadZone">
+            <input type="file" id="cekIklanInput" accept="image/*" hidden />
+            <div id="cekIklanUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload gambar iklan</p>
+              <p style="font-size:10px;color:var(--text-6)">PNG, JPG, WEBP · maks 10MB</p>
+            </div>
+            <img id="cekIklanPreview" style="display:none;width:100%;border-radius:8px;max-height:220px;object-fit:contain" />
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Platform Target <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <select id="cekIklanPlatform" class="voice-select" style="width:100%">
+            <option value="">Semua Platform</option>
+            <option value="Instagram Feed">Instagram Feed</option>
+            <option value="Instagram Stories/Reels">Instagram Stories/Reels</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Marketplace (Tokopedia/Shopee)">Marketplace (Tokopedia/Shopee)</option>
+            <option value="WhatsApp">WhatsApp</option>
+          </select>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Info Produk <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <textarea id="cekIklanInfo" class="textarea-field" rows="3" placeholder="Nama produk, target audience, tujuan iklan..."></textarea>
+        </div>
+        <button class="btn-generate" id="btnStartCekIklan" disabled>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="white" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Cek Kualitas
+        </button>
+      </div>
+      <div class="analyze-right" id="cekIklanRight">
+        <div id="cekIklanEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M16 24l6 6 10-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+          <p>Upload gambar iklan lalu klik Cek Kualitas</p>
+        </div>
+        <div id="cekIklanLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px">Menganalisis kualitas iklan...</p>
         </div>
       </div>
     </div>
