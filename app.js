@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
   $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
   $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); setupAnalyzeTab(); });
   $('btnCekIklan') && $('btnCekIklan').addEventListener('click', function() { showView('cekiklan'); setupCekIklan(); });
+  $('btnCopywriting') && $('btnCopywriting').addEventListener('click', function() { showView('copywriting'); setupCopywriting(); });
+  $('btnBackFromCopywriting') && $('btnBackFromCopywriting').addEventListener('click', function() { showView('app'); });
   $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { showView('app'); });
   $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
 
@@ -78,6 +80,8 @@ function showView(v) {
   if (analyzeView) analyzeView.style.display = v==='analyze' ? 'flex' : 'none';
   var cekIklanView = $('cekIklanView');
   if (cekIklanView) cekIklanView.style.display = v==='cekiklan' ? 'flex' : 'none';
+  var copyView = $('copywritingView');
+  if (copyView) copyView.style.display = v==='copywriting' ? 'flex' : 'none';
 
 }
 
@@ -186,6 +190,8 @@ function setUser(user, profile) {
   if (btnAn) btnAn.style.display = 'flex';
   var btnCek = $('btnCekIklan');
   if (btnCek) btnCek.style.display = 'flex';
+  var btnCopy = $('btnCopywriting');
+  if (btnCopy) btnCopy.style.display = 'flex';
 
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
@@ -212,6 +218,8 @@ function clearUser() {
   if (btnAn2) btnAn2.style.display = 'none';
   var btnCek2 = $('btnCekIklan');
   if (btnCek2) btnCek2.style.display = 'none';
+  var btnCopy2 = $('btnCopywriting');
+  if (btnCopy2) btnCopy2.style.display = 'none';
 
   showLoginScreen();
 }
@@ -956,6 +964,98 @@ async function startCekIklan() {
       var textDiv = document.createElement('div');
       textDiv.style.cssText = 'font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;margin-top:16px';
       textDiv.textContent = data.analysis;
+      copyBtn.onclick = function() { navigator.clipboard.writeText(textDiv.textContent); showToast('Disalin!','success'); };
+      right.innerHTML = '';
+      right.appendChild(copyBtn);
+      right.appendChild(textDiv);
+    }
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    if (empty) empty.style.display = 'flex';
+    showToast(e.message, 'error');
+  }
+  if (btn) btn.disabled = false;
+}
+
+// ── Copywriting Generator ────────────────────────────────
+var copywritingBase64 = null;
+
+function setupCopywriting() {
+  var zone = $('copywritingUploadZone');
+  var input = $('copywritingInput');
+  var preview = $('copywritingPreview');
+  var empty = $('copywritingUploadEmpty');
+  if (!zone || zone._initialized) return;
+  zone._initialized = true;
+
+  zone.addEventListener('click', function() {
+    if (preview && preview.style.display !== 'none') return;
+    input.click();
+  });
+  empty && empty.addEventListener('click', function(e) { e.stopPropagation(); input.click(); });
+
+  input.addEventListener('change', function(e) {
+    var f = e.target.files[0]; if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      copywritingBase64 = ev.target.result;
+      if (preview && f.type.startsWith('image/')) { preview.src = copywritingBase64; preview.style.display = 'block'; }
+      if (empty) empty.style.display = 'none';
+    };
+    reader.readAsDataURL(f);
+  });
+
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor='var(--accent)'; });
+  zone.addEventListener('dragleave', function() { zone.style.borderColor=''; });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault(); zone.style.borderColor='';
+    var f = e.dataTransfer.files[0];
+    if (f) { input.files=e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+  });
+
+  var btn = $('btnStartCopywriting');
+  if (btn) btn.addEventListener('click', startCopywriting);
+}
+
+async function startCopywriting() {
+  var productInfo = $('copywritingProductInfo') ? $('copywritingProductInfo').value.trim() : '';
+  if (!productInfo && !copywritingBase64) { showToast('Upload gambar atau isi info produk dulu.','error'); return; }
+
+  var loading = $('copywritingLoading');
+  var empty = $('copywritingEmpty');
+  var right = $('copywritingRight');
+  var btn = $('btnStartCopywriting');
+  var platform = $('copywritingPlatform') ? $('copywritingPlatform').value : 'Instagram';
+  var tone = $('copywritingTone') ? $('copywritingTone').value : 'persuasif dan emosional';
+
+  var frameworks = [];
+  if ($('fwAIDA') && $('fwAIDA').checked) frameworks.push('AIDA');
+  if ($('fwPAS') && $('fwPAS').checked) frameworks.push('PAS');
+  if ($('fwBAB') && $('fwBAB').checked) frameworks.push('BAB');
+  if ($('fwFAB') && $('fwFAB').checked) frameworks.push('FAB');
+  if (!frameworks.length) { showToast('Pilih minimal 1 framework.','error'); return; }
+
+  if (empty) empty.style.display = 'none';
+  if (loading) loading.style.display = 'block';
+  if (btn) btn.disabled = true;
+
+  try {
+    var res = await fetch('/api/proxy?action=copywriting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+(authToken||localStorage.getItem('adstudio_token')||'') },
+      body: JSON.stringify({ imageBase64: copywritingBase64, productInfo, platform, tone, frameworks })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gagal.');
+
+    if (loading) loading.style.display = 'none';
+    if (right) {
+      var copyBtn = document.createElement('button');
+      copyBtn.className = 'btn-ghost';
+      copyBtn.textContent = '📋 Copy Semua';
+      var textDiv = document.createElement('div');
+      textDiv.style.cssText = 'font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;margin-top:16px';
+      textDiv.textContent = data.copy;
       copyBtn.onclick = function() { navigator.clipboard.writeText(textDiv.textContent); showToast('Disalin!','success'); };
       right.innerHTML = '';
       right.appendChild(copyBtn);
