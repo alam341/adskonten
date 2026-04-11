@@ -122,19 +122,15 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ taskIds: [taskId], taskType: 'flux' });
       }
 
-      // Konversi ratio ke format yang diterima tiap model
       // ratio format dari UI: '1:1', '9:16', '16:9', '4:5', '3:2', '2:3'
       const ratioVal = ratio || '1:1';
-
-      // GPT Image pakai size string: '1024x1024', '1024x1536', '1536x1024'
-      const gptSizeMap = { '1:1':'1024x1024', '9:16':'1024x1536', '16:9':'1536x1024', '4:5':'1024x1280', '2:3':'1024x1536', '3:2':'1536x1024' };
-      // Nano Banana image_size: 'square', 'portrait', 'landscape', 'square_hd', etc
+      // Nano Banana image_size pakai nama
       const nanaSizeMap = { '1:1':'square_hd', '9:16':'portrait', '16:9':'landscape', '4:5':'portrait', '2:3':'portrait', '3:2':'landscape' };
 
       let input = { prompt };
       if (model === 'gpt-image/1.5-image-to-image') {
         input.input_urls = [imageUrl];
-        input.size = gptSizeMap[ratioVal] || '1024x1024';
+        input.aspect_ratio = ratioVal;  // GPT Image pakai aspect_ratio langsung: "1:1", "3:2", dll
         input.quality = 'medium';
       } else if (model === 'google/nano-banana') {
         input.image_input = [imageUrl];
@@ -146,8 +142,8 @@ module.exports = async function handler(req, res) {
         input.resolution = '1K';
         input.output_format = 'png';
       } else if (model === 'grok-imagine/image-to-image') {
+        // Grok image-to-image tidak support aspect_ratio — mengikuti ratio gambar input
         input.image_urls = [imageUrl];
-        input.aspect_ratio = ratioVal;
         input.quality_mode = true;
       } else {
         // Default: kirim aspect_ratio langsung (Flux, dll)
