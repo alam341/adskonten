@@ -1,578 +1,389 @@
-<!DOCTYPE html>
-<html lang="id" data-theme="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AdGen — AI Content Generator</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  <!-- TOP NAV -->
-  <nav class="topnav">
-    <div class="nav-left">
-      <div class="logo">
-        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#7C6EFA"/><path d="M6 16L11 6L16 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13H14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <span class="logo-name">AdGen</span>
-        <span class="logo-sub">by kie.ai</span>
-      </div>
-    </div>
-    <div class="nav-center">
-      <div class="tab-nav">
-        <button class="tab-btn active" data-tab="image">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 9l3-3 2.5 2.5L10 5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Gambar
-        </button>
-        <button class="tab-btn" data-tab="video">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 5.5l3-2v7l-3-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Video
-        </button>
-        <button class="tab-btn" data-tab="music">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 4v2a3 3 0 0 0 6 0V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 9c.5 2 2.5 3.5 5 3.5s4.5-1.5 5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          Speech
-        </button>
-      </div>
-    </div>
-    <div class="nav-right">
-      <button class="btn-history nav-icon-btn" id="btnHistory" style="display:none" title="History">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 1 0 13A6.5 6.5 0 0 1 7.5 1z" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 4v4l2.5 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        History
-      </button>
-      <div class="user-info" id="userInfo" style="display:none">
-        <span class="user-email" id="userEmail"></span>
-        <button class="btn-logout" id="btnLogout">Logout</button>
-      </div>
-      <button class="btn-auth nav-icon-btn" id="btnAuthToggle">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 12c0-2.5 2.5-4 5.5-4s5.5 1.5 5.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Login
-      </button>
-      <button class="theme-toggle" id="themeToggle" title="Light / Dark">
-        <svg class="icon-sun" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1v1M7.5 13v1M1 7.5H2M13 7.5h1M3.05 3.05l.7.7M11.25 11.25l.7.7M11.25 3.75l-.7.7M3.75 11.25l-.7.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="7.5" r="3" stroke="currentColor" stroke-width="1.3"/></svg>
-        <svg class="icon-moon" width="15" height="15" viewBox="0 0 15 15" fill="none" style="display:none"><path d="M12 7.5A4.5 4.5 0 0 1 5 2.1 6 6 0 1 0 12.9 10 4.5 4.5 0 0 1 12 7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
-  </nav>
+  const KEY_IMAGE  = process.env.KIE_API_KEY_IMAGE;
+  const KEY_VIDEO  = process.env.KIE_API_KEY_VIDEO;
+  const KEY_SPEECH = process.env.KIE_API_KEY_SPEECH;
+  const SUPA_URL   = process.env.SUPABASE_URL;
+  const SUPA_ANON  = process.env.SUPABASE_ANON_KEY;
+  const SUPA_SVC   = process.env.SUPABASE_SERVICE_KEY;
 
-  <!-- LOGIN SCREEN -->
-  <div class="login-screen" id="loginScreen">
-    <div class="login-card">
-      <div class="login-logo">
-        <svg width="40" height="40" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#7C6EFA"/><path d="M6 16L11 6L16 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13H14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <div>
-          <div class="login-logo-name">AdGen</div>
-          <div class="login-logo-sub">AI Ad Content Generator · by kie.ai</div>
-        </div>
-      </div>
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="authTabLogin">Login</button>
-        <button class="auth-tab" id="authTabRegister">Daftar</button>
-      </div>
-      <div id="authFormLogin">
-        <div class="auth-field">
-          <label>Username</label>
-          <input type="text" id="loginEmail" class="apikey-field" style="width:100%" placeholder="Username" autocomplete="username" />
-        </div>
-        <div class="auth-field">
-          <label>Password</label>
-          <input type="password" id="loginPassword" class="apikey-field" style="width:100%" placeholder="Password" />
-        </div>
-        <button class="btn-generate" id="btnLogin" style="margin-top:8px">Login</button>
-      </div>
-      <div id="authFormRegister" style="display:none">
-        <div class="auth-field">
-          <label>Username</label>
-          <input type="text" id="registerEmail" class="apikey-field" style="width:100%" placeholder="Username (huruf, angka, _)" autocomplete="username" />
-        </div>
-        <div class="auth-field">
-          <label>Password</label>
-          <input type="password" id="registerPassword" class="apikey-field" style="width:100%" placeholder="Min 6 karakter" />
-        </div>
-        <button class="btn-generate" id="btnRegister" style="margin-top:8px">Daftar</button>
-      </div>
-      <p class="login-footer">Dengan masuk, kamu setuju dengan syarat penggunaan.</p>
-    </div>
-  </div>
+  function getKey(type) {
+    if (type === 'video')  return KEY_VIDEO  || KEY_IMAGE || KEY_SPEECH;
+    if (type === 'speech') return KEY_SPEECH || KEY_IMAGE || KEY_VIDEO;
+    return KEY_IMAGE || KEY_VIDEO || KEY_SPEECH;
+  }
 
-  <!-- APP LAYOUT -->
-  <div class="app-layout" id="appLayout" style="display:none">
+  const action = req.query.action;
 
-    <!-- ============ SIDEBAR ============ -->
-    <aside class="sidebar">
-      <div class="sidebar-inner">
+  // ── Helpers ──────────────────────────────────────────────
+  async function getUser(token) {
+    if (!token || !SUPA_URL) return null;
+    try {
+      const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON }
+      });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch(e) { return null; }
+  }
 
-        <!-- ===== TAB: GAMBAR ===== -->
-        <div class="tab-panel" data-panel="image">
+  async function getProfile(userId) {
+    try {
+      const r = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const d = await r.json();
+      return Array.isArray(d) ? d[0] : null;
+    } catch(e) { return null; }
+  }
 
-          <div class="panel-group">
-            <div class="panel-label">Gambar Referensi</div>
-            <div class="upload-zone" id="imgUploadZone">
-              <input type="file" id="imgInput" accept="image/*" hidden />
-              <div class="upload-empty" id="imgUploadEmpty">
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <p class="upload-empty-label">Upload atau drag & drop</p>
-                <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
-              </div>
-              <div class="upload-filled" id="imgUploadFilled" style="display:none">
-                <img id="imgPreview" src="" alt="preview" />
-                <button class="remove-btn" id="imgRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-              </div>
-            </div>
-          </div>
+  async function getUserAndProfile(token) {
+    const user = await getUser(token);
+    if (!user) return { user: null, profile: null };
+    const profile = await getProfile(user.id);
+    return { user, profile };
+  }
 
-          <div class="panel-group">
-            <div class="panel-label">Prompt</div>
-            <textarea id="imgPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan konten iklan yang ingin dibuat..."></textarea>
-          </div>
+  async function uploadToStorage(userId, imageUrl, filename) {
+    if (!SUPA_URL || !SUPA_SVC) return null;
+    try {
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) return null;
+      const buf = await imgRes.arrayBuffer();
+      const path = `${userId}/${filename}`;
+      const r = await fetch(`${SUPA_URL}/storage/v1/object/adgen-results/${path}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC, 'Content-Type': imgRes.headers.get('content-type') || 'image/jpeg', 'x-upsert': 'true' },
+        body: buf,
+      });
+      if (!r.ok) return null;
+      return `${SUPA_URL}/storage/v1/object/public/adgen-results/${path}`;
+    } catch(e) { return null; }
+  }
 
-          <div class="panel-group">
-            <button class="collapse-btn" id="imgNegTrigger">
-              <span>Negative Prompt</span>
-              <svg class="collapse-arrow" id="imgNegArrow" width="14" height="14" viewBox="0 0 14 14"><path d="M3.5 5.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div id="imgNegBody" style="display:none; padding-top:8px">
-              <textarea id="imgNegPrompt" class="textarea-field" rows="2" placeholder="blurry, ugly, low quality..."></textarea>
-            </div>
-          </div>
+  try {
 
-          <div class="divider"></div>
+    // ── REGISTER ─────────────────────────────────────────
+    if (action === 'register') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const { email, password } = req.body;
+      const username = email.replace('@adgen.local', '');
 
-          <div class="panel-group">
-            <div class="panel-label">Model AI</div>
-            <div class="model-list" id="imgModelList">
-              <label class="model-row active" data-model="gpt-image/1.5-image-to-image">
-                <input type="radio" name="imgModel" value="gpt-image/1.5-image-to-image" checked hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">GPT Image 1.5</span><span class="badge badge-purple">Teks</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="flux-kontext-pro">
-                <input type="radio" name="imgModel" value="flux-kontext-pro" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Flux Kontext Pro</span><span class="badge badge-blue">Brand</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="grok-imagine/image-to-image">
-                <input type="radio" name="imgModel" value="grok-imagine/image-to-image" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="google/nano-banana">
-                <input type="radio" name="imgModel" value="google/nano-banana" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Nano Banana</span><span class="badge badge-green">Cepat</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="nano-banana-2">
-                <input type="radio" name="imgModel" value="nano-banana-2" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Nano Banana 2</span><span class="badge badge-teal">Seimbang</span></div>
-                </div>
-              </label>
-            </div>
-          </div>
+      // Cek username sudah ada
+      const checkR = await fetch(`${SUPA_URL}/rest/v1/profiles?username=eq.${username}&select=id`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const checkD = await checkR.json();
+      if (Array.isArray(checkD) && checkD.length > 0) {
+        return res.status(400).json({ error: 'Username sudah dipakai.' });
+      }
 
-          <div class="panel-group" id="imgStrengthGroup" style="display:none">
-            <div class="panel-label-row">
-              <span class="panel-label" style="margin:0">Strength</span>
-              <span class="val-badge" id="imgStrengthVal">0.80</span>
-            </div>
-            <input type="range" id="imgStrength" min="0" max="1" step="0.05" value="0.8" class="slider" />
-            <div class="slider-ends"><span>Mirip asli</span><span>Bebas</span></div>
-          </div>
+      // Daftar ke Supabase Auth
+      const r = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(400).json({ error: d.error_description || d.msg || 'Register gagal.' });
 
-          <div class="divider"></div>
+      const userId = d.user?.id || d.id;
+      if (!userId) return res.status(400).json({ error: 'Register gagal.' });
 
-          <div class="panel-group">
-            <div class="panel-label">Ukuran</div>
-            <div class="ratio-grid" id="imgRatioGrid">
-              <button class="ratio-cell active" data-ratio="1:1"><div class="rv rv-1-1"></div><span>1:1</span><small>Feed</small></button>
-              <button class="ratio-cell" data-ratio="9:16"><div class="rv rv-9-16"></div><span>9:16</span><small>Stories</small></button>
-              <button class="ratio-cell" data-ratio="16:9"><div class="rv rv-16-9"></div><span>16:9</span><small>Banner</small></button>
-              <button class="ratio-cell" data-ratio="4:5"><div class="rv rv-4-5"></div><span>4:5</span><small>Portrait</small></button>
-              <button class="ratio-cell" data-ratio="3:2"><div class="rv rv-3-2"></div><span>3:2</span><small>Wide</small></button>
-              <button class="ratio-cell" data-ratio="2:3"><div class="rv rv-2-3"></div><span>2:3</span><small>Tall</small></button>
-            </div>
-          </div>
+      // Buat profile dengan status pending
+      await fetch(`${SUPA_URL}/rest/v1/profiles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+        body: JSON.stringify({ id: userId, username, status: 'pending', is_admin: false }),
+      });
 
-          <div class="divider"></div>
+      return res.status(200).json({ message: 'Daftar berhasil. Tunggu persetujuan admin.' });
+    }
 
-          <div class="panel-group">
-            <div class="panel-label-row">
-              <span class="panel-label" style="margin:0">Jumlah Generate</span>
-              <span class="val-badge" id="imgQtyDisplay">1</span>
-            </div>
-            <div class="qty-row">
-              <button class="qty-dec" id="imgQtyDec">−</button>
-              <input type="number" id="imgQtyInput" class="qty-input" value="1" min="1" max="20" />
-              <button class="qty-inc" id="imgQtyInc">+</button>
-            </div>
-            <div class="qty-hint">Maks 20 gambar sekaligus</div>
-          </div>
+    // ── LOGIN ─────────────────────────────────────────────
+    if (action === 'login') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const { email, password } = req.body;
 
-        </div>
+      const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(400).json({ error: 'Username atau password salah.' });
 
-        <!-- ===== TAB: VIDEO ===== -->
-        <div class="tab-panel" data-panel="video" style="display:none">
+      // Cek status approval
+      const profile = await getProfile(d.user.id);
+      if (!profile) return res.status(403).json({ error: 'Akun tidak ditemukan.' });
+      if (profile.status === 'pending')  return res.status(403).json({ error: 'Akun belum disetujui admin. Silakan tunggu.' });
+      if (profile.status === 'rejected') return res.status(403).json({ error: 'Akun ditolak. Hubungi admin.' });
 
-          <div class="panel-group">
-            <div class="panel-label">Gambar Referensi</div>
-            <div class="upload-zone" id="vidUploadZone">
-              <input type="file" id="vidInput" accept="image/*" hidden />
-              <div class="upload-empty" id="vidUploadEmpty">
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <p class="upload-empty-label">Upload gambar untuk dijadikan video</p>
-                <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
-              </div>
-              <div class="upload-filled" id="vidUploadFilled" style="display:none">
-                <img id="vidPreview" src="" alt="preview" />
-                <button class="remove-btn" id="vidRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-              </div>
-            </div>
-          </div>
+      return res.status(200).json({ access_token: d.access_token, user: d.user, profile });
+    }
 
-          <div class="panel-group">
-            <div class="panel-label">Prompt Gerakan</div>
-            <textarea id="vidPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan gerakan yang diinginkan...&#10;&#10;Contoh: kamera perlahan zoom in ke produk, cahaya berkilau dari kiri, efek partikel mengambang..."></textarea>
-          </div>
+    // ── GET ME ────────────────────────────────────────────
+    if (action === 'me') {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { user, profile } = await getUserAndProfile(token);
+      if (!user) return res.status(401).json({ error: 'Tidak terautentikasi.' });
+      if (!profile || profile.status !== 'approved') return res.status(403).json({ error: 'Akun belum disetujui.' });
+      return res.status(200).json({ user, profile });
+    }
 
-          <div class="divider"></div>
+    // ── ADMIN: GET USERS ──────────────────────────────────
+    if (action === 'adminUsers') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile } = await getUserAndProfile(token);
+      if (!profile || !profile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
 
-          <div class="panel-group">
-            <div class="panel-label">Model Video</div>
-            <div class="model-list" id="vidModelList">
-              <label class="model-row active" data-model="kling-2.6/image-to-video">
-                <input type="radio" name="vidModel" value="kling-2.6/image-to-video" checked hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Kling 2.6</span><span class="badge badge-purple">Realistis</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="grok-imagine/image-to-video">
-                <input type="radio" name="vidModel" value="grok-imagine/image-to-video" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="wan-2.6/image-to-video">
-                <input type="radio" name="vidModel" value="wan-2.6/image-to-video" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Wan 2.6</span><span class="badge badge-teal">Cepat</span></div>
-                </div>
-              </label>
-            </div>
-          </div>
+      const status = req.query.status || 'pending';
+      const r = await fetch(`${SUPA_URL}/rest/v1/profiles?status=eq.${status}&order=created_at.desc&select=*`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const d = await r.json();
+      return res.status(200).json({ users: d });
+    }
 
-          <div class="divider"></div>
+    // ── ADMIN: APPROVE/REJECT USER ────────────────────────
+    if (action === 'adminAction') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile: adminProfile } = await getUserAndProfile(token);
+      if (!adminProfile || !adminProfile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
 
-          <div class="panel-group">
-            <div class="panel-label">Durasi</div>
-            <div class="ratio-grid" id="vidDurationGrid" style="grid-template-columns: repeat(3, 1fr)">
-              <button class="ratio-cell active" data-dur="5"><span>5s</span></button>
-              <button class="ratio-cell" data-dur="10"><span>10s</span></button>
-              <button class="ratio-cell" data-dur="15"><span>15s</span></button>
-            </div>
-          </div>
+      const { userId, act } = req.body; // act: 'approve' | 'reject'
+      if (!userId || !['approve','reject'].includes(act)) return res.status(400).json({ error: 'Parameter salah.' });
 
-          <div class="panel-group">
-            <div class="panel-label">Resolusi</div>
-            <div class="ratio-grid" style="grid-template-columns: repeat(3, 1fr)">
-              <button class="ratio-cell" data-res="480p"><span>480p</span></button>
-              <button class="ratio-cell active" data-res="720p"><span>720p</span></button>
-              <button class="ratio-cell" data-res="1080p"><span>1080p</span></button>
-            </div>
-          </div>
+      const newStatus = act === 'approve' ? 'approved' : 'rejected';
+      const r = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+        body: JSON.stringify({ status: newStatus, approved_at: new Date().toISOString() }),
+      });
+      if (!r.ok) return res.status(500).json({ error: 'Gagal update status.' });
+      return res.status(200).json({ ok: true, status: newStatus });
+    }
 
-        </div>
+    // ── ADMIN: ALL HISTORIES ──────────────────────────────
+    if (action === 'adminHistories') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile } = await getUserAndProfile(token);
+      if (!profile || !profile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
 
-        <!-- ===== TAB: SPEECH ===== -->
-        <div class="tab-panel" data-panel="music" style="display:none">
+      const r = await fetch(`${SUPA_URL}/rest/v1/histories?order=created_at.desc&limit=50`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const d = await r.json();
+      return res.status(200).json({ histories: d });
+    }
 
-          <div class="panel-group">
-            <div class="panel-label">Teks Narasi</div>
-            <textarea id="musicPrompt" class="textarea-field" rows="6" placeholder="Ketik teks yang ingin diubah jadi suara...&#10;&#10;Contoh: Primagold, susu kambing etawa terbaik untuk kesehatan sendi Anda. Dapatkan sekarang hanya 115 ribu, dapat 4 box!"></textarea>
-            <div class="qty-hint" id="ttsCharCount" style="text-align:right; margin-top:4px">0 karakter</div>
-          </div>
+    // ── HISTORY: GET ──────────────────────────────────────
+    if (action === 'history' && req.method === 'GET') {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { user, profile } = await getUserAndProfile(token);
+      if (!user || !profile || profile.status !== 'approved') return res.status(401).json({ error: 'Login dulu.' });
+      const page = parseInt(req.query.page || '1'), limit = 20, offset = (page-1)*limit;
+      const r = await fetch(`${SUPA_URL}/rest/v1/histories?user_id=eq.${user.id}&order=created_at.desc&limit=${limit}&offset=${offset}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON }
+      });
+      return res.status(200).json({ histories: await r.json(), page });
+    }
 
-          <div class="divider"></div>
+    // ── HISTORY: DELETE ───────────────────────────────────
+    if (action === 'historyDelete' && req.method === 'DELETE') {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { user } = await getUserAndProfile(token);
+      if (!user) return res.status(401).json({ error: 'Login dulu.' });
+      const { id } = req.query;
+      await fetch(`${SUPA_URL}/rest/v1/histories?id=eq.${id}&user_id=eq.${user.id}`, {
+        method: 'DELETE', headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON }
+      });
+      return res.status(200).json({ ok: true });
+    }
 
-          <div class="panel-group">
-            <div class="panel-label">Model</div>
-            <div class="model-list" id="ttsModelList">
-              <label class="model-row active" data-model="elevenlabs/text-to-speech-multilingual-v2">
-                <input type="radio" name="ttsModel" value="elevenlabs/text-to-speech-multilingual-v2" checked hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Multilingual v2</span><span class="badge badge-purple">Kualitas</span></div>
-                  <div class="model-row-price" style="font-size:11px;color:#44444e">ElevenLabs · Support Bahasa Indonesia</div>
-                </div>
-              </label>
-            </div>
-          </div>
+    // ── SAVE RESULT ───────────────────────────────────────
+    if (action === 'saveResult') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { user } = await getUserAndProfile(token);
+      if (!user) return res.status(200).json({ ok: false });
+      const { type, model, prompt, ratio, resultUrls } = req.body;
+      if (!resultUrls?.length) return res.status(400).json({ error: 'resultUrls diperlukan.' });
+      const storageUrls = [];
+      for (let i = 0; i < resultUrls.length; i++) {
+        const ext = resultUrls[i].includes('.mp4')?'mp4':resultUrls[i].includes('.mp3')?'mp3':'jpg';
+        const stored = await uploadToStorage(user.id, resultUrls[i], `${type}_${Date.now()}_${i}.${ext}`);
+        if (stored) storageUrls.push(stored);
+      }
+      await fetch(`${SUPA_URL}/rest/v1/histories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+        body: JSON.stringify({ user_id: user.id, type, model, prompt, ratio, result_urls: resultUrls, storage_urls: storageUrls.length ? storageUrls : resultUrls }),
+      });
+      return res.status(200).json({ ok: true });
+    }
 
-          <div class="divider"></div>
+    // ── UPLOAD ────────────────────────────────────────────
+    if (action === 'upload') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const apiKey = getKey('image');
+      if (!apiKey) return res.status(500).json({ error: 'API key belum diset.' });
+      const { imageBase64 } = req.body;
+      const r = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Data: imageBase64, uploadPath: 'images' }),
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Upload error.' });
+      const url = d.data?.downloadUrl || d.data?.fileUrl || d.data?.url;
+      if (!url) return res.status(500).json({ error: 'URL tidak ditemukan.' });
+      return res.status(200).json({ url });
+    }
 
-          <div class="panel-group">
-            <div class="panel-label">Suara (Voice)</div>
-            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
-              <select id="ttsVoiceSelect" class="voice-select" style="flex:1; min-width:0; margin-bottom:0">
-                <optgroup label="Wanita">
-              <option value="21m00Tcm4TlvDq8ikWAM" selected>Rachel — Calm, conversational</option>
-              <option value="9BWtsMINqrJLrRacOk9x">Aria — Expressive, natural</option>
-              <option value="EXAVITQu4vr4xnSDxMaL">Sarah — Soft, friendly</option>
-              <option value="FGY2WhTYpPnrIDTdsKH5">Laura — Enthusiast, quirky</option>
-              <option value="XB0fDUnXU5powFXDhCwa">Charlotte — Seductive, whisper</option>
-              <option value="Xb7hH8MSUJpSbSDYk0k2">Alice — Confident, British</option>
-              <option value="XrExE9yKIg1WjnnlVkGX">Matilda — Warm, authoritative</option>
-              <option value="cgSgspJ2msm6clMCkdW9">Jessica — Playful, bright, warm</option>
-              <option value="pFZP5JQG7iQjIQuC4Bku">Lily — Warm, expressive</option>
-              <option value="BIvP0GN1cAtSRTxNHnWS">Ellen — Serious, direct</option>
-              <option value="aMSt68OGf4xUZAnLpTU8">Juniper — Grounded, professional</option>
-              <option value="RILOU7YmBhvwJGDGjNmP">Jane — Audiobook reader</option>
-              <option value="Z3R5wn05IrDiVCyEkUrK">Arabella — Mysterious, emotive</option>
-              <option value="tnSpp4vdxKPjI9w0GnoV">Hope — Upbeat, clear</option>
-              <option value="exsUS4vynmxd379XN4yO">Blondie — Conversational</option>
-              <option value="BpjGufoPiobT79j2vtj4">Priyanka — Calm, neutral</option>
-              <option value="2zRM7PkgwBPiau2jvVXc">Monika Sogam — Deep, natural</option>
-              <option value="5l5f8iK3YPeGga21rQIX">Adeline — Feminine, conversational</option>
-              <option value="BZgkqPqms7Kj9ulSkVzn">Eve — Authentic, energetic</option>
-              <option value="hpp4J3VqNfWAUOO0d1Us">Bella — Professional, bright</option>
-              <option value="56AoDkrOh6qfVPDXZ7Pt">Cassidy — Crisp, direct</option>
-              <option value="lcMyyd2HUfFzxdCaC4Ta">Lucy — Fresh, casual</option>
-              <option value="6aDn1KB0hjpdcocrUkmq">Tiffany — Natural, welcoming</option>
-              <option value="ZF6FPAbjXT4488VcRRnw">Amelia — Enthusiastic, expressive</option>
-              <option value="1hlpeD1ydbI2ow0Tt3EW">Olivia — Smooth, warm</option>
-              <option value="FUfBrNit0NNZAwb58KWH">Angela — Conversational, friendly</option>
-              <option value="pPdl9cQBQq4p6mRkZy2Z">Emma — Adorable, upbeat</option>
-              <option value="aD6riP1btT197c6dACmy">Rachel M — British radio presenter</option>
-              <option value="MnUw1cSnpiLoLhpd3Hqp">Heather Rey — Rushed, friendly</option>
-              <option value="kPzsL2i3teMYv0FxEYQ6">Brittney — Social media, youthful</option>
-              <option value="Atp5cNFg1Wj5gyKD7HWV">Natasha — Gentle meditation</option>
-              <option value="1cxc5c3E9K6F1wlqOJGV">Emily — Gentle, soft, meditative</option>
-              <option value="Qggl4b0xRMiqOwhPtVWT">Clara — Relaxing, soothing</option>
-              <option value="zA6D7RyKdc2EClouEMkP">AImee — Tranquil ASMR</option>
-              <option value="1wGbFxmAM3Fgw63G1zZJ">Allison — Calm, meditative</option>
-              <option value="sH0WdfE5fsKuM2otdQZr">Koraly — Soft-spoken, gentle</option>
-              <option value="scOwDtmlUjD3prqpp97I">Sam — Support agent</option>
-              <option value="Sm1seazb4gs7RSlUVw7c">Anika — Animated, friendly</option>
-              <option value="wJqPPQ618aTW29mptyoc">Ana Rita — Smooth, expressive</option>
-                </optgroup>
-                <optgroup label="Pria">
-              <option value="CwhRBWXzGAHq8TQ4Fs17">Roger — Confident, assertive</option>
-              <option value="IKne3meq5aSn9XLyUdCD">Charlie — Natural, casual</option>
-              <option value="JBFqnCBsd6RMkjVDRZzb">George — Warm, deep British</option>
-              <option value="N2lVS1w4EtoT3dr4eOWO">Callum — Husky trickster</option>
-              <option value="SAz9YHcvj6GT2YYXdXww">River — Calm, gentle</option>
-              <option value="TX3LPaxmHKxFdv7VOQHJ">Liam — Energetic, social media</option>
-              <option value="bIHbv24MWmeRgasZH58o">Will — Friendly, approachable</option>
-              <option value="cjVigY5qzO86Huf0OWal">Eric — Friendly, positive</option>
-              <option value="iP95p4xoKVk53GoZ742B">Chris — Charming, down-to-earth</option>
-              <option value="nPczCjzI2devNBz1zQrb">Brian — Deep, resonant</option>
-              <option value="onwK4e9ZLuTAKqWW03F9">Daniel — News presenter</option>
-              <option value="pqHfZKP75CvOlQylNhV4">Bill — Trustworthy, grounded</option>
-              <option value="EkK5I93UQWFDigLMpZcX">James — Husky, engaging</option>
-              <option value="NNl6r8mD7vthiJatiJt1">Bradford — Expressive, articulate</option>
-              <option value="YOq2y2Up4RgXP2HyXjE5">Xavier — Announcer, metallic</option>
-              <option value="Bj9UqZbhQsanLzgalpEG">Austin — Deep, raspy</option>
-              <option value="c6SfcYrb2t09NHXiT80T">Jarnathan — Confident, versatile</option>
-              <option value="B8gJV1IhpuegLxdpXFOE">Kuon — Cheerful, clear</option>
-              <option value="1SM7GgM6IMuvQlz2BwM3">Mark — Casual, relaxed</option>
-              <option value="pNInz6obpgDQGcFmaJgB">Adam — Dominant, firm</option>
-              <option value="DGTOOUoGpoP6UZ9uSWfA">Célian — Documentary narrator</option>
-              <option value="x70vRnQBMBu4FAYhjJbO">Nathan — Virtual radio host</option>
-              <option value="P1bg08DkjqiVEzOn76yG">Viraj — Rich, soft</option>
-              <option value="qDuRKMlYmrm8trt5QyBn">Taksh — Calm, smooth</option>
-              <option value="vBKc2FfBKJfcZNyEt1n6">Finn — Youthful, eager</option>
-              <option value="gs0tAILXbY5DNrJrsM6F">Jeff — Classy, strong</option>
-              <option value="DTKMou8ccj1ZaWGBiotd">Jamahal — Young, vibrant</option>
-              <option value="IjnA9kwZJHJ20Fp7Vmy6">Matthew — Casual, friendly</option>
-              <option value="UgBBYS2sOqTuMpoF3BR0">Mark — Natural conversations</option>
-              <option value="KoQQbl9zjAdLgKZjm8Ol">Pro Narrator — Convincing storyteller</option>
-              <option value="Sq93GQT4X1lKDXsQcixO">Felix — Warm, contemporary</option>
-              <option value="TmNe0cCqkZBMwPWOd3RD">Smith — Mellow, bassy</option>
-              <option value="DYkrAHD8iwork3YSUBbs">Tom — Conversations & books</option>
-              <option value="FF7KdobWPaiR0vkcALHF">David — Movie trailer narrator</option>
-              <option value="6F5Zhi321D3Oq7v1oNT4">Hank — Deep, engaging narrator</option>
-              <option value="LG95yZDEHg6fCZdQjLqj">Phil — Explosive announcer</option>
-              <option value="CeNX9CMwmxDxUF5Q2Inm">Johnny Dynamite — Vintage radio DJ</option>
-              <option value="cTNP6ZM2mLTKj2BFhxEh">Paul French — Podcaster</option>
-              <option value="U1Vk2oyatMdYs096Ety7">Michael — Deep, dark, urban</option>
-              <option value="EiNlNiXeDU1pqqOPrYMO">John Doe — Deep</option>
-              <option value="qNkzaJoHLLdpvgh5tISm">Carter — Rich, smooth, rugged</option>
-              <option value="oR4uRy4fHDUGGISL0Rev">Myrrdin — Wise, magical narrator</option>
-              <option value="LruHrtVF6PSyGItzMNHS">Benjamin — Deep, warm, calming</option>
-              <option value="MJ0RnG71ty4LH3dvNfSd">Leon — Soothing, grounded</option>
-              <option value="HgyIHe81F3nXywNwkraY">Nate — Sultry, whispery</option>
-              <option value="AeRdCCKzvd23BpJoofzx">Nathaniel — British, calm</option>
-              <option value="Tsns2HvNFKfGiNjllgqo">Sven — Emotional, nice</option>
-              <option value="1U02n4nD6AdIZ9CjF053">Viraj — Smooth, gentle</option>
-              <option value="hqfrgApggtO1785R4Fsn">Theodore HQ — Serene, grounded</option>
-                </optgroup>
-              </select>
-              <button class="voice-play-btn" id="voicePlayBtn" title="Preview suara" style="flex-shrink:0; width:36px; height:36px; border-radius:8px; padding:0">
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg>
-              </button>
-            </div>
-            <div class="voice-select-desc" id="voiceSelectDesc">Calm, conversational</div>
-            <audio id="voicePreviewAudio" style="display:none"></audio>
-          </div>
+    // ── GENERATE ─────────────────────────────────────────
+    if (action === 'generate') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const body = req.body, { type } = body;
 
-          <div class="panel-group">
-            <div class="panel-label-row">
-              <span class="panel-label" style="margin:0">Stabilitas</span>
-              <span class="val-badge" id="ttsStabilityVal">0.5</span>
-            </div>
-            <input type="range" id="ttsStability" min="0" max="1" step="0.05" value="0.5" class="slider" />
-            <div class="slider-ends"><span>Ekspresif</span><span>Stabil</span></div>
-          </div>
+      if (type === 'speech') {
+        const apiKey = getKey('speech');
+        const { text, model, voice, speed, stability } = body;
+        const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: model||'elevenlabs/text-to-speech-multilingual-v2', input: { text, voice: voice||'Rachel', stability: stability||0.5, similarity_boost: 0.75, style: 0, speed: speed||1.0, timestamps: false, language_code: '' } }),
+        });
+        const d = await r.json();
+        if (!r.ok) return res.status(r.status).json({ error: 'TTS error: '+JSON.stringify(d) });
+        const taskId = d.data?.taskId;
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
+        return res.status(200).json({ taskId });
+      }
 
-        </div>
+      if (type === 'video') {
+        const apiKey = getKey('video');
+        const { model, imageUrl, prompt, duration, resolution } = body;
+        let input = { prompt, image_urls: [imageUrl], duration: String(duration||'5') };
+        if (model === 'kling-2.6/image-to-video') input.sound = false;
+        else if (model === 'grok-imagine/image-to-video') { input.mode='normal'; input.resolution=resolution||'720p'; input.aspect_ratio='16:9'; }
+        else if (model.startsWith('wan')) input.resolution = resolution||'720p';
+        const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, input }),
+        });
+        const d = await r.json();
+        if (!r.ok) return res.status(r.status).json({ error: 'Video error: '+JSON.stringify(d) });
+        const taskId = d.data?.taskId;
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
+        return res.status(200).json({ taskId, taskType: 'jobs' });
+      }
 
-      </div>
+      // Image
+      const apiKey = getKey('image');
+      const { model, imageUrl, prompt, ratio, negPrompt, strength, quantity } = body;
+      const qty = Math.min(Math.max(parseInt(quantity)||1,1),20);
+      const ratioVal = ratio||'1:1';
+      const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
 
-      <!-- Generate CTA -->
-      <div class="sidebar-cta">
-        <button class="btn-generate" id="btnGenerate">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span id="btnGenerateLabel">Generate Gambar</span>
-        </button>
-      </div>
-    </aside>
+      if (model === 'flux-kontext-pro') {
+        const r = await fetch('https://api.kie.ai/api/v1/flux/kontext/generate', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, model, aspectRatio: ratioVal, outputFormat: 'jpeg', promptUpsampling: false, safetyTolerance: 2, imageUrl }),
+        });
+        const d = await r.json();
+        if (!r.ok) return res.status(r.status).json({ error: 'Flux error: '+JSON.stringify(d) });
+        const taskId = d.data?.taskId || d.data?.id;
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
+        return res.status(200).json({ taskIds: [taskId], taskType: 'flux' });
+      }
 
-    <!-- ============ CANVAS ============ -->
-    <main class="canvas-area">
+      let input = { prompt };
+      if (model === 'gpt-image/1.5-image-to-image') { input.input_urls=[imageUrl]; input.aspect_ratio=ratioVal; input.quality='medium'; }
+      else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
+      else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
+      else if (model === 'grok-imagine/image-to-image') { input.image_urls=[imageUrl]; input.quality_mode=true; }
+      else { input.image_url=imageUrl; input.aspect_ratio=ratioVal; input.output_format='png'; }
 
-      <!-- Empty -->
-      <div class="state-empty" id="stateEmpty">
-        <div class="empty-art">
-          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-            <rect x="8" y="8" width="48" height="48" rx="12" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.3"/>
-            <path d="M20 44l12-16 12 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
-            <circle cx="40" cy="26" r="5" stroke="currentColor" stroke-width="1.8" opacity="0.4"/>
-          </svg>
-        </div>
-        <h2 class="empty-title" id="emptyTitle">Generate Konten Iklan AI</h2>
-        <p class="empty-desc" id="emptyDesc">Upload gambar, isi prompt, pilih model, lalu klik Generate.</p>
-      </div>
+      const tasks = await Promise.all(Array.from({length:qty},()=>
+        fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+          method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'},
+          body: JSON.stringify({model,input}),
+        }).then(r=>r.json())
+      ));
+      const taskIds = tasks.map(d=>d.data?.taskId).filter(Boolean);
+      if (!taskIds.length) return res.status(500).json({ error: 'Semua task gagal.' });
+      return res.status(200).json({ taskIds, taskType: 'jobs' });
+    }
 
-      <!-- Loading -->
-      <div class="state-loading" id="stateLoading" style="display:none">
-        <div class="spinner-wrap">
-          <div class="spinner-ring"></div>
-          <div class="spinner-logo">
-            <svg width="24" height="24" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#7C6EFA"/><path d="M6 16L11 6L16 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13H14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </div>
-        </div>
-        <p class="loading-title">Generating...</p>
-        <p class="loading-sub" id="loadingSub">AI sedang memproses</p>
-        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
-      </div>
+    // ── STATUS ────────────────────────────────────────────
+    if (action === 'status') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const { taskId, type } = req.query;
+      const apiKey = getKey(type==='video'?'video':'image');
+      const kieUrl = type==='flux'
+        ? `https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`
+        : `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
+      const r = await fetch(kieUrl, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
+      const data = d.data;
+      const status = data?.state || data?.status || 'waiting';
+      const DONE = ['success','SUCCESS','completed','COMPLETED'];
+      const FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
+      let imageUrl=null, videoUrl=null, imageUrls=[];
+      if (DONE.includes(status)) {
+        if (data?.resultJson) {
+          try {
+            const result = JSON.parse(data.resultJson);
+            const allUrls = result?.resultUrls || result?.images || [];
+            if (allUrls.length > 0) {
+              const firstUrl = allUrls[0];
+              if (firstUrl.includes('.mp4')||firstUrl.includes('.webm')) videoUrl=firstUrl;
+              else { imageUrls=allUrls; imageUrl=firstUrl; }
+            } else {
+              const singleUrl = result?.audio_url||result?.audioUrl||result?.image_url||result?.url||null;
+              if (singleUrl) { if(singleUrl.includes('.mp4')) videoUrl=singleUrl; else { imageUrl=singleUrl; imageUrls=[singleUrl]; } }
+            }
+          } catch(e) {}
+        }
+        if (!imageUrl && !videoUrl) {
+          const tries = [data?.output?.audio_url,data?.output?.image_url,data?.output?.url,data?.output?.images?.[0],data?.imageUrl,data?.image_url,data?.url];
+          const found = tries.find(c=>typeof c==='string'&&c.startsWith('http'));
+          if (found) { if(found.includes('.mp4')) videoUrl=found; else { imageUrl=found; imageUrls=[found]; } }
+        }
+      }
+      return res.status(200).json({ status, imageUrl, imageUrls, videoUrl, isFail: FAIL.includes(status) });
+    }
 
-      <!-- Result: Gambar -->
-      <div class="state-result" id="stateResultImg" style="display:none">
-        <div class="result-bar">
-          <span class="result-meta-text" id="imgResultMeta"></span>
-          <div class="result-btns">
-            <button class="btn-ghost" id="imgBtnRegenerate">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Ulang
-            </button>
-            <button class="btn-solid" id="imgBtnDownloadAll" style="display:none">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
-              Download Semua
-            </button>
-          </div>
-        </div>
-        <div class="result-img-area">
-          <div class="result-grid" id="imgResultGrid"></div>
-        </div>
-      </div>
+    // ── VOICE PREVIEW ─────────────────────────────────────
+    if (action === 'preview') {
+      const { voiceId } = req.query;
+      if (!voiceId) return res.status(400).json({ error: 'voiceId diperlukan.' });
+      const urls = [`https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`, `https://storage.googleapis.com/eleven-public-prod/premade/voices/${voiceId}/preview.mp3`];
+      let audioRes = null;
+      for (const url of urls) { try { const r=await fetch(url); if(r.ok){audioRes=r;break;} } catch(e){} }
+      if (!audioRes) return res.status(404).json({ error: 'Preview tidak tersedia.' });
+      res.setHeader('Content-Type','audio/mpeg');
+      res.setHeader('Cache-Control','public, max-age=604800');
+      return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
+    }
 
-      <!-- Result: Video -->
-      <div class="state-result" id="stateResultVid" style="display:none">
-        <div class="result-bar">
-          <span class="result-meta-text" id="vidResultMeta"></span>
-          <div class="result-btns">
-            <button class="btn-ghost" id="vidBtnRegenerate">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Ulang
-            </button>
-            <button class="btn-solid" id="vidBtnDownload">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
-              Download
-            </button>
-          </div>
-        </div>
-        <div class="result-img-area" style="align-items:center; justify-content:center">
-          <video id="vidResult" controls style="max-width:100%; max-height:80vh; border-radius:12px"></video>
-        </div>
-      </div>
+    return res.status(400).json({ error: 'Action tidak dikenal: '+action });
 
-      <!-- Result: Music -->
-      <div class="state-result" id="stateResultMusic" style="display:none">
-        <div class="result-bar">
-          <span class="result-meta-text" id="musicResultMeta"></span>
-          <div class="result-btns">
-            <button class="btn-ghost" id="musicBtnRegenerate">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Ulang
-            </button>
-          </div>
-        </div>
-        <div class="result-img-area">
-          <div class="music-result-list" id="musicResultList"></div>
-        </div>
-      </div>
+  } catch(err) {
+    console.error('[proxy]', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
 
-    </main>
-  </div>
-
-  <!-- Image Preview Modal -->
-  <div class="preview-modal" id="previewModal" style="display:none">
-    <div class="preview-modal-bg" id="previewModalBg"></div>
-    <div class="preview-modal-inner">
-      <button class="preview-close" id="previewClose"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-      <button class="preview-nav prev" id="previewPrev"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <img class="preview-modal-img" id="previewModalImg" src="" alt="preview" />
-      <button class="preview-nav next" id="previewNext"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 4l5 5-5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <div class="preview-footer">
-        <span class="preview-counter" id="previewCounter">1 / 1</span>
-        <button class="preview-dl-btn" id="previewDl"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg> Download</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-
-
-  <!-- History View -->
-  <div class="history-view" id="historyView" style="display:none">
-    <div class="history-header">
-      <button class="btn-ghost" id="btnBackToApp">← Kembali</button>
-      <h2 class="history-title">History Generate</h2>
-      <div></div>
-    </div>
-    <div class="history-empty" id="historyEmpty" style="display:none">
-      <div style="font-size:48px">📂</div>
-      <p>Belum ada history. Generate sesuatu dulu!</p>
-    </div>
-    <div class="history-grid" id="historyGrid"></div>
-    <div style="text-align:center;padding:16px">
-      <button class="btn-ghost" id="historyLoadMore" style="display:none" onclick="loadHistory(historyPage+1)">Load More</button>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+module.exports.config = { api: { bodyParser: { sizeLimit: '15mb' } } };
