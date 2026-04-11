@@ -122,24 +122,38 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ taskIds: [taskId], taskType: 'flux' });
       }
 
-      // Semua model lain
-      let input = { prompt, aspect_ratio: ratio || '1:1' };
+      // Konversi ratio ke format yang diterima tiap model
+      // ratio format dari UI: '1:1', '9:16', '16:9', '4:5', '3:2', '2:3'
+      const ratioVal = ratio || '1:1';
+
+      // GPT Image pakai size string: '1024x1024', '1024x1536', '1536x1024'
+      const gptSizeMap = { '1:1':'1024x1024', '9:16':'1024x1536', '16:9':'1536x1024', '4:5':'1024x1280', '2:3':'1024x1536', '3:2':'1536x1024' };
+      // Nano Banana image_size: 'square', 'portrait', 'landscape', 'square_hd', etc
+      const nanaSizeMap = { '1:1':'square_hd', '9:16':'portrait', '16:9':'landscape', '4:5':'portrait', '2:3':'portrait', '3:2':'landscape' };
+
+      let input = { prompt };
       if (model === 'gpt-image/1.5-image-to-image') {
-        input.input_urls = [imageUrl]; input.quality = 'medium';
-      } else if (model === 'qwen/image-to-image') {
-        input.image_url = imageUrl;
-        input.strength = typeof strength === 'number' ? strength : 0.8;
-        input.negative_prompt = negPrompt || 'blurry, ugly, low quality';
-        input.num_inference_steps = 30; input.guidance_scale = 2.5;
-        input.enable_safety_checker = true; input.output_format = 'png';
+        input.input_urls = [imageUrl];
+        input.size = gptSizeMap[ratioVal] || '1024x1024';
+        input.quality = 'medium';
       } else if (model === 'google/nano-banana') {
-        input.image_input = [imageUrl]; input.image_size = ratio || '1:1'; input.output_format = 'png'; delete input.aspect_ratio;
+        input.image_input = [imageUrl];
+        input.image_size = nanaSizeMap[ratioVal] || 'square_hd';
+        input.output_format = 'png';
       } else if (model === 'nano-banana-2') {
-        input.image_input = [imageUrl]; input.resolution = '1K'; input.output_format = 'png';
+        input.image_input = [imageUrl];
+        input.aspect_ratio = ratioVal;
+        input.resolution = '1K';
+        input.output_format = 'png';
       } else if (model === 'grok-imagine/image-to-image') {
-        input.image_urls = [imageUrl]; input.quality_mode = true; delete input.aspect_ratio;
+        input.image_urls = [imageUrl];
+        input.aspect_ratio = ratioVal;
+        input.quality_mode = true;
       } else {
-        input.image_url = imageUrl; input.output_format = 'png';
+        // Default: kirim aspect_ratio langsung (Flux, dll)
+        input.image_url = imageUrl;
+        input.aspect_ratio = ratioVal;
+        input.output_format = 'png';
       }
 
       const tasks = await Promise.all(Array.from({ length: qty }, () =>
