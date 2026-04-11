@@ -268,7 +268,7 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .toast.success { border-color: rgba(124,110,250,0.4); color: #a294fa; }
 
 /* ── RESPONSIVE ── */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   html, body { overflow: auto; }
 /* removed */
 /* removed */
