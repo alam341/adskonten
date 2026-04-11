@@ -589,3 +589,14 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 
 /* App layout offset when motivation bar visible */
 .app-layout.has-motivation { height: calc(100vh - 84px); }
+
+/* ── Analyze View ── */
+.analyze-body { flex: 1; display: flex; gap: 0; overflow: hidden; }
+.analyze-left { width: 300px; min-width: 300px; border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; background: var(--bg-nav); }
+.analyze-right { flex: 1; padding: 24px; overflow-y: auto; }
+.analyze-upload { border: 1.5px dashed var(--border-hover); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; background: var(--bg-surface); transition: border-color 0.15s; margin-bottom: 0; }
+.analyze-upload:hover { border-color: var(--accent); }
+.analyze-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text-5); font-size: 13px; text-align: center; opacity: 0.5; }
+.analyze-result-box { background: var(--bg-nav); border: 1px solid var(--border); border-radius: 12px; padding: 24px; font-size: 13px; line-height: 1.8; color: var(--text-2); white-space: pre-wrap; }
+.analyze-result-box h2 { font-size: 14px; font-weight: 700; color: var(--text-1); margin: 16px 0 8px; font-family: 'Space Grotesk', sans-serif; }
+.analyze-result-box h2:first-child { margin-top: 0; }
