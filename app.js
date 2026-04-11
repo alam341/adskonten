@@ -11,6 +11,10 @@ var imgRatio = '1:1', vidDuration = '5', vidResolution = '720p', imgQty = 1;
 var activeTab = 'image', activeView = 'app'; // 'app' or 'history'
 var previewUrls = [], previewIdx = 0;
 var currentUser = null, authToken = null, currentProfile = null;
+var cloneRefBase64 = null, cloneRefMime = null;
+var cloneProdBase64 = null, cloneProdMime = null;
+var cloneModel = 'gpt-image/1.5-image-to-image';
+var cloneRatio = '1:1';
 
 function $(id) { return document.getElementById(id); }
 
@@ -41,6 +45,11 @@ document.addEventListener('DOMContentLoaded', function() {
   setupAuth();
   showState('empty');
 
+  setupUpload('cloneRef', function(v){ cloneRefBase64=v; }, function(m){ cloneRefMime=m; }, null, null);
+  setupUpload('cloneProd', function(v){ cloneProdBase64=v; }, function(m){ cloneProdMime=m; }, null, null);
+  setupModelList('cloneModelList', function(m){ cloneModel=m; });
+  setupRatioGrid('cloneRatioGrid', function(v){ cloneRatio=v; });
+  $('cloneBtnRegenerate') && $('cloneBtnRegenerate').addEventListener('click', generate);
   $('btnGenerate') && $('btnGenerate').addEventListener('click', generate);
   $('imgBtnRegenerate') && $('imgBtnRegenerate').addEventListener('click', generate);
   $('vidBtnRegenerate') && $('vidBtnRegenerate').addEventListener('click', generate);
@@ -258,9 +267,9 @@ function setupTabs() {
       activeTab = btn.dataset.tab;
       document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab===activeTab); });
       document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = p.dataset.panel===activeTab ? 'block':'none'; });
-      var labels = { image:'Generate Gambar', video:'Generate Video', music:'Generate Speech' };
+      var labels = { image:'Generate Gambar', video:'Generate Video', music:'Generate Speech', clone:'Clone Style' };
       $('btnGenerateLabel') && ($('btnGenerateLabel').textContent = labels[activeTab]||'Generate');
-      var titles = { image:'Generate Konten Iklan — Gambar', video:'Generate Konten Iklan — Video', music:'Generate Narasi / Voice Over' };
+      var titles = { image:'Generate Konten Iklan — Gambar', video:'Generate Konten Iklan — Video', music:'Generate Narasi / Voice Over', clone:'Clone Style Iklan Kompetitor' };
       $('emptyTitle') && ($('emptyTitle').textContent = titles[activeTab]||'');
       showState('empty');
     });
@@ -383,6 +392,7 @@ function generate() {
   if (activeTab==='image') generateImage();
   if (activeTab==='video') generateVideo();
   if (activeTab==='music') generateSpeech();
+  if (activeTab==='clone') generateClone();
 }
 
 async function generateImage() {
@@ -414,6 +424,74 @@ async function generateImage() {
     showImageResult(urls);
     saveToHistory('image',imgModel,prompt,imgRatio,urls);
   } catch(err) { console.error(err); showToast(err.message,'error'); showState('empty'); }
+}
+
+async function generateClone() {
+  var prompt = $('clonePrompt') ? $('clonePrompt').value.trim() : '';
+  if (!cloneRefBase64)  { showToast('Upload iklan kompetitor dulu.', 'error'); return; }
+  if (!cloneProdBase64) { showToast('Upload foto produk dulu.', 'error'); return; }
+  if (!prompt)          { showToast('Isi info produk & iklan dulu.', 'error'); return; }
+  showState('loading'); resetProgress();
+  try {
+    updateSub('Mengupload gambar referensi...');
+    var upRef  = await proxyPost('upload', { imageBase64: cloneRefBase64,  mimeType: cloneRefMime||'image/jpeg',  type: 'image' });
+    var upProd = await proxyPost('upload', { imageBase64: cloneProdBase64, mimeType: cloneProdMime||'image/jpeg', type: 'image' });
+    if (!upRef.url || !upProd.url) throw new Error('Upload gagal.');
+
+    // Build prompt yang instruksikan AI untuk clone style
+    var clonePromptFull = 'Analyze the style, layout, color scheme, typography, composition, and visual elements of the REFERENCE AD image. ' +
+      'Then create a new advertisement for MY PRODUCT using the EXACT SAME visual style, layout structure, and design language as the reference. ' +
+      'Keep all the visual style elements but replace with my product and brand. ' +
+      'Product info: ' + prompt + '. ' +
+      'Use the product image provided. Make it look professional and ready for social media advertising.';
+
+    updateSub('Mengirim ke AI...');
+    var gen = await proxyPost('generate', {
+      type: 'image',
+      model: cloneModel,
+      imageUrl: upRef.url,      // referensi style (gambar utama)
+      secondImageUrl: upProd.url, // foto produk
+      prompt: clonePromptFull,
+      ratio: cloneRatio,
+      quantity: 1,
+    });
+
+    var taskIds = gen.taskIds || (gen.taskId ? [gen.taskId] : []);
+    if (!taskIds.length) throw new Error('taskId tidak ditemukan.');
+
+    updateSub('Generating clone style...');
+    var urls = [];
+    for (var ti = 0; ti < taskIds.length; ti++) {
+      try {
+        var result = await pollStatus(taskIds[ti], gen.taskType||'jobs', 90);
+        if (Array.isArray(result)) urls = urls.concat(result);
+        else if (result) urls.push(result);
+      } catch(e) { console.warn(e.message); }
+    }
+    if (!urls.length) throw new Error('Generate gagal.');
+
+    // Show in clone result
+    var grid = $('cloneResultGrid');
+    if (grid) {
+      grid.innerHTML = '';
+      urls.forEach(function(url, i) {
+        var wrap = document.createElement('div'); wrap.className = 'result-item';
+        var img = document.createElement('img'); img.src = url; img.loading = 'lazy';
+        var overlay = document.createElement('div'); overlay.className = 'result-overlay';
+        overlay.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="white" stroke-width="1.5"/><path d="M8 11h6M11 8v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><span>Lihat</span>';
+        wrap.addEventListener('click', function(){ openModal(urls, i); });
+        wrap.appendChild(img); wrap.appendChild(overlay); grid.appendChild(wrap);
+      });
+    }
+    showState('clone');
+    $('cloneResultMeta') && ($('cloneResultMeta').textContent = cloneModel + ' · ' + cloneRatio + ' · ' + new Date().toLocaleTimeString('id-ID'));
+    var dlAll = $('cloneBtnDownloadAll');
+    if (dlAll) {
+      dlAll.style.display = urls.length > 1 ? 'flex' : 'none';
+      dlAll.onclick = function() { urls.forEach(function(url,i){ setTimeout(function(){ var a=document.createElement('a');a.href=url;a.download='clone-'+(i+1)+'.jpg';a.target='_blank';a.click(); },i*300); }); };
+    }
+    saveToHistory('image', cloneModel, clonePromptFull, cloneRatio, urls);
+  } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
 }
 
 async function generateVideo() {
@@ -498,12 +576,13 @@ async function pollStatus(taskId, type, maxAttempts) {
 
 // ── Results ───────────────────────────────────────────────
 function showState(s) {
-  $('stateEmpty')       && ($('stateEmpty').style.display       = s==='empty'  ?'flex':'none');
-  $('stateLoading')     && ($('stateLoading').style.display     = s==='loading'?'flex':'none');
-  $('stateResultImg')   && ($('stateResultImg').style.display   = s==='img'    ?'flex':'none');
-  $('stateResultVid')   && ($('stateResultVid').style.display   = s==='vid'    ?'flex':'none');
-  $('stateResultMusic') && ($('stateResultMusic').style.display = s==='music'  ?'flex':'none');
-  $('btnGenerate')      && ($('btnGenerate').disabled           = s==='loading');
+  $('stateEmpty')        && ($('stateEmpty').style.display        = s==='empty'  ?'flex':'none');
+  $('stateLoading')      && ($('stateLoading').style.display      = s==='loading'?'flex':'none');
+  $('stateResultImg')    && ($('stateResultImg').style.display    = s==='img'    ?'flex':'none');
+  $('stateResultVid')    && ($('stateResultVid').style.display    = s==='vid'    ?'flex':'none');
+  $('stateResultMusic')  && ($('stateResultMusic').style.display  = s==='music'  ?'flex':'none');
+  $('stateResultClone')  && ($('stateResultClone').style.display  = s==='clone'  ?'flex':'none');
+  $('btnGenerate')       && ($('btnGenerate').disabled            = s==='loading');
 }
 function resetProgress() { var pb=$('progressBar'); if(!pb)return; pb.style.animation='none';pb.offsetHeight;pb.style.animation=''; }
 function updateSub(t) { $('loadingSub')&&($('loadingSub').textContent=t); }
