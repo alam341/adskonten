@@ -174,7 +174,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; line-he
 .canvas-area { flex: 1; min-width: 0; height: 100%; overflow: auto; background: var(--bg); display: flex; align-items: center; justify-content: center; position: relative; }
 
 /* ── EMPTY STATE ── */
-.state-empty { display: flex; align-items: center; gap: 20px; text-align: left; padding: 40px; }
+.state-empty { display: flex; align-items: center; gap: 20px; padding: 40px; }
 .empty-art { color: #333340; margin-bottom: 24px; display: flex; justify-content: center; }
 .empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #c0c0cc; margin-bottom: 10px; letter-spacing: -0.3px; }
 .empty-desc { font-size: 13px; color: var(--text-5); line-height: 1.7; margin-bottom: 32px; }
@@ -270,10 +270,10 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 /* ── RESPONSIVE ── */
 @media (max-width: 480px) {
   html, body { overflow: auto; }
-/* removed */
-/* removed */
-/* removed */
-/* removed */
+  .app-layout { flex-direction: column; height: auto; }
+  .sidebar { width: 100%; min-width: 100%; max-width: 100%; height: auto; }
+  .sidebar-inner { overflow: visible; }
+  .canvas-area { min-height: 60vh; }
   .tab-nav { gap: 2px; }
   .tab-btn { padding: 6px 10px; font-size: 12px; }
 }
