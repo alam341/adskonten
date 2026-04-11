@@ -56,8 +56,48 @@
     </div>
   </nav>
 
+  <!-- LOGIN SCREEN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg width="40" height="40" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#7C6EFA"/><path d="M6 16L11 6L16 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13H14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <div>
+          <div class="login-logo-name">AdGen</div>
+          <div class="login-logo-sub">AI Ad Content Generator · by kie.ai</div>
+        </div>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="authTabLogin">Login</button>
+        <button class="auth-tab" id="authTabRegister">Daftar</button>
+      </div>
+      <div id="authFormLogin">
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" id="loginEmail" class="apikey-field" style="width:100%" placeholder="email@example.com" />
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" class="apikey-field" style="width:100%" placeholder="Password" />
+        </div>
+        <button class="btn-generate" id="btnLogin" style="margin-top:8px">Login</button>
+      </div>
+      <div id="authFormRegister" style="display:none">
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" id="registerEmail" class="apikey-field" style="width:100%" placeholder="email@example.com" />
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="registerPassword" class="apikey-field" style="width:100%" placeholder="Min 6 karakter" />
+        </div>
+        <button class="btn-generate" id="btnRegister" style="margin-top:8px">Daftar</button>
+      </div>
+      <p class="login-footer">Dengan masuk, kamu setuju dengan syarat penggunaan.</p>
+    </div>
+  </div>
+
   <!-- APP LAYOUT -->
-  <div class="app-layout">
+  <div class="app-layout" id="appLayout" style="display:none">
 
     <!-- ============ SIDEBAR ============ -->
     <aside class="sidebar">
@@ -514,45 +554,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- Auth Modal -->
-  <div class="auth-modal" id="authModal" style="display:none">
-    <div class="auth-modal-bg" id="authModalBg"></div>
-    <div class="auth-modal-inner">
-      <button class="preview-close" id="authModalClose" style="top:12px;right:12px">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </button>
-      <div class="auth-logo">
-        <svg width="28" height="28" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#7C6EFA"/><path d="M6 16L11 6L16 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13H14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <span>AdGen</span>
-      </div>
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="authTabLogin">Login</button>
-        <button class="auth-tab" id="authTabRegister">Daftar</button>
-      </div>
-      <div id="authFormLogin">
-        <div class="auth-field">
-          <label>Email</label>
-          <input type="email" id="loginEmail" class="apikey-field" style="width:100%" placeholder="email@example.com" />
-        </div>
-        <div class="auth-field">
-          <label>Password</label>
-          <input type="password" id="loginPassword" class="apikey-field" style="width:100%" placeholder="Password" />
-        </div>
-        <button class="btn-generate" id="btnLogin" style="margin-top:8px">Login</button>
-      </div>
-      <div id="authFormRegister" style="display:none">
-        <div class="auth-field">
-          <label>Email</label>
-          <input type="email" id="registerEmail" class="apikey-field" style="width:100%" placeholder="email@example.com" />
-        </div>
-        <div class="auth-field">
-          <label>Password</label>
-          <input type="password" id="registerPassword" class="apikey-field" style="width:100%" placeholder="Min 6 karakter" />
-        </div>
-        <button class="btn-generate" id="btnRegister" style="margin-top:8px">Daftar</button>
-      </div>
-    </div>
-  </div>
+
 
   <!-- History View -->
   <div class="history-view" id="historyView" style="display:none">
