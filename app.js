@@ -10,7 +10,7 @@ var ttsSpeed = 1.0, ttsStability = 0.5;
 var imgRatio = '1:1', vidDuration = '5', vidResolution = '720p', imgQty = 1;
 var activeTab = 'image', activeView = 'app'; // 'app' or 'history'
 var previewUrls = [], previewIdx = 0;
-var currentUser = null, authToken = null;
+var currentUser = null, authToken = null, currentProfile = null;
 
 function $(id) { return document.getElementById(id); }
 
@@ -46,6 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
   $('vidBtnRegenerate') && $('vidBtnRegenerate').addEventListener('click', generate);
   $('musicBtnRegenerate') && $('musicBtnRegenerate').addEventListener('click', generate);
   $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
+  $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
+  $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('app'); });
   $('btnBackToApp') && $('btnBackToApp').addEventListener('click', function() { showView('app'); });
 });
 
@@ -54,8 +56,10 @@ function showView(v) {
   activeView = v;
   var appLayout = document.querySelector('.app-layout');
   var historyView = $('historyView');
+  var adminView = $('adminView');
   if (appLayout) appLayout.style.display = v==='app' ? 'flex' : 'none';
   if (historyView) historyView.style.display = v==='history' ? 'flex' : 'none';
+  if (adminView) adminView.style.display = v==='admin' ? 'flex' : 'none';
 }
 
 // ── Auth ──────────────────────────────────────────────────
@@ -103,7 +107,7 @@ function switchAuthTab(t) {
 async function fetchMe() {
   try {
     var d = await proxyGet('me');
-    setUser(d.user);
+    setUser(d.user, d.profile);
   } catch(e) { clearUser(); }
 }
 
@@ -117,7 +121,7 @@ async function doLogin() {
     var d = await proxyPost('login', { email, password: pass });
     authToken = d.access_token;
     localStorage.setItem('adgen_token', authToken);
-    setUser(d.user);
+    setUser(d.user, d.profile);
     showToast('Login berhasil!', 'success');
   } catch(e) { showToast(e.message, 'error'); }
   $('btnLogin').disabled = false;
@@ -149,16 +153,18 @@ function doLogout() {
   if (activeView === 'history') showView('app');
 }
 
-function setUser(user) {
-  currentUser = user;
+function setUser(user, profile) {
+  currentUser = user; currentProfile = profile;
   var emailEl = $('userEmail');
-  if (emailEl) emailEl.textContent = (user.email || '').replace('@adgen.local', '');
+  if (emailEl) emailEl.textContent = profile ? profile.username : (user.email||'').replace('@adgen.local','');
   var btnAuth = $('btnAuthToggle');
   if (btnAuth) btnAuth.style.display = 'none';
   var userInfo = $('userInfo');
   if (userInfo) userInfo.style.display = 'flex';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'flex';
+  var btnAdmin = $('btnAdmin');
+  if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
   showAppScreen();
 }
 
@@ -555,6 +561,65 @@ function showToast(msg, type) {
   clearTimeout(toastTO); toastTO=setTimeout(function(){ t.classList.remove('show'); },5000);
 }
 function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+// ── Admin Panel ───────────────────────────────────────────
+var currentAdminStatus = 'pending';
+
+async function loadAdminUsers(status) {
+  currentAdminStatus = status;
+  ['Pending','Approved','Rejected'].forEach(function(s) {
+    var tab = $('adminTab'+s);
+    if (tab) tab.classList.toggle('active', s.toLowerCase()===status);
+  });
+  var list = $('adminUserList');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-5)">Memuat...</div>';
+  try {
+    var d = await proxyGet('adminUsers', { status });
+    var users = d.users || [];
+    if (!users.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-5)">Tidak ada user '+status+'.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    users.forEach(function(u) {
+      var card = document.createElement('div');
+      card.className = 'admin-user-card';
+      card.dataset.userId = u.id;
+      var actHtml = '';
+      if (status === 'pending') {
+        actHtml = '<button class="btn-approve admin-act" data-act="approve">✓ Approve</button><button class="btn-reject admin-act" data-act="reject">✗ Reject</button>';
+      } else if (status === 'approved') {
+        actHtml = '<button class="btn-reject admin-act" data-act="reject">✗ Reject</button>';
+      } else {
+        actHtml = '<button class="btn-approve admin-act" data-act="approve">✓ Approve</button>';
+      }
+      card.innerHTML =
+        '<div class="admin-user-info"><div class="admin-user-name">'+u.username+'</div>' +
+        '<div class="admin-user-date">Daftar: '+new Date(u.created_at).toLocaleDateString('id-ID')+'</div></div>' +
+        '<div class="admin-user-actions">'+actHtml+'</div>';
+      list.appendChild(card);
+    });
+    // Event delegation
+    list.querySelectorAll('.admin-act').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var card = btn.closest('.admin-user-card');
+        adminAction(card.dataset.userId, btn.dataset.act);
+      });
+    });
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#f08080">Error: '+e.message+'</div>';
+  }
+}
+
+
+async function adminAction(userId, act) {
+  try {
+    await proxyPost('adminAction', { userId, act });
+    showToast(act==='approve' ? 'User disetujui!' : 'User ditolak.', 'success');
+    loadAdminUsers(currentAdminStatus);
+  } catch(e) { showToast(e.message, 'error'); }
+}
 
 // ── Theme Toggle ──────────────────────────────────────────
 (function() {
