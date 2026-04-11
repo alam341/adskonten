@@ -66,7 +66,7 @@ function showView(v) {
 function setupAuth() {
   // Show login screen by default, check token
   showLoginScreen();
-  var saved = localStorage.getItem('adgen_token');
+  var saved = localStorage.getItem('adstudio_token');
   if (saved) { authToken = saved; fetchMe(); }
 
   $('btnLogin') && $('btnLogin').addEventListener('click', doLogin);
@@ -120,7 +120,7 @@ async function doLogin() {
   try {
     var d = await proxyPost('login', { email, password: pass });
     authToken = d.access_token;
-    localStorage.setItem('adgen_token', authToken);
+    localStorage.setItem('adstudio_token', authToken);
     setUser(d.user, d.profile);
     showToast('Login berhasil!', 'success');
   } catch(e) { showToast(e.message, 'error'); }
@@ -147,7 +147,7 @@ async function doRegister() {
 
 function doLogout() {
   authToken = null; currentUser = null;
-  localStorage.removeItem('adgen_token');
+  localStorage.removeItem('adstudio_token');
   clearUser();
   showToast('Logout berhasil.', 'success');
   if (activeView === 'history') showView('app');
@@ -625,8 +625,8 @@ async function adminAction(userId, act) {
 (function() {
   var html=document.documentElement, btn=$('themeToggle');
   var sunIcon=btn?btn.querySelector('.icon-sun'):null, moonIcon=btn?btn.querySelector('.icon-moon'):null;
-  var saved=localStorage.getItem('adgen_theme')||'dark';
+  var saved=localStorage.getItem('adstudio_theme')||'dark';
   setTheme(saved);
   if (btn) btn.addEventListener('click',function(){ setTheme(html.dataset.theme==='dark'?'light':'dark'); });
-  function setTheme(t){ html.dataset.theme=t; localStorage.setItem('adgen_theme',t); if(sunIcon) sunIcon.style.display=t==='dark'?'block':'none'; if(moonIcon) moonIcon.style.display=t==='light'?'block':'none'; }
+  function setTheme(t){ html.dataset.theme=t; localStorage.setItem('adstudio_theme',t); if(sunIcon) sunIcon.style.display=t==='dark'?'block':'none'; if(moonIcon) moonIcon.style.display=t==='light'?'block':'none'; }
 })();
