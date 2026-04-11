@@ -749,6 +749,8 @@ function setupAnalyzeTab() {
     var url = URL.createObjectURL(f);
     if (preview) { preview.src=url; preview.style.display='block'; }
     if (empty) empty.style.display='none';
+    var btnEnable = $('btnStartAnalyze');
+    if (btnEnable) btnEnable.disabled = false;
   });
 
   zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor='var(--accent)'; });
@@ -804,7 +806,7 @@ async function startAnalyze() {
       var productInfo = $('analyzeProductInfo') ? $('analyzeProductInfo').value.trim() : '';
       var res = await fetch('/api/proxy?action=analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': authToken ? 'Bearer '+authToken : '' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': authToken ? 'Bearer '+authToken : (localStorage.getItem('adstudio_token') ? 'Bearer '+localStorage.getItem('adstudio_token') : '') },
         body: JSON.stringify({ frames: frames, productInfo: productInfo })
       });
       var data = await res.json();
