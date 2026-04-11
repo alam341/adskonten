@@ -740,30 +740,59 @@ function showWelcomeScreen(username) {
   });
 }
 
+var motivationMood = 'semangat';
+var motivationEmoji = '✨';
+var motivationInterval = null;
+
 async function generateMotivation(mood, emoji, username) {
+  motivationMood = mood || motivationMood;
+  motivationEmoji = emoji || motivationEmoji;
+
   var bar = $('motivationBar');
   var textEl = $('motivationText');
   var iconEl = $('motivationIcon');
   if (!bar) return;
 
   bar.style.display = 'flex';
-  if (iconEl) iconEl.textContent = emoji;
-  if (textEl) textEl.textContent = 'Generating motivasi...';
+  if (iconEl) iconEl.textContent = motivationEmoji;
+  if (textEl) textEl.textContent = '...';
 
-  // Adjust app-layout height
   var appLayout = $('appLayout');
   if (appLayout) appLayout.classList.add('has-motivation');
 
+  await fetchMotivation(textEl);
+
+  // Refresh motivasi tiap 10 menit
+  if (motivationInterval) clearInterval(motivationInterval);
+  motivationInterval = setInterval(async function() {
+    if (textEl) textEl.style.opacity = '0.4';
+    await fetchMotivation(textEl);
+    if (textEl) textEl.style.opacity = '1';
+  }, 10 * 60 * 1000);
+}
+
+async function fetchMotivation(textEl) {
+  var fallbacks = {
+    bahagia: 'Energimu hari ini, jadikan karya iklan yang luar biasa!',
+    semangat: 'Semangatmu adalah bahan bakar kreativitas terbaik!',
+    biasa: 'Hari biasa pun bisa menghasilkan karya yang luar biasa.',
+    lelah: 'Istirahat sejenak, lalu bangkit lebih kuat dari sebelumnya.',
+    sedih: 'Kreativitas terbaik lahir dari hati yang paling dalam.',
+    stres: 'Tarik napas, fokus satu langkah. Kamu pasti bisa!',
+    onfire: 'Hari ini adalah harimu — ciptakan sesuatu yang epik!',
+    kurangsehat: 'Jaga dirimu, kesehatan adalah modal utama berkarya.',
+    siaptempur: 'Siap tempur! Jadikan hari ini penuh pencapaian!'
+  };
   try {
     var res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 100,
+        max_tokens: 80,
         messages: [{
           role: 'user',
-          content: 'Berikan 1 kalimat motivasi singkat (max 12 kata) dalam Bahasa Indonesia yang sesuai untuk seseorang yang merasa ' + mood + ' saat memulai kerja sebagai tim kreatif iklan. Langsung tulis kalimatnya saja tanpa tanda kutip atau penjelasan.'
+          content: 'Berikan 1 kalimat motivasi baru dan unik (max 12 kata) dalam Bahasa Indonesia untuk seseorang yang merasa ' + motivationMood + ' saat bekerja sebagai tim kreatif iklan. Jangan ulangi kalimat sebelumnya. Langsung tulis kalimatnya saja tanpa tanda kutip.'
         }]
       })
     });
@@ -771,18 +800,7 @@ async function generateMotivation(mood, emoji, username) {
     var text = data.content && data.content[0] && data.content[0].text;
     if (text && textEl) textEl.textContent = text.trim();
   } catch(e) {
-    var fallbacks = {
-      bahagia: 'Energimu hari ini, jadikan karya iklan yang luar biasa!',
-      semangat: 'Semangatmu adalah bahan bakar kreativitas terbaik!',
-      biasa: 'Hari biasa pun bisa menghasilkan karya yang luar biasa.',
-      lelah: 'Istirahat sejenak, lalu bangkit lebih kuat dari sebelumnya.',
-      sedih: 'Kreativitas terbaik lahir dari hati yang paling dalam.',
-      stres: 'Tarik napas, fokus satu langkah. Kamu pasti bisa!',
-      onfire: 'Hari ini adalah harimu — ciptakan sesuatu yang epik!',
-      kurangsehat: 'Jaga dirimu, kesehatan adalah modal utama berkarya.',
-      siaployy: 'Siap tempur! Jadikan hari ini penuh pencapaian!'
-    };
-    if (textEl) textEl.textContent = fallbacks[mood] || 'Semangat berkarya hari ini!';
+    if (textEl) textEl.textContent = fallbacks[motivationMood] || 'Semangat berkarya hari ini!';
   }
 }
 
