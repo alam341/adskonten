@@ -460,6 +460,66 @@ Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
       return res.status(200).json({ analysis: text });
     }
 
+    // ── COPYWRITING ──────────────────────────────────────────
+    if (action === 'copywriting') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+
+      const { imageBase64, productInfo, platform, tone, frameworks } = req.body;
+      if (!productInfo) return res.status(400).json({ error: 'Info produk wajib diisi.' });
+
+      const fwList = frameworks && frameworks.length ? frameworks.join(', ') : 'AIDA, PAS';
+      const prompt = `Kamu adalah copywriter iklan profesional Indonesia kelas dunia. Buat copywriting iklan yang menjual.
+
+${imageBase64 ? 'Analisis gambar/video yang dilampirkan secara mendalam — produk, keunggulan visual, warna, suasana, target audience yang terlihat — lalu buat copywriting yang sesuai.' : ''}
+${productInfo ? 'Info produk tambahan: ' + productInfo : ''}
+Platform: ${platform || 'Instagram'}
+Tone: ${tone || 'persuasif dan emosional'}
+Framework yang digunakan: ${fwList}
+
+Buat copywriting LENGKAP untuk setiap framework yang diminta. Format output:
+
+---
+
+## 📌 FRAMEWORK: [NAMA FRAMEWORK]
+
+**🎯 HEADLINE:**
+[headline yang kuat, max 10 kata]
+
+**💬 BODY COPY:**
+[body copy lengkap sesuai framework]
+
+**📣 CTA (Call to Action):**
+[CTA yang kuat dan spesifik]
+
+**#️⃣ HASHTAG:**
+[5-10 hashtag relevan untuk ${platform}]
+
+---
+
+[ulangi untuk setiap framework]
+
+Tulis dalam Bahasa Indonesia yang natural, menjual, dan sesuai dengan kultur lokal. Gunakan kata-kata yang powerful dan emosional.`;
+
+      const msgContent = [];
+      if (imageBase64) {
+        const mediaType = imageBase64.match(/^data:([^;]+)/)?.[1] || 'image/jpeg';
+        const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
+        msgContent.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } });
+      }
+      msgContent.push({ type: 'text', text: prompt });
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 3000, messages: [{ role: 'user', content: msgContent }] })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Generate gagal.' });
+      return res.status(200).json({ copy: d.content?.[0]?.text || '' });
+    }
+
     // ── CEK KUALITAS IKLAN ───────────────────────────────────
     if (action === 'cekiklan') {
       if (req.method !== 'POST') return res.status(405).end();
