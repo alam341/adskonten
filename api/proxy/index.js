@@ -357,6 +357,33 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ status, imageUrl, imageUrls, videoUrl, isFail: FAIL.includes(status) });
     }
 
+    // ── MOTIVATION ───────────────────────────────────────────
+    if (action === 'motivation') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+      const { mood } = req.body;
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 80,
+          messages: [{
+            role: 'user',
+            content: 'Berikan 1 kalimat motivasi baru dan unik (max 12 kata) dalam Bahasa Indonesia untuk seseorang yang merasa ' + (mood||'semangat') + ' saat bekerja sebagai tim kreatif iklan. Langsung tulis kalimatnya saja tanpa tanda kutip atau penjelasan.'
+          }]
+        })
+      });
+      const d = await r.json();
+      const text = d.content?.[0]?.text || 'Semangat berkarya hari ini!';
+      return res.status(200).json({ text: text.trim() });
+    }
+
     // ── VOICE PREVIEW ─────────────────────────────────────
     if (action === 'preview') {
       const { voiceId } = req.query;
