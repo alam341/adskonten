@@ -47,7 +47,11 @@
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M4 7.5h7M4 5h7M4 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Admin
       </button>
-<button class="nav-icon-btn" id="btnCekIklan" style="display:none">
+<button class="nav-icon-btn" id="btnCopywriting" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Copywriting
+      </button>
+      <button class="nav-icon-btn" id="btnCekIklan" style="display:none">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Cek Iklan
       </button>
@@ -856,6 +860,94 @@
         <div id="cekIklanLoading" style="display:none;text-align:center;padding:60px 40px">
           <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
           <p style="color:var(--text-4);font-size:13px">Menganalisis kualitas iklan...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copywriting View -->
+  <div class="history-view" id="copywritingView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromCopywriting">← Kembali</button>
+      <h2 class="history-title">Generator Copywriting Iklan</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+
+        <div class="panel-group">
+          <div class="panel-label">Upload Gambar/Video <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <div class="analyze-upload-zone" id="copywritingUploadZone">
+            <input type="file" id="copywritingInput" accept="image/*,video/*" hidden />
+            <div id="copywritingUploadEmpty" style="padding:16px;text-align:center;cursor:pointer">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M11 13l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <p style="font-size:11px;color:var(--text-4);margin-top:6px">Upload gambar produk</p>
+            </div>
+            <img id="copywritingPreview" style="display:none;width:100%;border-radius:8px;max-height:160px;object-fit:contain" />
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Info Produk <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <textarea id="copywritingProductInfo" class="textarea-field" rows="3" placeholder="Nama produk, harga, keunggulan utama, target audience...&#10;&#10;Contoh: Susu kambing Primagold Rp115rb, untuk ibu hamil &amp; lansia, kaya kalsium &amp; protein"></textarea>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Platform</div>
+          <select id="copywritingPlatform" class="voice-select" style="width:100%">
+            <option value="Instagram">Instagram Feed</option>
+            <option value="Instagram Stories/Reels">Instagram Stories/Reels</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Marketplace">Marketplace (Tokopedia/Shopee)</option>
+            <option value="WhatsApp">WhatsApp Blast</option>
+          </select>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Tone / Gaya</div>
+          <select id="copywritingTone" class="voice-select" style="width:100%">
+            <option value="persuasif dan emosional">Persuasif & Emosional</option>
+            <option value="profesional dan terpercaya">Profesional & Terpercaya</option>
+            <option value="santai dan akrab">Santai & Akrab</option>
+            <option value="urgent dan FOMO">Urgent & FOMO</option>
+            <option value="storytelling">Storytelling</option>
+            <option value="humor">Humor</option>
+          </select>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Framework</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwAIDA" checked style="accent-color:var(--accent)"> AIDA (Attention → Interest → Desire → Action)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwPAS" checked style="accent-color:var(--accent)"> PAS (Problem → Agitate → Solution)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwBAB" style="accent-color:var(--accent)"> BAB (Before → After → Bridge)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwFAB" style="accent-color:var(--accent)"> FAB (Features → Advantages → Benefits)
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-generate" id="btnStartCopywriting">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Generate Copywriting
+        </button>
+
+      </div>
+      <div class="analyze-right" id="copywritingRight">
+        <div id="copywritingEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M8 12h32M8 20h24M8 28h20M8 36h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/></svg>
+          <p>Isi info produk lalu klik Generate Copywriting</p>
+        </div>
+        <div id="copywritingLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px">Menulis copywriting...</p>
         </div>
       </div>
     </div>
