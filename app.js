@@ -108,9 +108,10 @@ async function fetchMe() {
 }
 
 async function doLogin() {
-  var email = $('loginEmail').value.trim();
-  var pass  = $('loginPassword').value;
-  if (!email || !pass) { showToast('Isi email dan password.', 'error'); return; }
+  var username = $('loginEmail').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+  var pass     = $('loginPassword').value;
+  if (!username || !pass) { showToast('Isi username dan password.', 'error'); return; }
+  var email = username + '@adgen.local';
   $('btnLogin').disabled = true;
   try {
     var d = await proxyPost('login', { email, password: pass });
@@ -123,13 +124,18 @@ async function doLogin() {
 }
 
 async function doRegister() {
-  var email = $('registerEmail').value.trim();
-  var pass  = $('registerPassword').value;
-  if (!email || !pass) { showToast('Isi email dan password.', 'error'); return; }
+  var raw      = $('registerEmail').value.trim();
+  var username = raw.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  var pass     = $('registerPassword').value;
+  if (!username) { showToast('Username hanya boleh huruf, angka, dan _.', 'error'); return; }
+  if (username.length < 3) { showToast('Username minimal 3 karakter.', 'error'); return; }
+  if (!pass || pass.length < 6) { showToast('Password minimal 6 karakter.', 'error'); return; }
+  var email = username + '@adgen.local';
   $('btnRegister').disabled = true;
   try {
     await proxyPost('register', { email, password: pass });
-    showToast('Registrasi berhasil! Cek email untuk konfirmasi.', 'success');
+    showToast('Daftar berhasil! Silakan login.', 'success');
+    $('loginEmail').value = raw;
     switchAuthTab('login');
   } catch(e) { showToast(e.message, 'error'); }
   $('btnRegister').disabled = false;
@@ -146,7 +152,7 @@ function doLogout() {
 function setUser(user) {
   currentUser = user;
   var emailEl = $('userEmail');
-  if (emailEl) emailEl.textContent = user.email;
+  if (emailEl) emailEl.textContent = (user.email || '').replace('@adgen.local', '');
   var btnAuth = $('btnAuthToggle');
   if (btnAuth) btnAuth.style.display = 'none';
   var userInfo = $('userInfo');
