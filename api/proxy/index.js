@@ -334,14 +334,29 @@ module.exports = async function handler(req, res) {
       if (req.method !== 'GET') return res.status(405).end();
       const { taskId, type } = req.query;
       const apiKey = getKey(type==='video'?'video':'image');
-      const kieUrl = type==='flux'
-        ? `https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`
-        : `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
-      const r = await fetch(kieUrl, { headers: { 'Authorization': `Bearer ${apiKey}` } });
-      const d = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
-      const data = d.data;
-      const status = data?.state || data?.status || 'waiting';
+      let d, data, status;
+      if (type === 'flux') {
+        // Try Flux detail endpoint
+        const r1 = await fetch(`https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+        if (r1.ok) {
+          d = await r1.json();
+          data = d.data;
+          status = data?.status || data?.state || 'waiting';
+        } else {
+          // Fallback to jobs endpoint
+          const r2 = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+          if (!r2.ok) return res.status(r2.status).json({ error: 'Status error.' });
+          d = await r2.json();
+          data = d.data;
+          status = data?.state || data?.status || 'waiting';
+        }
+      } else {
+        const r = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+        if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
+        d = await r.json();
+        data = d.data;
+        status = data?.state || data?.status || 'waiting';
+      }
       const DONE = ['success','SUCCESS','completed','COMPLETED'];
       const FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
       let imageUrl=null, videoUrl=null, imageUrls=[];
@@ -361,9 +376,8 @@ module.exports = async function handler(req, res) {
           } catch(e) {}
         }
         if (!imageUrl && !videoUrl) {
-          // Flux Kontext returns resultImageUrl directly
           const tries = [
-            data?.resultImageUrl, data?.result_image_url,
+            data?.info?.resultImageUrl, data?.resultImageUrl, data?.result_image_url,
             data?.output?.audio_url, data?.output?.image_url, data?.output?.url,
             data?.output?.images?.[0], data?.imageUrl, data?.image_url, data?.url
           ];
