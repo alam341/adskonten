@@ -186,17 +186,26 @@ module.exports = async function handler(req, res) {
       const DONE   = ['success','SUCCESS','completed','COMPLETED'];
       const FAIL   = ['fail','FAIL','failed','FAILED','error','ERROR'];
 
-      let imageUrl = null, videoUrl = null;
+      let imageUrl = null, videoUrl = null, imageUrls = [];
       if (DONE.includes(status)) {
         if (data?.resultJson) {
           try {
             const result = JSON.parse(data.resultJson);
-            // resultJson format: { resultUrls: [...] } for image/audio/video
-            const firstUrl = result?.resultUrls?.[0] || result?.audio_url || result?.audioUrl ||
-              result?.images?.[0] || result?.image_url || result?.url || null;
-            if (firstUrl) {
-              if (firstUrl.includes('.mp4') || firstUrl.includes('.webm')) videoUrl = firstUrl;
-              else imageUrl = firstUrl;
+            const allUrls = result?.resultUrls || result?.images || [];
+            if (allUrls.length > 0) {
+              const firstUrl = allUrls[0];
+              if (firstUrl.includes('.mp4') || firstUrl.includes('.webm')) {
+                videoUrl = firstUrl;
+              } else {
+                imageUrls = allUrls;
+                imageUrl  = firstUrl;
+              }
+            } else {
+              const singleUrl = result?.audio_url || result?.audioUrl || result?.image_url || result?.url || null;
+              if (singleUrl) {
+                if (singleUrl.includes('.mp4') || singleUrl.includes('.webm')) videoUrl = singleUrl;
+                else { imageUrl = singleUrl; imageUrls = [singleUrl]; }
+              }
             }
           } catch(e) {}
         }
@@ -210,12 +219,12 @@ module.exports = async function handler(req, res) {
           const found = tries.find(c => typeof c === 'string' && c.startsWith('http'));
           if (found) {
             if (found.includes('.mp4') || found.includes('.webm')) videoUrl = found;
-            else imageUrl = found;
+            else { imageUrl = found; imageUrls = [found]; }
           }
         }
       }
 
-      return res.status(200).json({ status, imageUrl, videoUrl, isFail: FAIL.includes(status) });
+      return res.status(200).json({ status, imageUrl, imageUrls, videoUrl, isFail: FAIL.includes(status) });
     }
 
 
