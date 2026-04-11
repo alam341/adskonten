@@ -604,3 +604,5 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 /* ── Analyze Tab in Sidebar ── */
 .analyze-upload-zone { border: 1.5px dashed var(--border-hover); border-radius: 10px; overflow: hidden; cursor: pointer; background: var(--bg-surface); transition: border-color 0.15s; }
 .analyze-upload-zone:hover { border-color: var(--accent); }
+
+.tab-panel { width: 100%; }
