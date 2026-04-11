@@ -384,6 +384,82 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ text: text.trim() });
     }
 
+    // ── ANALYZE VIDEO FRAMES ─────────────────────────────
+    if (action === 'analyze') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+
+      const { frames, productInfo } = req.body;
+      if (!frames || !frames.length) return res.status(400).json({ error: 'frames diperlukan.' });
+
+      // Build content array with frames as images
+      const content = [];
+      content.push({
+        type: 'text',
+        text: `Kamu adalah analis iklan profesional. Analisis frame-frame dari video iklan kompetitor berikut ini.${productInfo ? ' Produk klien kami: ' + productInfo : ''}
+
+Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
+
+## 🎯 Konsep & Pesan Utama
+[Apa pesan utama iklan ini]
+
+## 👥 Target Audience
+[Siapa target audiencenya dan mengapa]
+
+## 💪 Kekuatan Iklan
+[Apa yang dilakukan dengan baik]
+
+## ⚠️ Kelemahan Iklan
+[Apa yang bisa diperbaiki]
+
+## 🎨 Style & Visual
+[Analisis visual, warna, komposisi, teks]
+
+## 📝 Strategi Copywriting
+[Analisis pesan, CTA, emotional appeal]
+
+## 💡 Rekomendasi untuk Mengalahkan Iklan Ini
+[Saran konkret untuk buat iklan yang lebih baik]`
+      });
+
+      // Add frames as images (max 5 frames)
+      const maxFrames = Math.min(frames.length, 5);
+      for (let i = 0; i < maxFrames; i++) {
+        content.push({
+          type: 'text',
+          text: `Frame ${i + 1}/${maxFrames}:`
+        });
+        content.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/jpeg',
+            data: frames[i].replace(/^data:image\/[a-z]+;base64,/, '')
+          }
+        });
+      }
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content }]
+        })
+      });
+
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Analisis gagal.' });
+      const text = d.content?.[0]?.text || 'Analisis tidak tersedia.';
+      return res.status(200).json({ analysis: text });
+    }
+
     // ── VOICE PREVIEW ─────────────────────────────────────
     if (action === 'preview') {
       const { voiceId } = req.query;
