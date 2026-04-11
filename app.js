@@ -60,25 +60,37 @@ function showView(v) {
 
 // ── Auth ──────────────────────────────────────────────────
 function setupAuth() {
-  // Restore session
+  // Show login screen by default, check token
+  showLoginScreen();
   var saved = localStorage.getItem('adgen_token');
   if (saved) { authToken = saved; fetchMe(); }
 
-  $('btnAuthToggle') && $('btnAuthToggle').addEventListener('click', function() {
-    var modal = $('authModal');
-    if (modal) modal.style.display = modal.style.display==='flex' ? 'none' : 'flex';
-  });
-  $('authModalClose') && $('authModalClose').addEventListener('click', function() {
-    $('authModal').style.display='none';
-  });
-  $('authModalBg') && $('authModalBg').addEventListener('click', function() {
-    $('authModal').style.display='none';
-  });
   $('btnLogin') && $('btnLogin').addEventListener('click', doLogin);
   $('btnRegister') && $('btnRegister').addEventListener('click', doRegister);
   $('btnLogout') && $('btnLogout').addEventListener('click', doLogout);
   $('authTabLogin') && $('authTabLogin').addEventListener('click', function() { switchAuthTab('login'); });
   $('authTabRegister') && $('authTabRegister').addEventListener('click', function() { switchAuthTab('register'); });
+
+  // Enter key support
+  [$('loginPassword'), $('loginEmail')].forEach(function(el) {
+    el && el.addEventListener('keydown', function(e) { if (e.key==='Enter') doLogin(); });
+  });
+  [$('registerPassword'), $('registerEmail')].forEach(function(el) {
+    el && el.addEventListener('keydown', function(e) { if (e.key==='Enter') doRegister(); });
+  });
+}
+
+function showLoginScreen() {
+  var ls = $('loginScreen'), al = $('appLayout'), hv = $('historyView');
+  if (ls) ls.style.display = 'flex';
+  if (al) al.style.display = 'none';
+  if (hv) hv.style.display = 'none';
+}
+
+function showAppScreen() {
+  var ls = $('loginScreen'), al = $('appLayout');
+  if (ls) ls.style.display = 'none';
+  if (al) al.style.display = 'flex';
 }
 
 function switchAuthTab(t) {
@@ -105,7 +117,6 @@ async function doLogin() {
     authToken = d.access_token;
     localStorage.setItem('adgen_token', authToken);
     setUser(d.user);
-    $('authModal').style.display = 'none';
     showToast('Login berhasil!', 'success');
   } catch(e) { showToast(e.message, 'error'); }
   $('btnLogin').disabled = false;
@@ -142,6 +153,7 @@ function setUser(user) {
   if (userInfo) userInfo.style.display = 'flex';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'flex';
+  showAppScreen();
 }
 
 function clearUser() {
@@ -152,6 +164,7 @@ function clearUser() {
   if (userInfo) userInfo.style.display = 'none';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'none';
+  showLoginScreen();
 }
 
 // ── Save to history ───────────────────────────────────────
