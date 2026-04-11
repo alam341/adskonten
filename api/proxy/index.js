@@ -100,11 +100,15 @@ module.exports = async function handler(req, res) {
       const r = await fetch(`${SUPA_URL}/auth/v1/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, data: { username: email.replace('@adgen.local','') } }),
       });
       const d = await r.json();
       if (!r.ok) return res.status(400).json({ error: d.error_description || d.msg || 'Register gagal.' });
-      return res.status(200).json({ message: 'Cek email untuk konfirmasi.', user: d.user });
+      // Jika langsung dapat session, return token juga
+      if (d.access_token) {
+        return res.status(200).json({ access_token: d.access_token, user: d.user });
+      }
+      return res.status(200).json({ message: 'Daftar berhasil.', user: d.user });
     }
 
     // ── AUTH: GET USER ───────────────────────────────────
