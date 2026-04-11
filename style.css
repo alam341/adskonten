@@ -69,8 +69,8 @@ body { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; line-he
 .app-layout { display: flex; flex-direction: row; width: 100%; overflow: hidden; height: calc(100vh - 48px); }
 
 /* ── SIDEBAR ── */
-.sidebar { width: 300px; min-width: 300px; max-width: 300px; flex-shrink: 0; background: var(--bg-nav); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-.sidebar-inner { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+.sidebar { width: 300px; min-width: 300px; max-width: 300px; flex: 0 0 300px; background: var(--bg-nav); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; align-self: stretch; }
+.sidebar-inner { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; max-height: calc(100% - 69px); }
 .sidebar-inner::-webkit-scrollbar { width: 4px; }
 .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
 .sidebar-inner::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 2px; }
