@@ -784,21 +784,13 @@ async function fetchMotivation(textEl) {
     siaptempur: 'Siap tempur! Jadikan hari ini penuh pencapaian!'
   };
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res = await fetch('/api/proxy?action=motivation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 80,
-        messages: [{
-          role: 'user',
-          content: 'Berikan 1 kalimat motivasi baru dan unik (max 12 kata) dalam Bahasa Indonesia untuk seseorang yang merasa ' + motivationMood + ' saat bekerja sebagai tim kreatif iklan. Jangan ulangi kalimat sebelumnya. Langsung tulis kalimatnya saja tanpa tanda kutip.'
-        }]
-      })
+      body: JSON.stringify({ mood: motivationMood })
     });
     var data = await res.json();
-    var text = data.content && data.content[0] && data.content[0].text;
-    if (text && textEl) textEl.textContent = text.trim();
+    if (data.text && textEl) textEl.textContent = data.text;
   } catch(e) {
     if (textEl) textEl.textContent = fallbacks[motivationMood] || 'Semangat berkarya hari ini!';
   }
