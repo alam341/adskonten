@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
   $('vidBtnRegenerate') && $('vidBtnRegenerate').addEventListener('click', generate);
   $('musicBtnRegenerate') && $('musicBtnRegenerate').addEventListener('click', generate);
   $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
+  $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); });
+  $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
   $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
   $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('app'); });
   $('btnBackToApp') && $('btnBackToApp').addEventListener('click', function() { showView('app'); });
@@ -69,6 +71,8 @@ function showView(v) {
   if (appLayout) appLayout.style.display = v==='app' ? 'flex' : 'none';
   if (historyView) historyView.style.display = v==='history' ? 'flex' : 'none';
   if (adminView) adminView.style.display = v==='admin' ? 'flex' : 'none';
+  var analyzeView = $('analyzeView');
+  if (analyzeView) analyzeView.style.display = v==='analyze' ? 'flex' : 'none';
 }
 
 // ── Auth ──────────────────────────────────────────────────
@@ -172,6 +176,8 @@ function setUser(user, profile) {
   if (userInfo) userInfo.style.display = 'flex';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'flex';
+  var btnAnalyze = $('btnAnalyze');
+  if (btnAnalyze) btnAnalyze.style.display = 'flex';
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
   // Show welcome screen jika belum pernah hari ini
@@ -193,6 +199,8 @@ function clearUser() {
   if (userInfo) userInfo.style.display = 'none';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'none';
+  var btnAn = $('btnAnalyze');
+  if (btnAn) btnAn.style.display = 'none';
   showLoginScreen();
 }
 
@@ -707,6 +715,145 @@ async function adminAction(userId, act) {
     loadAdminUsers(currentAdminStatus);
   } catch(e) { showToast(e.message, 'error'); }
 }
+
+// ── Analyze Video ────────────────────────────────────────
+(function() {
+  var videoFile = null;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var zone = $('analyzeUploadZone');
+    var input = $('analyzeVideoInput');
+    var preview = $('analyzeVideoPreview');
+    var empty = $('analyzeUploadEmpty');
+    var btnStart = $('btnStartAnalyze');
+
+    if (!zone) return;
+
+    zone.addEventListener('click', function() {
+      if (preview.style.display !== 'none') return;
+      input.click();
+    });
+
+    input.addEventListener('change', function(e) {
+      var f = e.target.files[0];
+      if (!f) return;
+      if (f.size > 50 * 1024 * 1024) { showToast('Maks 50MB.', 'error'); return; }
+      videoFile = f;
+      var url = URL.createObjectURL(f);
+      preview.src = url;
+      preview.style.display = 'block';
+      empty.style.display = 'none';
+      if (btnStart) btnStart.disabled = false;
+    });
+
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor='var(--accent)'; });
+    zone.addEventListener('dragleave', function() { zone.style.borderColor=''; });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault(); zone.style.borderColor='';
+      var f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith('video/')) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+    });
+
+    if (btnStart) btnStart.addEventListener('click', startAnalyze);
+  });
+
+  async function startAnalyze() {
+    if (!videoFile) return;
+    var loadingEl = $('analyzeLoading');
+    var loadingText = $('analyzeLoadingText');
+    var emptyEl = $('analyzeEmpty');
+    var resultEl = $('analyzeResult');
+    var frameGrid = $('analyzeFrameGrid');
+    var framesEl = $('analyzeFrames');
+    var btnStart = $('btnStartAnalyze');
+
+    emptyEl.style.display = 'none';
+    resultEl.style.display = 'none';
+    loadingEl.style.display = 'block';
+    if (btnStart) btnStart.disabled = true;
+
+    try {
+      // Extract frames from video using canvas
+      if (loadingText) loadingText.textContent = 'Mengekstrak frames dari video...';
+      var frames = await extractFrames(videoFile, 5);
+
+      // Show frame thumbnails
+      if (framesEl) {
+        framesEl.innerHTML = '';
+        frames.forEach(function(f) {
+          var img = document.createElement('img');
+          img.src = f;
+          img.style.cssText = 'width:100%;border-radius:4px;object-fit:cover;height:50px';
+          framesEl.appendChild(img);
+        });
+      }
+      if (frameGrid) frameGrid.style.display = 'block';
+
+      if (loadingText) loadingText.textContent = 'Menganalisis dengan Claude AI...';
+
+      var productInfo = $('analyzeProductInfo') ? $('analyzeProductInfo').value.trim() : '';
+      var res = await fetch('/api/proxy?action=analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': authToken ? 'Bearer '+authToken : '' },
+        body: JSON.stringify({ frames: frames, productInfo: productInfo })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Analisis gagal.');
+
+      loadingEl.style.display = 'none';
+      resultEl.style.display = 'block';
+      // Render result
+      var html = data.analysis.replace(/\n/g, '<br>');
+      resultEl.innerHTML = html;
+
+    } catch(e) {
+      loadingEl.style.display = 'none';
+      emptyEl.style.display = 'flex';
+      showToast(e.message, 'error');
+    }
+    if (btnStart) btnStart.disabled = false;
+  }
+
+  function extractFrames(file, count) {
+    return new Promise(function(resolve, reject) {
+      var video = document.createElement('video');
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var frames = [];
+      var url = URL.createObjectURL(file);
+
+      video.src = url;
+      video.muted = true;
+      video.addEventListener('loadedmetadata', function() {
+        canvas.width = 640;
+        canvas.height = Math.round(640 * video.videoHeight / video.videoWidth);
+        var duration = video.duration;
+        var times = [];
+        for (var i = 0; i < count; i++) {
+          times.push((duration / (count + 1)) * (i + 1));
+        }
+        var idx = 0;
+        function captureNext() {
+          if (idx >= times.length) {
+            URL.revokeObjectURL(url);
+            resolve(frames);
+            return;
+          }
+          video.currentTime = times[idx];
+        }
+        video.addEventListener('seeked', function() {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          frames.push(canvas.toDataURL('image/jpeg', 0.8));
+          idx++;
+          captureNext();
+        });
+        captureNext();
+      });
+      video.addEventListener('error', function() { reject(new Error('Video tidak bisa dibaca.')); });
+      video.load();
+    });
+  }
+})();
 
 // ── Welcome Screen ───────────────────────────────────────
 function showWelcomeScreen(username) {
