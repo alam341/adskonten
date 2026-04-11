@@ -171,10 +171,10 @@ body { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; line-he
 .btn-generate:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ── CANVAS ── */
-/* removed */
+.canvas-area { flex: 1; min-width: 0; height: 100%; overflow: auto; background: var(--bg); display: flex; align-items: center; justify-content: center; position: relative; }
 
 /* ── EMPTY STATE ── */
-.state-empty { display: flex; align-items: center; gap: 20px; text-align: left; }
+.state-empty { display: flex; align-items: center; gap: 20px; text-align: left; padding: 40px; }
 .empty-art { color: #333340; margin-bottom: 24px; display: flex; justify-content: center; }
 .empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #c0c0cc; margin-bottom: 10px; letter-spacing: -0.3px; }
 .empty-desc { font-size: 13px; color: var(--text-5); line-height: 1.7; margin-bottom: 32px; }
@@ -525,5 +525,3 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .btn-approve:hover { background:#16a34a; }
 .btn-reject { padding:7px 16px; border-radius:7px; border:none; background:#ef4444; color:white; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; transition:background 0.15s; }
 .btn-reject:hover { background:#dc2626; }
-
-.canvas-area { flex: 1; min-width: 0; height: 100%; overflow: auto; background: var(--bg); display: flex; align-items: center; justify-content: center; position: relative; }
