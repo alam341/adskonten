@@ -467,7 +467,7 @@ Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
       if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
 
       const { imageBase64, productInfo, platform, tone, frameworks } = req.body;
-      if (!productInfo) return res.status(400).json({ error: 'Info produk wajib diisi.' });
+      // productInfo opsional - bisa kosong kalau ada gambar
 
       const fwList = frameworks && frameworks.length ? frameworks.join(', ') : 'AIDA, PAS';
       const prompt = `Kamu adalah copywriter iklan profesional Indonesia kelas dunia. Buat copywriting iklan yang menjual.
