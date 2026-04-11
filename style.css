@@ -534,3 +534,58 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 [data-panel="clone"] .model-row { padding: 6px 10px; }
 [data-panel="clone"] .ratio-grid { gap: 4px; }
 [data-panel="clone"] .ratio-cell { padding: 5px 2px; }
+
+/* ── Welcome Screen ── */
+.welcome-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  z-index: 600; display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.welcome-card {
+  background: var(--bg-nav); border: 1px solid var(--border);
+  border-radius: 24px; padding: 40px 36px; width: 100%; max-width: 460px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.35); text-align: center;
+}
+.welcome-greeting {
+  font-size: 14px; color: var(--accent); font-weight: 600;
+  letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;
+}
+.welcome-name {
+  font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700;
+  color: var(--text-1); margin-bottom: 8px; letter-spacing: -0.3px;
+}
+.welcome-sub {
+  font-size: 13px; color: var(--text-4); margin-bottom: 28px;
+}
+.mood-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px;
+}
+.mood-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 8px; border-radius: 12px; border: 1.5px solid var(--border);
+  background: var(--bg-surface); cursor: pointer; transition: all 0.15s;
+  font-family: inherit;
+}
+.mood-btn:hover { border-color: var(--accent); background: var(--accent-dim); transform: translateY(-2px); }
+.mood-btn.selected { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 0 0 3px rgba(124,110,250,0.15); }
+.mood-emoji { font-size: 28px; line-height: 1; }
+.mood-label { font-size: 11px; font-weight: 500; color: var(--text-3); }
+.welcome-skip {
+  background: none; border: none; color: var(--text-5); font-family: inherit;
+  font-size: 13px; cursor: pointer; padding: 8px 16px; border-radius: 8px;
+  transition: color 0.15s;
+}
+.welcome-skip:hover { color: var(--text-2); }
+
+/* ── Motivation Bar ── */
+.motivation-bar {
+  height: 36px; display: flex; align-items: center; justify-content: center;
+  gap: 8px; background: linear-gradient(90deg, var(--accent-dim), rgba(124,110,250,0.05));
+  border-bottom: 1px solid rgba(124,110,250,0.15); padding: 0 20px;
+  font-size: 12.5px; color: var(--text-3);
+}
+.motivation-icon { font-size: 14px; }
+.motivation-text { font-style: italic; }
+[data-theme="light"] .motivation-bar { background: linear-gradient(90deg, rgba(101,88,232,0.07), rgba(101,88,232,0.02)); }
+
+/* App layout offset when motivation bar visible */
+.app-layout.has-motivation { height: calc(100vh - 84px); }
