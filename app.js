@@ -174,6 +174,14 @@ function setUser(user, profile) {
   if (btnHist) btnHist.style.display = 'flex';
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
+  // Show welcome screen jika belum pernah hari ini
+  var today = new Date().toDateString();
+  var lastWelcome = localStorage.getItem('adstudio_welcome_date');
+  if (lastWelcome !== today) {
+    localStorage.setItem('adstudio_welcome_date', today);
+    var uname = profile ? profile.username : (user.email||'').replace('@adgen.local','');
+    setTimeout(function() { showWelcomeScreen(uname); }, 300);
+  }
   showAppScreen();
 }
 
@@ -463,7 +471,7 @@ async function generateClone() {
     var urls = [];
     for (var ti = 0; ti < taskIds.length; ti++) {
       try {
-        var result = await pollStatus(taskIds[ti], gen.taskType||'jobs', 150);
+        var result = await pollStatus(taskIds[ti], gen.taskType||'jobs', 60);
         if (Array.isArray(result)) urls = urls.concat(result);
         else if (result) urls.push(result);
       } catch(e) { console.warn(e.message); }
@@ -698,6 +706,84 @@ async function adminAction(userId, act) {
     showToast(act==='approve' ? 'User disetujui!' : 'User ditolak.', 'success');
     loadAdminUsers(currentAdminStatus);
   } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Welcome Screen ───────────────────────────────────────
+function showWelcomeScreen(username) {
+  var ws = $('welcomeScreen');
+  if (!ws) return;
+
+  // Greeting sesuai waktu
+  var hour = new Date().getHours();
+  var greeting = hour < 11 ? 'Selamat Pagi' : hour < 15 ? 'Selamat Siang' : hour < 18 ? 'Selamat Sore' : 'Selamat Malam';
+  $('welcomeGreeting') && ($('welcomeGreeting').textContent = greeting + ',');
+  $('welcomeName') && ($('welcomeName').textContent = username + ' 👋');
+
+  ws.style.display = 'flex';
+
+  // Mood buttons
+  document.querySelectorAll('.mood-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.mood-btn').forEach(function(b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      var mood = btn.dataset.mood;
+      var emoji = btn.dataset.emoji;
+      setTimeout(function() {
+        ws.style.display = 'none';
+        generateMotivation(mood, emoji, username);
+      }, 400);
+    });
+  });
+
+  $('welcomeSkip') && $('welcomeSkip').addEventListener('click', function() {
+    ws.style.display = 'none';
+  });
+}
+
+async function generateMotivation(mood, emoji, username) {
+  var bar = $('motivationBar');
+  var textEl = $('motivationText');
+  var iconEl = $('motivationIcon');
+  if (!bar) return;
+
+  bar.style.display = 'flex';
+  if (iconEl) iconEl.textContent = emoji;
+  if (textEl) textEl.textContent = 'Generating motivasi...';
+
+  // Adjust app-layout height
+  var appLayout = $('appLayout');
+  if (appLayout) appLayout.classList.add('has-motivation');
+
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 100,
+        messages: [{
+          role: 'user',
+          content: 'Berikan 1 kalimat motivasi singkat (max 12 kata) dalam Bahasa Indonesia yang sesuai untuk seseorang yang merasa ' + mood + ' saat memulai kerja sebagai tim kreatif iklan. Langsung tulis kalimatnya saja tanpa tanda kutip atau penjelasan.'
+        }]
+      })
+    });
+    var data = await res.json();
+    var text = data.content && data.content[0] && data.content[0].text;
+    if (text && textEl) textEl.textContent = text.trim();
+  } catch(e) {
+    var fallbacks = {
+      bahagia: 'Energimu hari ini, jadikan karya iklan yang luar biasa!',
+      semangat: 'Semangatmu adalah bahan bakar kreativitas terbaik!',
+      biasa: 'Hari biasa pun bisa menghasilkan karya yang luar biasa.',
+      lelah: 'Istirahat sejenak, lalu bangkit lebih kuat dari sebelumnya.',
+      sedih: 'Kreativitas terbaik lahir dari hati yang paling dalam.',
+      stres: 'Tarik napas, fokus satu langkah. Kamu pasti bisa!',
+      onfire: 'Hari ini adalah harimu — ciptakan sesuatu yang epik!',
+      kurangsehat: 'Jaga dirimu, kesehatan adalah modal utama berkarya.',
+      siaployy: 'Siap tempur! Jadikan hari ini penuh pencapaian!'
+    };
+    if (textEl) textEl.textContent = fallbacks[mood] || 'Semangat berkarya hari ini!';
+  }
 }
 
 // ── Theme Toggle ──────────────────────────────────────────
