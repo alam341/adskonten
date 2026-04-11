@@ -525,3 +525,12 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .btn-approve:hover { background:#16a34a; }
 .btn-reject { padding:7px 16px; border-radius:7px; border:none; background:#ef4444; color:white; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; transition:background 0.15s; }
 .btn-reject:hover { background:#dc2626; }
+
+/* ── Clone Style compact ── */
+[data-panel="clone"] .panel-group { margin-bottom: 8px; }
+[data-panel="clone"] .upload-empty { padding: 12px; gap: 3px; }
+[data-panel="clone"] .upload-empty svg { width: 20px; height: 20px; }
+[data-panel="clone"] .upload-filled img { height: 90px; }
+[data-panel="clone"] .model-row { padding: 6px 10px; }
+[data-panel="clone"] .ratio-grid { gap: 4px; }
+[data-panel="clone"] .ratio-cell { padding: 5px 2px; }
