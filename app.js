@@ -56,6 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
   $('musicBtnRegenerate') && $('musicBtnRegenerate').addEventListener('click', generate);
   $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
   $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); setupAnalyzeTab(); });
+  $('btnCekIklan') && $('btnCekIklan').addEventListener('click', function() { showView('cekiklan'); setupCekIklan(); });
+  $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { showView('app'); });
   $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
 
   $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
@@ -74,6 +76,8 @@ function showView(v) {
   if (adminView) adminView.style.display = v==='admin' ? 'flex' : 'none';
   var analyzeView = $('analyzeView');
   if (analyzeView) analyzeView.style.display = v==='analyze' ? 'flex' : 'none';
+  var cekIklanView = $('cekIklanView');
+  if (cekIklanView) cekIklanView.style.display = v==='cekiklan' ? 'flex' : 'none';
 
 }
 
@@ -180,6 +184,8 @@ function setUser(user, profile) {
   if (btnHist) btnHist.style.display = 'flex';
   var btnAn = $('btnAnalyze');
   if (btnAn) btnAn.style.display = 'flex';
+  var btnCek = $('btnCekIklan');
+  if (btnCek) btnCek.style.display = 'flex';
 
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
@@ -204,6 +210,8 @@ function clearUser() {
   if (btnHist) btnHist.style.display = 'none';
   var btnAn2 = $('btnAnalyze');
   if (btnAn2) btnAn2.style.display = 'none';
+  var btnCek2 = $('btnCekIklan');
+  if (btnCek2) btnCek2.style.display = 'none';
 
   showLoginScreen();
 }
@@ -875,6 +883,91 @@ async function startAnalyze() {
       video.load();
     });
   }
+
+// ── Cek Kualitas Iklan ───────────────────────────────────
+var cekIklanBase64 = null;
+
+function setupCekIklan() {
+  var zone = $('cekIklanUploadZone');
+  var input = $('cekIklanInput');
+  var preview = $('cekIklanPreview');
+  var empty = $('cekIklanUploadEmpty');
+  var btn = $('btnStartCekIklan');
+  if (!zone || zone._initialized) return;
+  zone._initialized = true;
+
+  zone.addEventListener('click', function() {
+    if (preview && preview.style.display !== 'none') return;
+    input.click();
+  });
+  empty && empty.addEventListener('click', function(e) { e.stopPropagation(); input.click(); });
+
+  input.addEventListener('change', function(e) {
+    var f = e.target.files[0]; if (!f) return;
+    if (f.size > 10*1024*1024) { showToast('Maks 10MB.','error'); return; }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      cekIklanBase64 = ev.target.result;
+      if (preview) { preview.src = cekIklanBase64; preview.style.display = 'block'; }
+      if (empty) empty.style.display = 'none';
+      if (btn) btn.disabled = false;
+    };
+    reader.readAsDataURL(f);
+  });
+
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor='var(--accent)'; });
+  zone.addEventListener('dragleave', function() { zone.style.borderColor=''; });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault(); zone.style.borderColor='';
+    var f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) { input.files=e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+  });
+
+  if (btn) btn.addEventListener('click', startCekIklan);
+}
+
+async function startCekIklan() {
+  if (!cekIklanBase64) { showToast('Upload gambar dulu.','error'); return; }
+  var loading = $('cekIklanLoading');
+  var empty = $('cekIklanEmpty');
+  var right = $('cekIklanRight');
+  var btn = $('btnStartCekIklan');
+  var platform = $('cekIklanPlatform') ? $('cekIklanPlatform').value : '';
+  var info = $('cekIklanInfo') ? $('cekIklanInfo').value.trim() : '';
+
+  if (empty) empty.style.display = 'none';
+  if (loading) loading.style.display = 'block';
+  if (btn) btn.disabled = true;
+
+  try {
+    var res = await fetch('/api/proxy?action=cekiklan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+(authToken||localStorage.getItem('adstudio_token')||'') },
+      body: JSON.stringify({ imageBase64: cekIklanBase64, platform, productInfo: info })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gagal.');
+
+    if (loading) loading.style.display = 'none';
+    if (right) {
+      var copyBtn = document.createElement('button');
+      copyBtn.className = 'btn-ghost';
+      copyBtn.textContent = 'Copy Hasil';
+      var textDiv = document.createElement('div');
+      textDiv.style.cssText = 'font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;margin-top:16px';
+      textDiv.textContent = data.analysis;
+      copyBtn.onclick = function() { navigator.clipboard.writeText(textDiv.textContent); showToast('Disalin!','success'); };
+      right.innerHTML = '';
+      right.appendChild(copyBtn);
+      right.appendChild(textDiv);
+    }
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    if (empty) empty.style.display = 'flex';
+    showToast(e.message, 'error');
+  }
+  if (btn) btn.disabled = false;
+}
 
 // ── Welcome Screen ───────────────────────────────────────
 function showWelcomeScreen(username) {
