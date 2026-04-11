@@ -418,3 +418,43 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
   background-color: #ffffff;
   border-color: #d0d0dc;
 }
+
+/* ── Auth ── */
+.nav-icon-btn { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500; padding:6px 12px; border-radius:8px; border:1px solid var(--border-input); background:var(--bg-surface); color:var(--text-3); cursor:pointer; font-family:inherit; transition:all 0.15s; }
+.nav-icon-btn:hover { color:var(--text-2); border-color:var(--border-hover); }
+.btn-auth { border-color:rgba(124,110,250,0.3); color:var(--accent); }
+.btn-history { }
+.user-info { display:flex; align-items:center; gap:10px; }
+.user-email { font-size:12px; color:var(--text-4); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.btn-logout { font-size:11px; padding:4px 10px; border-radius:6px; border:1px solid var(--border-input); background:none; color:var(--text-5); cursor:pointer; font-family:inherit; transition:all 0.15s; }
+.btn-logout:hover { color:#f08080; border-color:rgba(220,80,80,0.4); }
+
+.auth-modal { position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; }
+.auth-modal-bg { position:absolute; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); }
+.auth-modal-inner { position:relative; z-index:1; background:var(--bg-nav); border:1px solid var(--border); border-radius:16px; padding:32px; width:100%; max-width:380px; }
+.auth-logo { display:flex; align-items:center; gap:10px; margin-bottom:24px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; color:var(--text-1); }
+.auth-tabs { display:flex; gap:4px; background:var(--bg-surface); border-radius:9px; padding:4px; margin-bottom:20px; }
+.auth-tab { flex:1; padding:7px; border:none; border-radius:7px; background:none; color:var(--text-5); font-family:inherit; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; }
+.auth-tab.active { background:var(--bg-hover); color:var(--text-2); }
+.auth-field { margin-bottom:14px; }
+.auth-field label { display:block; font-size:11px; font-weight:600; color:var(--text-4); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+
+/* ── History View ── */
+.history-view { position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; flex-direction:column; overflow:hidden; }
+.history-header { height:56px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 24px; border-bottom:1px solid var(--border); background:var(--bg-nav); }
+.history-title { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--text-1); }
+.history-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-5); font-size:14px; }
+.history-grid { flex:1; overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; padding:20px; align-content:start; }
+.history-loading { grid-column:1/-1; text-align:center; color:var(--text-5); padding:40px; }
+.history-card { background:var(--bg-nav); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:border-color 0.15s; }
+.history-card:hover { border-color:var(--border-hover); }
+.history-card img { width:100%; height:160px; object-fit:cover; display:block; }
+.history-thumb-placeholder { height:160px; display:flex; align-items:center; justify-content:center; font-size:40px; background:var(--bg-surface); }
+.history-card-info { padding:8px 10px 4px; }
+.history-card-type { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--accent); }
+.history-card-model { font-size:11px; color:var(--text-4); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.history-card-date { font-size:10px; color:var(--text-6); margin-top:2px; }
+.history-card-actions { display:flex; gap:6px; padding:6px 10px 10px; }
+.btn-dl-hist, .btn-del-hist { flex:1; padding:5px; border-radius:6px; border:1px solid var(--border-input); background:none; color:var(--text-4); cursor:pointer; font-size:13px; text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; transition:all 0.15s; font-family:inherit; }
+.btn-dl-hist:hover { background:var(--accent-dim); color:var(--accent); border-color:rgba(124,110,250,0.3); }
+.btn-del-hist:hover { background:rgba(220,80,80,0.1); color:#f08080; border-color:rgba(220,80,80,0.3); }
