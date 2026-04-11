@@ -289,7 +289,7 @@ module.exports = async function handler(req, res) {
 
       // Image
       const apiKey = getKey('image');
-      const { model, imageUrl, prompt, ratio, negPrompt, strength, quantity } = body;
+      const { model, imageUrl, secondImageUrl, prompt, ratio, negPrompt, strength, quantity } = body;
       const qty = Math.min(Math.max(parseInt(quantity)||1,1),20);
       const ratioVal = ratio||'1:1';
       const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
@@ -308,7 +308,11 @@ module.exports = async function handler(req, res) {
       }
 
       let input = { prompt };
-      if (model === 'gpt-image/1.5-image-to-image') { input.input_urls=[imageUrl]; input.aspect_ratio=ratioVal; input.quality='medium'; }
+      if (model === 'gpt-image/1.5-image-to-image') {
+        // GPT Image support multiple input_urls - kirim referensi + produk
+        input.input_urls = secondImageUrl ? [imageUrl, secondImageUrl] : [imageUrl];
+        input.aspect_ratio = ratioVal; input.quality = 'medium';
+      }
       else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
       else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
       else if (model === 'grok-imagine/image-to-image') { input.image_urls=[imageUrl]; input.quality_mode=true; }
