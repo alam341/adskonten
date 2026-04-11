@@ -304,9 +304,13 @@ async function generateImage() {
     for (var ti = 0; ti < taskIds.length; ti++) {
       updateSub('Mengambil gambar '+(ti+1)+' dari '+taskIds.length+'...');
       try {
-        var url = await pollStatus(taskIds[ti], gen.taskType||'jobs', 90);
-        if (url) urls.push(url);
-        // Tampilkan yang sudah selesai sementara nunggu sisanya
+        var result = await pollStatus(taskIds[ti], gen.taskType||'jobs', 90);
+        // result bisa string (1 URL) atau array (multiple URLs dari Grok dll)
+        if (Array.isArray(result)) {
+          urls = urls.concat(result);
+        } else if (result) {
+          urls.push(result);
+        }
         if (urls.length > 0) showImageResult(urls);
       } catch(e) {
         console.warn('Task '+taskIds[ti]+' gagal:', e.message);
@@ -382,6 +386,8 @@ async function pollStatus(taskId, type, maxAttempts) {
     updateSub('Memproses... ('+(i+1)+'/'+maxAttempts+')');
     var data = await proxyGet('status', { taskId: taskId, type: type });
     if (['success','SUCCESS','completed','COMPLETED'].indexOf(data.status) >= 0) {
+      // Return array kalau ada multiple images (misal Grok return 2)
+      if (data.imageUrls && data.imageUrls.length > 1) return data.imageUrls;
       var url = data.imageUrl || data.videoUrl;
       if (!url) throw new Error('Hasil tidak ditemukan.');
       return url;
