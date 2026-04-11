@@ -55,8 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
   $('vidBtnRegenerate') && $('vidBtnRegenerate').addEventListener('click', generate);
   $('musicBtnRegenerate') && $('musicBtnRegenerate').addEventListener('click', generate);
   $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
-  $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); });
-  $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
+
   $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
   $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('app'); });
   $('btnBackToApp') && $('btnBackToApp').addEventListener('click', function() { showView('app'); });
@@ -71,8 +70,7 @@ function showView(v) {
   if (appLayout) appLayout.style.display = v==='app' ? 'flex' : 'none';
   if (historyView) historyView.style.display = v==='history' ? 'flex' : 'none';
   if (adminView) adminView.style.display = v==='admin' ? 'flex' : 'none';
-  var analyzeView = $('analyzeView');
-  if (analyzeView) analyzeView.style.display = v==='analyze' ? 'flex' : 'none';
+
 }
 
 // ── Auth ──────────────────────────────────────────────────
@@ -176,8 +174,7 @@ function setUser(user, profile) {
   if (userInfo) userInfo.style.display = 'flex';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'flex';
-  var btnAnalyze = $('btnAnalyze');
-  if (btnAnalyze) btnAnalyze.style.display = 'flex';
+
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
   // Show welcome screen jika belum pernah hari ini
@@ -199,8 +196,7 @@ function clearUser() {
   if (userInfo) userInfo.style.display = 'none';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'none';
-  var btnAn = $('btnAnalyze');
-  if (btnAn) btnAn.style.display = 'none';
+
   showLoginScreen();
 }
 
@@ -283,11 +279,12 @@ function setupTabs() {
       activeTab = btn.dataset.tab;
       document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab===activeTab); });
       document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = p.dataset.panel===activeTab ? 'block':'none'; });
-      var labels = { image:'Generate Gambar', video:'Generate Video', music:'Generate Speech', clone:'Clone Style' };
+      var labels = { image:'Generate Gambar', video:'Generate Video', music:'Generate Speech', clone:'Clone Style', analyze:'Mulai Analisis' };
       $('btnGenerateLabel') && ($('btnGenerateLabel').textContent = labels[activeTab]||'Generate');
-      var titles = { image:'Generate Konten Iklan — Gambar', video:'Generate Konten Iklan — Video', music:'Generate Narasi / Voice Over', clone:'Clone Style Iklan Kompetitor' };
+      var titles = { image:'Generate Konten Iklan — Gambar', video:'Generate Konten Iklan — Video', music:'Generate Narasi / Voice Over', clone:'Clone Style Iklan Kompetitor', analyze:'Analisis Video Iklan Kompetitor' };
       $('emptyTitle') && ($('emptyTitle').textContent = titles[activeTab]||'');
       showState('empty');
+      if (activeTab === 'analyze') setupAnalyzeTab();
     });
   });
 }
@@ -409,6 +406,7 @@ function generate() {
   if (activeTab==='video') generateVideo();
   if (activeTab==='music') generateSpeech();
   if (activeTab==='clone') generateClone();
+  if (activeTab==='analyze') startAnalyze();
 }
 
 async function generateImage() {
@@ -597,7 +595,8 @@ function showState(s) {
   $('stateResultImg')    && ($('stateResultImg').style.display    = s==='img'    ?'flex':'none');
   $('stateResultVid')    && ($('stateResultVid').style.display    = s==='vid'    ?'flex':'none');
   $('stateResultMusic')  && ($('stateResultMusic').style.display  = s==='music'  ?'flex':'none');
-  $('stateResultClone')  && ($('stateResultClone').style.display  = s==='clone'  ?'flex':'none');
+  $('stateResultClone')  && ($('stateResultClone').style.display  = s==='clone'   ?'flex':'none');
+  $('stateResultAnalyze') && ($('stateResultAnalyze').style.display = s==='analyze' ?'flex':'none');
   $('btnGenerate')       && ($('btnGenerate').disabled            = s==='loading');
 }
 function resetProgress() { var pb=$('progressBar'); if(!pb)return; pb.style.animation='none';pb.offsetHeight;pb.style.animation=''; }
@@ -717,65 +716,60 @@ async function adminAction(userId, act) {
 }
 
 // ── Analyze Video ────────────────────────────────────────
-(function() {
-  var videoFile = null;
+var analyzeVideoFile = null;
 
-  document.addEventListener('DOMContentLoaded', function() {
-    var zone = $('analyzeUploadZone');
-    var input = $('analyzeVideoInput');
-    var preview = $('analyzeVideoPreview');
-    var empty = $('analyzeUploadEmpty');
-    var btnStart = $('btnStartAnalyze');
+function setupAnalyzeTab() {
+  var zone = $('analyzeUploadZone');
+  var input = $('analyzeVideoInput');
+  var preview = $('analyzeVideoPreview');
+  var empty = $('analyzeUploadEmpty');
+  if (!zone || zone._initialized) return;
+  zone._initialized = true;
 
-    if (!zone) return;
+  zone.addEventListener('click', function() {
+    if (preview && preview.style.display !== 'none') return;
+    input.click();
+  });
+  empty && empty.addEventListener('click', function(e) { e.stopPropagation(); input.click(); });
 
-    zone.addEventListener('click', function() {
-      if (preview.style.display !== 'none') return;
-      input.click();
-    });
-
-    input.addEventListener('change', function(e) {
-      var f = e.target.files[0];
-      if (!f) return;
-      if (f.size > 50 * 1024 * 1024) { showToast('Maks 50MB.', 'error'); return; }
-      videoFile = f;
-      var url = URL.createObjectURL(f);
-      preview.src = url;
-      preview.style.display = 'block';
-      empty.style.display = 'none';
-      if (btnStart) btnStart.disabled = false;
-    });
-
-    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor='var(--accent)'; });
-    zone.addEventListener('dragleave', function() { zone.style.borderColor=''; });
-    zone.addEventListener('drop', function(e) {
-      e.preventDefault(); zone.style.borderColor='';
-      var f = e.dataTransfer.files[0];
-      if (f && f.type.startsWith('video/')) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
-    });
-
-    if (btnStart) btnStart.addEventListener('click', startAnalyze);
+  input.addEventListener('change', function(e) {
+    var f = e.target.files[0]; if (!f) return;
+    if (f.size > 50*1024*1024) { showToast('Maks 50MB.','error'); return; }
+    analyzeVideoFile = f;
+    var url = URL.createObjectURL(f);
+    if (preview) { preview.src=url; preview.style.display='block'; }
+    if (empty) empty.style.display='none';
   });
 
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor='var(--accent)'; });
+  zone.addEventListener('dragleave', function() { zone.style.borderColor=''; });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault(); zone.style.borderColor='';
+    var f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('video/')) { input.files=e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+  });
+}
+
+// Called from tab switch and generate button
+(function() {
+
   async function startAnalyze() {
-    if (!videoFile) return;
-    var loadingEl = $('analyzeLoading');
-    var loadingText = $('analyzeLoadingText');
-    var emptyEl = $('analyzeEmpty');
-    var resultEl = $('analyzeResult');
+    var urlInput = $('analyzeVideoUrl');
+    var videoUrl = urlInput ? urlInput.value.trim() : '';
+    if (!analyzeVideoFile && !videoUrl) { showToast('Upload video atau paste link dulu.','error'); return; }
+
     var frameGrid = $('analyzeFrameGrid');
     var framesEl = $('analyzeFrames');
-    var btnStart = $('btnStartAnalyze');
-
-    emptyEl.style.display = 'none';
-    resultEl.style.display = 'none';
-    loadingEl.style.display = 'block';
-    if (btnStart) btnStart.disabled = true;
+    showState('loading'); resetProgress(); updateSub('Memproses video...');
 
     try {
       // Extract frames from video using canvas
       if (loadingText) loadingText.textContent = 'Mengekstrak frames dari video...';
-      var frames = await extractFrames(videoFile, 5);
+      var frames = [];
+      if (analyzeVideoFile) {
+        updateSub('Mengekstrak frames dari video...');
+        frames = await extractFrames(analyzeVideoFile, 5);
+      }
 
       // Show frame thumbnails
       if (framesEl) {
@@ -800,18 +794,16 @@ async function adminAction(userId, act) {
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Analisis gagal.');
 
-      loadingEl.style.display = 'none';
-      resultEl.style.display = 'block';
-      // Render result
-      var html = data.analysis.replace(/\n/g, '<br>');
-      resultEl.innerHTML = html;
+      // Show result in canvas
+      showState('analyze');
+      var resultText = $('analyzeResultText');
+      if (resultText) resultText.textContent = data.analysis;
+      $('analyzeResultMeta') && ($('analyzeResultMeta').textContent = 'Analisis selesai · ' + new Date().toLocaleTimeString('id-ID'));
 
     } catch(e) {
-      loadingEl.style.display = 'none';
-      emptyEl.style.display = 'flex';
+      showState('empty');
       showToast(e.message, 'error');
     }
-    if (btnStart) btnStart.disabled = false;
   }
 
   function extractFrames(file, count) {
