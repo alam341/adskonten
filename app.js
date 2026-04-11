@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
   $('vidBtnRegenerate') && $('vidBtnRegenerate').addEventListener('click', generate);
   $('musicBtnRegenerate') && $('musicBtnRegenerate').addEventListener('click', generate);
   $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
+  $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); setupAnalyzeTab(); });
+  $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
 
   $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
   $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('app'); });
@@ -70,6 +72,8 @@ function showView(v) {
   if (appLayout) appLayout.style.display = v==='app' ? 'flex' : 'none';
   if (historyView) historyView.style.display = v==='history' ? 'flex' : 'none';
   if (adminView) adminView.style.display = v==='admin' ? 'flex' : 'none';
+  var analyzeView = $('analyzeView');
+  if (analyzeView) analyzeView.style.display = v==='analyze' ? 'flex' : 'none';
 
 }
 
@@ -174,6 +178,8 @@ function setUser(user, profile) {
   if (userInfo) userInfo.style.display = 'flex';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'flex';
+  var btnAn = $('btnAnalyze');
+  if (btnAn) btnAn.style.display = 'flex';
 
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
@@ -196,6 +202,8 @@ function clearUser() {
   if (userInfo) userInfo.style.display = 'none';
   var btnHist = $('btnHistory');
   if (btnHist) btnHist.style.display = 'none';
+  var btnAn2 = $('btnAnalyze');
+  if (btnAn2) btnAn2.style.display = 'none';
 
   showLoginScreen();
 }
@@ -725,6 +733,8 @@ function setupAnalyzeTab() {
   var empty = $('analyzeUploadEmpty');
   if (!zone || zone._initialized) return;
   zone._initialized = true;
+  var btnStart = $('btnStartAnalyze');
+  if (btnStart) btnStart.addEventListener('click', startAnalyze);
 
   zone.addEventListener('click', function() {
     if (preview && preview.style.display !== 'none') return;
@@ -760,7 +770,15 @@ function setupAnalyzeTab() {
 
     var frameGrid = $('analyzeFrameGrid');
     var framesEl = $('analyzeFrames');
-    showState('loading'); resetProgress(); updateSub('Memproses video...');
+    var loadingEl = $('analyzeLoading');
+    var emptyEl = $('analyzeEmpty');
+    var resultEl = $('analyzeResult');
+    var btnStart = $('btnStartAnalyze');
+
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (resultEl) resultEl.style.display = 'none';
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (btnStart) btnStart.disabled = true;
 
     try {
       // Extract frames from video using canvas
@@ -794,16 +812,17 @@ function setupAnalyzeTab() {
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Analisis gagal.');
 
-      // Show result in canvas
-      showState('analyze');
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (resultEl) resultEl.style.display = 'block';
       var resultText = $('analyzeResultText');
       if (resultText) resultText.textContent = data.analysis;
-      $('analyzeResultMeta') && ($('analyzeResultMeta').textContent = 'Analisis selesai · ' + new Date().toLocaleTimeString('id-ID'));
 
     } catch(e) {
-      showState('empty');
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'flex';
       showToast(e.message, 'error');
     }
+    if (btnStart) btnStart.disabled = false;
   }
 
   function extractFrames(file, count) {
