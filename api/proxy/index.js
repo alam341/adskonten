@@ -1,43 +1,197 @@
+const https = require('https');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // API key terpisah per fitur — fallback ke KIE_API_KEY jika yang spesifik tidak diset
-  const KEY_IMAGE  = process.env.KIE_API_KEY_IMAGE  || process.env.KIE_API_KEY;
-  const KEY_VIDEO  = process.env.KIE_API_KEY_VIDEO  || process.env.KIE_API_KEY;
-  const KEY_SPEECH = process.env.KIE_API_KEY_SPEECH || process.env.KIE_API_KEY;
-
-  if (!KEY_IMAGE && !KEY_VIDEO && !KEY_SPEECH) {
-    return res.status(500).json({ error: 'Tidak ada API key. Set KIE_API_KEY_IMAGE/VIDEO/SPEECH di Vercel.' });
-  }
+  const KEY_IMAGE  = process.env.KIE_API_KEY_IMAGE;
+  const KEY_VIDEO  = process.env.KIE_API_KEY_VIDEO;
+  const KEY_SPEECH = process.env.KIE_API_KEY_SPEECH;
+  const SUPA_URL   = process.env.SUPABASE_URL;
+  const SUPA_ANON  = process.env.SUPABASE_ANON_KEY;
+  const SUPA_SVC   = process.env.SUPABASE_SERVICE_KEY;
 
   function getKey(type) {
-    if (type === 'video')  return KEY_VIDEO  || KEY_IMAGE;
-    if (type === 'speech') return KEY_SPEECH || KEY_IMAGE;
-    return KEY_IMAGE;
+    if (type === 'video')  return KEY_VIDEO  || KEY_IMAGE || KEY_SPEECH;
+    if (type === 'speech') return KEY_SPEECH || KEY_IMAGE || KEY_VIDEO;
+    return KEY_IMAGE || KEY_VIDEO || KEY_SPEECH;
   }
 
   const action = req.query.action;
 
+  // Helper: get user from JWT token
+  async function getUser(token) {
+    if (!token || !SUPA_URL || !SUPA_ANON) return null;
+    try {
+      const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON }
+      });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch(e) { return null; }
+  }
+
+  // Helper: save history to Supabase
+  async function saveHistory(userId, data) {
+    if (!SUPA_URL || !SUPA_SVC) return null;
+    try {
+      const r = await fetch(`${SUPA_URL}/rest/v1/histories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPA_SVC}`,
+          'apikey': SUPA_SVC,
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify({ user_id: userId, ...data }),
+      });
+      const d = await r.json();
+      return Array.isArray(d) ? d[0] : d;
+    } catch(e) { return null; }
+  }
+
+  // Helper: upload image to Supabase Storage
+  async function uploadToStorage(userId, imageUrl, filename) {
+    if (!SUPA_URL || !SUPA_SVC) return null;
+    try {
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) return null;
+      const buf = await imgRes.arrayBuffer();
+      const path = `${userId}/${filename}`;
+      const r = await fetch(`${SUPA_URL}/storage/v1/object/adgen-results/${path}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPA_SVC}`,
+          'apikey': SUPA_SVC,
+          'Content-Type': imgRes.headers.get('content-type') || 'image/jpeg',
+          'x-upsert': 'true',
+        },
+        body: buf,
+      });
+      if (!r.ok) return null;
+      return `${SUPA_URL}/storage/v1/object/public/adgen-results/${path}`;
+    } catch(e) { return null; }
+  }
+
   try {
+
+    // ── AUTH: LOGIN ──────────────────────────────────────
+    if (action === 'login') {
+      if (req.method !== 'POST') return res.status(405).end();
+      if (!SUPA_URL || !SUPA_ANON) return res.status(500).json({ error: 'Supabase belum dikonfigurasi.' });
+      const { email, password } = req.body;
+      const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(400).json({ error: d.error_description || d.msg || 'Login gagal.' });
+      return res.status(200).json({ access_token: d.access_token, user: d.user });
+    }
+
+    // ── AUTH: REGISTER ───────────────────────────────────
+    if (action === 'register') {
+      if (req.method !== 'POST') return res.status(405).end();
+      if (!SUPA_URL || !SUPA_ANON) return res.status(500).json({ error: 'Supabase belum dikonfigurasi.' });
+      const { email, password } = req.body;
+      const r = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(400).json({ error: d.error_description || d.msg || 'Register gagal.' });
+      return res.status(200).json({ message: 'Cek email untuk konfirmasi.', user: d.user });
+    }
+
+    // ── AUTH: GET USER ───────────────────────────────────
+    if (action === 'me') {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const user = await getUser(token);
+      if (!user) return res.status(401).json({ error: 'Tidak terautentikasi.' });
+      return res.status(200).json({ user });
+    }
+
+    // ── HISTORY: GET ─────────────────────────────────────
+    if (action === 'history' && req.method === 'GET') {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const user = await getUser(token);
+      if (!user) return res.status(401).json({ error: 'Login dulu.' });
+      if (!SUPA_URL || !SUPA_ANON) return res.status(500).json({ error: 'Supabase belum dikonfigurasi.' });
+
+      const page  = parseInt(req.query.page || '1');
+      const limit = 20;
+      const offset = (page - 1) * limit;
+
+      const r = await fetch(
+        `${SUPA_URL}/rest/v1/histories?user_id=eq.${user.id}&order=created_at.desc&limit=${limit}&offset=${offset}`,
+        { headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON } }
+      );
+      const d = await r.json();
+      return res.status(200).json({ histories: d, page });
+    }
+
+    // ── HISTORY: DELETE ──────────────────────────────────
+    if (action === 'historyDelete' && req.method === 'DELETE') {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const user = await getUser(token);
+      if (!user) return res.status(401).json({ error: 'Login dulu.' });
+      const { id } = req.query;
+      await fetch(`${SUPA_URL}/rest/v1/histories?id=eq.${id}&user_id=eq.${user.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON },
+      });
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── SAVE RESULT ──────────────────────────────────────
+    if (action === 'saveResult') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const user = await getUser(token);
+      if (!user) return res.status(200).json({ ok: false, reason: 'not_logged_in' });
+
+      const { type, model, prompt, ratio, resultUrls } = req.body;
+      if (!resultUrls || !resultUrls.length) return res.status(400).json({ error: 'resultUrls diperlukan.' });
+
+      // Upload ke storage (supaya permanent)
+      const storageUrls = [];
+      for (let i = 0; i < resultUrls.length; i++) {
+        const url = resultUrls[i];
+        const ext = url.includes('.mp4') ? 'mp4' : url.includes('.mp3') ? 'mp3' : 'jpg';
+        const filename = `${type}_${Date.now()}_${i}.${ext}`;
+        const stored = await uploadToStorage(user.id, url, filename);
+        if (stored) storageUrls.push(stored);
+      }
+
+      const hist = await saveHistory(user.id, {
+        type, model, prompt, ratio,
+        result_urls: resultUrls,
+        storage_urls: storageUrls.length ? storageUrls : resultUrls,
+      });
+
+      return res.status(200).json({ ok: true, history: hist });
+    }
 
     // ── UPLOAD ───────────────────────────────────────────
     if (action === 'upload') {
       if (req.method !== 'POST') return res.status(405).end();
+      const apiKey = getKey('image');
+      if (!apiKey) return res.status(500).json({ error: 'KIE API key belum diset.' });
       const { imageBase64 } = req.body;
       if (!imageBase64) return res.status(400).json({ error: 'imageBase64 diperlukan.' });
-
       const r = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${getKey('image')}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ base64Data: imageBase64, uploadPath: 'images' }),
       });
       const d = await r.json();
       if (!r.ok) return res.status(r.status).json({ error: 'Upload error: ' + JSON.stringify(d) });
       const url = d.data?.downloadUrl || d.data?.fileUrl || d.data?.url;
-      if (!url) return res.status(500).json({ error: 'URL tidak ditemukan: ' + JSON.stringify(d) });
+      if (!url) return res.status(500).json({ error: 'URL tidak ditemukan.' });
       return res.status(200).json({ url });
     }
 
@@ -47,25 +201,23 @@ module.exports = async function handler(req, res) {
       const body = req.body;
       const { type } = body;
 
-      // === TEXT TO SPEECH (ElevenLabs) ===
+      // === SPEECH ===
       if (type === 'speech') {
-        const { text, model, voice, speed, stability, languageCode } = body;
+        const apiKey = getKey('speech');
+        if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY_SPEECH belum diset.' });
+        const { text, model, voice, speed, stability } = body;
         if (!text) return res.status(400).json({ error: 'text diperlukan.' });
-
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${getKey('speech')}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: model || 'elevenlabs/text-to-speech-turbo-2-5',
+            model: model || 'elevenlabs/text-to-speech-multilingual-v2',
             input: {
-              text,
-              voice:            voice || 'Rachel',
-              stability:        typeof stability === 'number' ? stability : 0.5,
-              similarity_boost: 0.75,
-              style:            0,
-              speed:            typeof speed === 'number' ? speed : 1.0,
-              timestamps:       false,
-              language_code:    '', // must be empty for multilingual-v2
+              text, voice: voice || 'Rachel',
+              stability: typeof stability === 'number' ? stability : 0.5,
+              similarity_boost: 0.75, style: 0,
+              speed: typeof speed === 'number' ? speed : 1.0,
+              timestamps: false, language_code: '',
             },
           }),
         });
@@ -78,22 +230,16 @@ module.exports = async function handler(req, res) {
 
       // === VIDEO ===
       if (type === 'video') {
+        const apiKey = getKey('video');
+        if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY_VIDEO belum diset.' });
         const { model, imageUrl, prompt, duration, resolution } = body;
         let input = { prompt, image_urls: [imageUrl], duration: String(duration || '5') };
-
-        if (model === 'kling-2.6/image-to-video') {
-          input.sound = false;
-        } else if (model === 'grok-imagine/image-to-video') {
-          input.mode       = 'normal';
-          input.resolution = resolution || '720p';
-          input.aspect_ratio = '16:9';
-        } else if (model === 'wan-2.6/image-to-video' || model.startsWith('wan')) {
-          input.resolution = resolution || '720p';
-        }
-
+        if (model === 'kling-2.6/image-to-video') input.sound = false;
+        else if (model === 'grok-imagine/image-to-video') { input.mode = 'normal'; input.resolution = resolution || '720p'; input.aspect_ratio = '16:9'; }
+        else if (model.startsWith('wan')) input.resolution = resolution || '720p';
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${getKey('video')}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model, input }),
         });
         const d = await r.json();
@@ -104,16 +250,19 @@ module.exports = async function handler(req, res) {
       }
 
       // === IMAGE ===
+      const apiKey = getKey('image');
+      if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY_IMAGE belum diset.' });
       const { model, imageUrl, prompt, ratio, negPrompt, strength, quantity } = body;
       if (!model || !prompt || !imageUrl) return res.status(400).json({ error: 'model, prompt, imageUrl diperlukan.' });
       const qty = Math.min(Math.max(parseInt(quantity) || 1, 1), 20);
+      const ratioVal = ratio || '1:1';
+      const nanaSizeMap = { '1:1':'square_hd', '9:16':'portrait', '16:9':'landscape', '4:5':'portrait', '2:3':'portrait', '3:2':'landscape' };
 
-      // Flux Kontext (endpoint berbeda)
       if (model === 'flux-kontext-pro' || model === 'flux-kontext-max') {
         const r = await fetch('https://api.kie.ai/api/v1/flux/kontext/generate', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${getKey('image')}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, model, aspectRatio: ratio || '1:1', outputFormat: 'jpeg', promptUpsampling: false, safetyTolerance: 2, imageUrl }),
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, model, aspectRatio: ratioVal, outputFormat: 'jpeg', promptUpsampling: false, safetyTolerance: 2, imageUrl }),
         });
         const d = await r.json();
         if (!r.ok) return res.status(r.status).json({ error: 'Flux error: ' + JSON.stringify(d) });
@@ -122,62 +271,41 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ taskIds: [taskId], taskType: 'flux' });
       }
 
-      // ratio format dari UI: '1:1', '9:16', '16:9', '4:5', '3:2', '2:3'
-      const ratioVal = ratio || '1:1';
-      // Nano Banana image_size pakai nama
-      const nanaSizeMap = { '1:1':'square_hd', '9:16':'portrait', '16:9':'landscape', '4:5':'portrait', '2:3':'portrait', '3:2':'landscape' };
-
       let input = { prompt };
       if (model === 'gpt-image/1.5-image-to-image') {
-        input.input_urls = [imageUrl];
-        input.aspect_ratio = ratioVal;  // GPT Image pakai aspect_ratio langsung: "1:1", "3:2", dll
-        input.quality = 'medium';
+        input.input_urls = [imageUrl]; input.aspect_ratio = ratioVal; input.quality = 'medium';
       } else if (model === 'google/nano-banana') {
-        input.image_input = [imageUrl];
-        input.image_size = nanaSizeMap[ratioVal] || 'square_hd';
-        input.output_format = 'png';
+        input.image_input = [imageUrl]; input.image_size = nanaSizeMap[ratioVal] || 'square_hd'; input.output_format = 'png';
       } else if (model === 'nano-banana-2') {
-        input.image_input = [imageUrl];
-        input.aspect_ratio = ratioVal;
-        input.resolution = '1K';
-        input.output_format = 'png';
+        input.image_input = [imageUrl]; input.aspect_ratio = ratioVal; input.resolution = '1K'; input.output_format = 'png';
       } else if (model === 'grok-imagine/image-to-image') {
-        // Grok image-to-image tidak support aspect_ratio — mengikuti ratio gambar input
-        input.image_urls = [imageUrl];
-        input.quality_mode = true;
+        input.image_urls = [imageUrl]; input.quality_mode = true;
       } else {
-        // Default: kirim aspect_ratio langsung (Flux, dll)
-        input.image_url = imageUrl;
-        input.aspect_ratio = ratioVal;
-        input.output_format = 'png';
+        input.image_url = imageUrl; input.aspect_ratio = ratioVal; input.output_format = 'png';
       }
 
       const tasks = await Promise.all(Array.from({ length: qty }, () =>
         fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${getKey('image')}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model, input }),
         }).then(r => r.json())
       ));
-
       const taskIds = tasks.map(d => d.data?.taskId).filter(Boolean);
       if (!taskIds.length) return res.status(500).json({ error: 'Semua task gagal: ' + JSON.stringify(tasks[0]) });
       return res.status(200).json({ taskIds, taskType: 'jobs' });
     }
 
-    // ── STATUS (image/video) ──────────────────────────────
+    // ── STATUS ───────────────────────────────────────────
     if (action === 'status') {
       if (req.method !== 'GET') return res.status(405).end();
       const { taskId, type } = req.query;
       if (!taskId) return res.status(400).json({ error: 'taskId diperlukan.' });
-
+      const apiKey = getKey(type === 'video' ? 'video' : 'image');
       const kieUrl = type === 'flux'
         ? `https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`
         : `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
-
-      // Gunakan key sesuai type task
-      const statusKey = (type === 'flux') ? getKey('image') : (req.query.taskType === 'video' ? getKey('video') : KEY_IMAGE || KEY_VIDEO || KEY_SPEECH);
-      const r = await fetch(kieUrl, { headers: { 'Authorization': `Bearer ${statusKey}` } });
+      const r = await fetch(kieUrl, { headers: { 'Authorization': `Bearer ${apiKey}` } });
       const d = await r.json();
       if (!r.ok) return res.status(r.status).json({ error: 'Status error: ' + JSON.stringify(d) });
 
@@ -194,12 +322,8 @@ module.exports = async function handler(req, res) {
             const allUrls = result?.resultUrls || result?.images || [];
             if (allUrls.length > 0) {
               const firstUrl = allUrls[0];
-              if (firstUrl.includes('.mp4') || firstUrl.includes('.webm')) {
-                videoUrl = firstUrl;
-              } else {
-                imageUrls = allUrls;
-                imageUrl  = firstUrl;
-              }
+              if (firstUrl.includes('.mp4') || firstUrl.includes('.webm')) videoUrl = firstUrl;
+              else { imageUrls = allUrls; imageUrl = firstUrl; }
             } else {
               const singleUrl = result?.audio_url || result?.audioUrl || result?.image_url || result?.url || null;
               if (singleUrl) {
@@ -210,12 +334,7 @@ module.exports = async function handler(req, res) {
           } catch(e) {}
         }
         if (!imageUrl && !videoUrl) {
-          const tries = [
-            data?.output?.audio_url, data?.output?.audioUrl,
-            data?.output?.image_url, data?.output?.url,
-            data?.output?.images?.[0], data?.imageUrl,
-            data?.image_url, data?.audioUrl, data?.audio_url, data?.url
-          ];
+          const tries = [data?.output?.audio_url, data?.output?.image_url, data?.output?.url, data?.output?.images?.[0], data?.imageUrl, data?.image_url, data?.url];
           const found = tries.find(c => typeof c === 'string' && c.startsWith('http'));
           if (found) {
             if (found.includes('.mp4') || found.includes('.webm')) videoUrl = found;
@@ -223,42 +342,32 @@ module.exports = async function handler(req, res) {
           }
         }
       }
-
       return res.status(200).json({ status, imageUrl, imageUrls, videoUrl, isFail: FAIL.includes(status) });
     }
 
-
-
-    // ── VOICE PREVIEW ─────────────────────────────────────
+    // ── VOICE PREVIEW ────────────────────────────────────
     if (action === 'preview') {
       if (req.method !== 'GET') return res.status(405).end();
       const { voiceId } = req.query;
       if (!voiceId) return res.status(400).json({ error: 'voiceId diperlukan.' });
-
-      // Try kie.ai CDN first, fallback to ElevenLabs public storage
       const urls = [
         `https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`,
         `https://storage.googleapis.com/eleven-public-prod/premade/voices/${voiceId}/preview.mp3`,
       ];
       let audioRes = null;
       for (const url of urls) {
-        try {
-          const r = await fetch(url);
-          if (r.ok) { audioRes = r; break; }
-        } catch(e) {}
+        try { const r = await fetch(url); if (r.ok) { audioRes = r; break; } } catch(e) {}
       }
       if (!audioRes) return res.status(404).json({ error: 'Preview tidak tersedia.' });
-
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Cache-Control', 'public, max-age=604800');
       const buf = await audioRes.arrayBuffer();
       return res.status(200).send(Buffer.from(buf));
     }
 
-
     return res.status(400).json({ error: 'Action tidak dikenal: ' + action });
 
-  } catch (err) {
+  } catch(err) {
     console.error('[proxy]', err);
     return res.status(500).json({ error: err.message });
   }
