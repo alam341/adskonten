@@ -458,3 +458,56 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .btn-dl-hist, .btn-del-hist { flex:1; padding:5px; border-radius:6px; border:1px solid var(--border-input); background:none; color:var(--text-4); cursor:pointer; font-size:13px; text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; transition:all 0.15s; font-family:inherit; }
 .btn-dl-hist:hover { background:var(--accent-dim); color:var(--accent); border-color:rgba(124,110,250,0.3); }
 .btn-del-hist:hover { background:rgba(220,80,80,0.1); color:#f08080; border-color:rgba(220,80,80,0.3); }
+
+/* ── Login Screen ── */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--bg-nav);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.login-logo-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.3px;
+}
+
+.login-logo-sub {
+  font-size: 11px;
+  color: var(--text-5);
+  margin-top: 2px;
+}
+
+.login-footer {
+  font-size: 11px;
+  color: var(--text-6);
+  text-align: center;
+  margin-top: 16px;
+}
+
+[data-theme="light"] .login-screen { background: #f0f0f6; }
+[data-theme="light"] .login-card { box-shadow: 0 8px 40px rgba(0,0,0,0.1); }
