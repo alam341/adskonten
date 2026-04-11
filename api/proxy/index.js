@@ -294,19 +294,6 @@ module.exports = async function handler(req, res) {
       const ratioVal = ratio||'1:1';
       const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
 
-      if (model === 'flux-kontext-pro') {
-        const r = await fetch('https://api.kie.ai/api/v1/flux/kontext/generate', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, model, aspectRatio: ratioVal, outputFormat: 'jpeg', promptUpsampling: false, safetyTolerance: 2, imageUrl }),
-        });
-        const d = await r.json();
-        if (!r.ok) return res.status(r.status).json({ error: 'Flux error: '+JSON.stringify(d) });
-        const taskId = d.data?.taskId || d.data?.id;
-        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
-        return res.status(200).json({ taskIds: [taskId], taskType: 'flux' });
-      }
-
       let input = { prompt };
       if (model === 'gpt-image/1.5-image-to-image') {
         // GPT Image support multiple input_urls - kirim referensi + produk
@@ -334,29 +321,11 @@ module.exports = async function handler(req, res) {
       if (req.method !== 'GET') return res.status(405).end();
       const { taskId, type } = req.query;
       const apiKey = getKey(type==='video'?'video':'image');
-      let d, data, status;
-      if (type === 'flux') {
-        // Try Flux detail endpoint
-        const r1 = await fetch(`https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
-        if (r1.ok) {
-          d = await r1.json();
-          data = d.data;
-          status = data?.status || data?.state || 'waiting';
-        } else {
-          // Fallback to jobs endpoint
-          const r2 = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
-          if (!r2.ok) return res.status(r2.status).json({ error: 'Status error.' });
-          d = await r2.json();
-          data = d.data;
-          status = data?.state || data?.status || 'waiting';
-        }
-      } else {
-        const r = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
-        if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
-        d = await r.json();
-        data = d.data;
-        status = data?.state || data?.status || 'waiting';
-      }
+      const r = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+      if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
+      const d = await r.json();
+      const data = d.data;
+      const status = data?.state || data?.status || 'waiting';
       const DONE = ['success','SUCCESS','completed','COMPLETED'];
       const FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
       let imageUrl=null, videoUrl=null, imageUrls=[];
