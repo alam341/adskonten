@@ -460,6 +460,67 @@ Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
       return res.status(200).json({ analysis: text });
     }
 
+    // ── CEK KUALITAS IKLAN ───────────────────────────────────
+    if (action === 'cekiklan') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+
+      const { imageBase64, platform, productInfo } = req.body;
+      if (!imageBase64) return res.status(400).json({ error: 'imageBase64 diperlukan.' });
+
+      const mediaType = imageBase64.match(/^data:([^;]+)/)?.[1] || 'image/jpeg';
+      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
+
+      const prompt = `Kamu adalah pakar iklan digital Indonesia berpengalaman. Analisis gambar iklan ini secara mendalam.
+${platform ? 'Platform target: ' + platform : ''}
+${productInfo ? 'Info produk: ' + productInfo : ''}
+
+Berikan penilaian dalam format berikut (Bahasa Indonesia):
+
+## 📊 SKOR KESELURUHAN: [X/10]
+
+## ✅ Yang Sudah Bagus
+[list kelebihan]
+
+## ⚠️ Yang Perlu Diperbaiki
+[list kelemahan spesifik]
+
+## 🎨 Analisis Visual
+[warna, layout, tipografi, hierarki visual]
+
+## 📝 Analisis Copywriting
+[headline, body copy, CTA - apakah kuat dan menjual?]
+
+## 🎯 Efektivitas untuk ${platform || 'iklan digital'}
+[seberapa efektif untuk platform ini]
+
+## 💡 Saran Perbaikan Konkret
+[minimal 3 saran spesifik yang bisa langsung diterapkan]
+
+## 🚀 Potensi Performa
+[prediksi performa: tinggi/sedang/rendah dan alasannya]`;
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } },
+              { type: 'text', text: prompt }
+            ]
+          }]
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Analisis gagal.' });
+      return res.status(200).json({ analysis: d.content?.[0]?.text || 'Analisis tidak tersedia.' });
+    }
+
     // ── VOICE PREVIEW ─────────────────────────────────────
     if (action === 'preview') {
       const { voiceId } = req.query;
