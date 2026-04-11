@@ -783,7 +783,7 @@
           Mulai Analisis
         </button>
       </div>
-      <div class="analyze-right">
+      <div class="analyze-right" style="overflow-y:auto;flex:1;min-height:0">
         <div class="analyze-empty" id="analyzeEmpty">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M4 36L16 22l8 8 14-16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
           <p>Upload video kompetitor lalu klik Mulai Analisis</p>
@@ -792,7 +792,7 @@
           <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
           <p style="color:var(--text-4);font-size:13px" id="analyzeLoadingText">Memproses...</p>
         </div>
-        <div id="analyzeResult" style="display:none;padding:24px">
+        <div id="analyzeResult" style="display:none;padding:24px;overflow:visible">
           <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
             <button class="btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('analyzeResultText').innerText);showToast('Disalin!','success')">📋 Copy Hasil</button>
           </div>
