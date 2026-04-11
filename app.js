@@ -463,7 +463,7 @@ async function generateClone() {
     var urls = [];
     for (var ti = 0; ti < taskIds.length; ti++) {
       try {
-        var result = await pollStatus(taskIds[ti], gen.taskType||'jobs', 90);
+        var result = await pollStatus(taskIds[ti], gen.taskType||'jobs', 150);
         if (Array.isArray(result)) urls = urls.concat(result);
         else if (result) urls.push(result);
       } catch(e) { console.warn(e.message); }
@@ -560,7 +560,7 @@ async function parseRes(res) {
 async function pollStatus(taskId, type, maxAttempts) {
   maxAttempts=maxAttempts||60;
   for (var i=0;i<maxAttempts;i++) {
-    await sleep(i<5?2000:i<15?3000:5000);
+    await sleep(i<5?3000:i<20?5000:8000);
     updateSub('Memproses... ('+(i+1)+'/'+maxAttempts+')');
     var data=await proxyGet('status',{taskId,type});
     if (['success','SUCCESS','completed','COMPLETED'].indexOf(data.status)>=0) {
