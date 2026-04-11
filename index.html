@@ -40,10 +40,6 @@
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
           Clone Style
         </button>
-        <button class="tab-btn" data-tab="analyze">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 10L4.5 6.5l2.5 2.5 4-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Analisis
-        </button>
       </div>
     </div>
     <div class="nav-right">
@@ -51,7 +47,11 @@
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M4 7.5h7M4 5h7M4 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Admin
       </button>
-<button class="btn-history nav-icon-btn" id="btnHistory" style="display:none" title="History">
+<button class="nav-icon-btn" id="btnAnalyze" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 11L5 7l3 3 5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Analisis
+      </button>
+      <button class="btn-history nav-icon-btn" id="btnHistory" style="display:none" title="History">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 1 0 13A6.5 6.5 0 0 1 7.5 1z" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 4v4l2.5 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         History
       </button>
@@ -555,38 +555,6 @@
           </div>
 
 
-
-        <!-- ===== TAB: ANALISIS ===== -->
-        <div class="tab-panel" data-panel="analyze" style="display:none">
-          <div class="panel-group">
-            <div class="panel-label">Upload Video Kompetitor</div>
-            <div class="analyze-upload-zone" id="analyzeUploadZone">
-              <input type="file" id="analyzeVideoInput" accept="video/*" hidden />
-              <div id="analyzeUploadEmpty" style="padding:16px;text-align:center;cursor:pointer">
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M10 16l4-5 4 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                <p style="font-size:11px;color:var(--text-4);margin-top:6px">Upload video iklan kompetitor</p>
-                <p style="font-size:10px;color:var(--text-6)">MP4, MOV · maks 50MB</p>
-              </div>
-              <video id="analyzeVideoPreview" style="display:none;width:100%;border-radius:8px;max-height:140px" controls></video>
-            </div>
-          </div>
-
-          <div class="panel-group">
-            <div class="panel-label">Atau Paste Link Video</div>
-            <input type="url" id="analyzeVideoUrl" class="apikey-field" style="width:100%" placeholder="https://youtube.com/... atau URL video" />
-            <div style="font-size:10px;color:var(--text-5);margin-top:4px">YouTube, Google Drive, atau URL MP4 langsung</div>
-          </div>
-
-          <div class="panel-group">
-            <div class="panel-label">Info Produk Kamu <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
-            <textarea id="analyzeProductInfo" class="textarea-field" rows="3" placeholder="Nama produk, kategori, target market..."></textarea>
-          </div>
-
-          <div id="analyzeFrameGrid" style="display:none;margin-bottom:12px">
-            <div class="panel-label">Frames yang dianalisis</div>
-            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:6px" id="analyzeFrames"></div>
-          </div>
-        </div>
       </div>
 
       </div>
@@ -775,6 +743,64 @@
     </div>
   </div>
 
+
+  <!-- Analyze View -->
+  <div class="history-view" id="analyzeView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromAnalyze">← Kembali</button>
+      <h2 class="history-title">Analisis Video Kompetitor</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+        <div class="panel-group">
+          <div class="panel-label">Upload Video Kompetitor</div>
+          <div class="analyze-upload-zone" id="analyzeUploadZone">
+            <input type="file" id="analyzeVideoInput" accept="video/*" hidden />
+            <div id="analyzeUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload video kompetitor</p>
+              <p style="font-size:10px;color:var(--text-6)">MP4, MOV · maks 50MB</p>
+            </div>
+            <video id="analyzeVideoPreview" style="display:none;width:100%;border-radius:8px;max-height:180px" controls></video>
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Atau Paste Link Video</div>
+          <input type="url" id="analyzeVideoUrl" class="apikey-field" style="width:100%" placeholder="https://youtube.com/... atau URL MP4" />
+          <div style="font-size:10px;color:var(--text-5);margin-top:4px">URL video MP4 publik</div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Info Produk Kamu <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <textarea id="analyzeProductInfo" class="textarea-field" rows="3" placeholder="Nama produk, kategori, target market..."></textarea>
+        </div>
+        <div id="analyzeFrameGrid" style="display:none;margin-bottom:12px">
+          <div class="panel-label" style="margin-bottom:6px">Frames yang dianalisis</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px" id="analyzeFrames"></div>
+        </div>
+        <button class="btn-generate" id="btnStartAnalyze" disabled>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 11L5 7l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Mulai Analisis
+        </button>
+      </div>
+      <div class="analyze-right">
+        <div class="analyze-empty" id="analyzeEmpty">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M4 36L16 22l8 8 14-16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+          <p>Upload video kompetitor lalu klik Mulai Analisis</p>
+        </div>
+        <div id="analyzeLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px" id="analyzeLoadingText">Memproses...</p>
+        </div>
+        <div id="analyzeResult" style="display:none;padding:24px">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('analyzeResultText').innerText);showToast('Disalin!','success')">📋 Copy Hasil</button>
+          </div>
+          <div id="analyzeResultText" style="font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
