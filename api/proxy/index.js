@@ -361,7 +361,12 @@ module.exports = async function handler(req, res) {
           } catch(e) {}
         }
         if (!imageUrl && !videoUrl) {
-          const tries = [data?.output?.audio_url,data?.output?.image_url,data?.output?.url,data?.output?.images?.[0],data?.imageUrl,data?.image_url,data?.url];
+          // Flux Kontext returns resultImageUrl directly
+          const tries = [
+            data?.resultImageUrl, data?.result_image_url,
+            data?.output?.audio_url, data?.output?.image_url, data?.output?.url,
+            data?.output?.images?.[0], data?.imageUrl, data?.image_url, data?.url
+          ];
           const found = tries.find(c=>typeof c==='string'&&c.startsWith('http'));
           if (found) { if(found.includes('.mp4')) videoUrl=found; else { imageUrl=found; imageUrls=[found]; } }
         }
