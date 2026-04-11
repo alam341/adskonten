@@ -66,10 +66,10 @@ body { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; line-he
 .tab-btn.active { background: var(--bg-hover); color: #c0b4ff; border: 1px solid rgba(124,110,250,0.3); }
 
 /* ── APP LAYOUT ── */
-.app-layout { display: flex; height: calc(100vh - 48px); overflow: hidden; }
+.app-layout { display: flex; height: calc(100vh - 48px); overflow: hidden; width: 100%; }
 
 /* ── SIDEBAR ── */
-.sidebar { width: 300px; flex-shrink: 0; background: var(--bg-nav); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: visible; }
+.sidebar { width: 300px; min-width: 300px; max-width: 300px; flex-shrink: 0; background: var(--bg-nav); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
 .sidebar-inner { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
 .sidebar-inner::-webkit-scrollbar { width: 4px; }
 .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
