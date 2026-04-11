@@ -814,9 +814,19 @@ async function startAnalyze() {
       if (!res.ok) throw new Error(data.error || 'Analisis gagal.');
 
       if (loadingEl) loadingEl.style.display = 'none';
-      if (resultEl) resultEl.style.display = 'block';
-      var resultText = $('analyzeResultText');
-      if (resultText) resultText.textContent = data.analysis;
+      var right = document.querySelector('.analyze-right');
+      if (right) {
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'btn-ghost';
+        copyBtn.textContent = 'Copy Hasil';
+        var textDiv = document.createElement('div');
+        textDiv.style.cssText = 'font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;margin-top:16px';
+        textDiv.textContent = data.analysis;
+        copyBtn.onclick = function() { navigator.clipboard.writeText(textDiv.textContent); showToast('Disalin!','success'); };
+        right.innerHTML = '';
+        right.appendChild(copyBtn);
+        right.appendChild(textDiv);
+      }
 
     } catch(e) {
       if (loadingEl) loadingEl.style.display = 'none';
