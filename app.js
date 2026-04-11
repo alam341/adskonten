@@ -290,8 +290,19 @@ async function generateImage() {
     var taskIds = gen.taskIds || (gen.taskId ? [gen.taskId] : []);
     if (!taskIds.length) throw new Error('taskId tidak ditemukan.');
     updateSub('Menunggu '+taskIds.length+' gambar...');
-    var results = await Promise.allSettled(taskIds.map(function(id) { return pollStatus(id, gen.taskType||'jobs'); }));
-    var urls = results.filter(function(r) { return r.status==='fulfilled' && r.value; }).map(function(r) { return r.value; });
+    // Poll satu per satu supaya tidak timeout paralel
+    var urls = [];
+    for (var ti = 0; ti < taskIds.length; ti++) {
+      updateSub('Mengambil gambar '+(ti+1)+' dari '+taskIds.length+'...');
+      try {
+        var url = await pollStatus(taskIds[ti], gen.taskType||'jobs', 90);
+        if (url) urls.push(url);
+        // Tampilkan yang sudah selesai sementara nunggu sisanya
+        if (urls.length > 0) showImageResult(urls);
+      } catch(e) {
+        console.warn('Task '+taskIds[ti]+' gagal:', e.message);
+      }
+    }
     if (!urls.length) throw new Error('Semua generate gagal.');
     showImageResult(urls);
   } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
