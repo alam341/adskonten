@@ -1,8 +1,6 @@
-const https = require('https');
-
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -21,9 +19,9 @@ module.exports = async function handler(req, res) {
 
   const action = req.query.action;
 
-  // Helper: get user from JWT token
+  // ── Helpers ──────────────────────────────────────────────
   async function getUser(token) {
-    if (!token || !SUPA_URL || !SUPA_ANON) return null;
+    if (!token || !SUPA_URL) return null;
     try {
       const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
         headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON }
@@ -33,26 +31,23 @@ module.exports = async function handler(req, res) {
     } catch(e) { return null; }
   }
 
-  // Helper: save history to Supabase
-  async function saveHistory(userId, data) {
-    if (!SUPA_URL || !SUPA_SVC) return null;
+  async function getProfile(userId) {
     try {
-      const r = await fetch(`${SUPA_URL}/rest/v1/histories`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPA_SVC}`,
-          'apikey': SUPA_SVC,
-          'Prefer': 'return=representation',
-        },
-        body: JSON.stringify({ user_id: userId, ...data }),
+      const r = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
       });
       const d = await r.json();
-      return Array.isArray(d) ? d[0] : d;
+      return Array.isArray(d) ? d[0] : null;
     } catch(e) { return null; }
   }
 
-  // Helper: upload image to Supabase Storage
+  async function getUserAndProfile(token) {
+    const user = await getUser(token);
+    if (!user) return { user: null, profile: null };
+    const profile = await getProfile(user.id);
+    return { user, profile };
+  }
+
   async function uploadToStorage(userId, imageUrl, filename) {
     if (!SUPA_URL || !SUPA_SVC) return null;
     try {
@@ -62,12 +57,7 @@ module.exports = async function handler(req, res) {
       const path = `${userId}/${filename}`;
       const r = await fetch(`${SUPA_URL}/storage/v1/object/adgen-results/${path}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${SUPA_SVC}`,
-          'apikey': SUPA_SVC,
-          'Content-Type': imgRes.headers.get('content-type') || 'image/jpeg',
-          'x-upsert': 'true',
-        },
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC, 'Content-Type': imgRes.headers.get('content-type') || 'image/jpeg', 'x-upsert': 'true' },
         body: buf,
       });
       if (!r.ok) return null;
@@ -77,123 +67,182 @@ module.exports = async function handler(req, res) {
 
   try {
 
-    // ── AUTH: LOGIN ──────────────────────────────────────
+    // ── REGISTER ─────────────────────────────────────────
+    if (action === 'register') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const { email, password } = req.body;
+      const username = email.replace('@adgen.local', '');
+
+      // Cek username sudah ada
+      const checkR = await fetch(`${SUPA_URL}/rest/v1/profiles?username=eq.${username}&select=id`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const checkD = await checkR.json();
+      if (Array.isArray(checkD) && checkD.length > 0) {
+        return res.status(400).json({ error: 'Username sudah dipakai.' });
+      }
+
+      // Daftar ke Supabase Auth
+      const r = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(400).json({ error: d.error_description || d.msg || 'Register gagal.' });
+
+      const userId = d.user?.id || d.id;
+      if (!userId) return res.status(400).json({ error: 'Register gagal.' });
+
+      // Buat profile dengan status pending
+      await fetch(`${SUPA_URL}/rest/v1/profiles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+        body: JSON.stringify({ id: userId, username, status: 'pending', is_admin: false }),
+      });
+
+      return res.status(200).json({ message: 'Daftar berhasil. Tunggu persetujuan admin.' });
+    }
+
+    // ── LOGIN ─────────────────────────────────────────────
     if (action === 'login') {
       if (req.method !== 'POST') return res.status(405).end();
-      if (!SUPA_URL || !SUPA_ANON) return res.status(500).json({ error: 'Supabase belum dikonfigurasi.' });
       const { email, password } = req.body;
+
       const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
         body: JSON.stringify({ email, password }),
       });
       const d = await r.json();
-      if (!r.ok) return res.status(400).json({ error: d.error_description || d.msg || 'Login gagal.' });
-      return res.status(200).json({ access_token: d.access_token, user: d.user });
+      if (!r.ok) return res.status(400).json({ error: 'Username atau password salah.' });
+
+      // Cek status approval
+      const profile = await getProfile(d.user.id);
+      if (!profile) return res.status(403).json({ error: 'Akun tidak ditemukan.' });
+      if (profile.status === 'pending')  return res.status(403).json({ error: 'Akun belum disetujui admin. Silakan tunggu.' });
+      if (profile.status === 'rejected') return res.status(403).json({ error: 'Akun ditolak. Hubungi admin.' });
+
+      return res.status(200).json({ access_token: d.access_token, user: d.user, profile });
     }
 
-    // ── AUTH: REGISTER ───────────────────────────────────
-    if (action === 'register') {
-      if (req.method !== 'POST') return res.status(405).end();
-      if (!SUPA_URL || !SUPA_ANON) return res.status(500).json({ error: 'Supabase belum dikonfigurasi.' });
-      const { email, password } = req.body;
-      const r = await fetch(`${SUPA_URL}/auth/v1/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
-        body: JSON.stringify({ email, password, data: { username: email.replace('@adgen.local','') } }),
-      });
-      const d = await r.json();
-      if (!r.ok) return res.status(400).json({ error: d.error_description || d.msg || 'Register gagal.' });
-      // Jika langsung dapat session, return token juga
-      if (d.access_token) {
-        return res.status(200).json({ access_token: d.access_token, user: d.user });
-      }
-      return res.status(200).json({ message: 'Daftar berhasil.', user: d.user });
-    }
-
-    // ── AUTH: GET USER ───────────────────────────────────
+    // ── GET ME ────────────────────────────────────────────
     if (action === 'me') {
       const token = (req.headers.authorization || '').replace('Bearer ', '');
-      const user = await getUser(token);
+      const { user, profile } = await getUserAndProfile(token);
       if (!user) return res.status(401).json({ error: 'Tidak terautentikasi.' });
-      return res.status(200).json({ user });
+      if (!profile || profile.status !== 'approved') return res.status(403).json({ error: 'Akun belum disetujui.' });
+      return res.status(200).json({ user, profile });
     }
 
-    // ── HISTORY: GET ─────────────────────────────────────
+    // ── ADMIN: GET USERS ──────────────────────────────────
+    if (action === 'adminUsers') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile } = await getUserAndProfile(token);
+      if (!profile || !profile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
+
+      const status = req.query.status || 'pending';
+      const r = await fetch(`${SUPA_URL}/rest/v1/profiles?status=eq.${status}&order=created_at.desc&select=*`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const d = await r.json();
+      return res.status(200).json({ users: d });
+    }
+
+    // ── ADMIN: APPROVE/REJECT USER ────────────────────────
+    if (action === 'adminAction') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile: adminProfile } = await getUserAndProfile(token);
+      if (!adminProfile || !adminProfile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
+
+      const { userId, act } = req.body; // act: 'approve' | 'reject'
+      if (!userId || !['approve','reject'].includes(act)) return res.status(400).json({ error: 'Parameter salah.' });
+
+      const newStatus = act === 'approve' ? 'approved' : 'rejected';
+      const r = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+        body: JSON.stringify({ status: newStatus, approved_at: new Date().toISOString() }),
+      });
+      if (!r.ok) return res.status(500).json({ error: 'Gagal update status.' });
+      return res.status(200).json({ ok: true, status: newStatus });
+    }
+
+    // ── ADMIN: ALL HISTORIES ──────────────────────────────
+    if (action === 'adminHistories') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile } = await getUserAndProfile(token);
+      if (!profile || !profile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
+
+      const r = await fetch(`${SUPA_URL}/rest/v1/histories?order=created_at.desc&limit=50`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const d = await r.json();
+      return res.status(200).json({ histories: d });
+    }
+
+    // ── HISTORY: GET ──────────────────────────────────────
     if (action === 'history' && req.method === 'GET') {
       const token = (req.headers.authorization || '').replace('Bearer ', '');
-      const user = await getUser(token);
-      if (!user) return res.status(401).json({ error: 'Login dulu.' });
-      if (!SUPA_URL || !SUPA_ANON) return res.status(500).json({ error: 'Supabase belum dikonfigurasi.' });
-
-      const page  = parseInt(req.query.page || '1');
-      const limit = 20;
-      const offset = (page - 1) * limit;
-
-      const r = await fetch(
-        `${SUPA_URL}/rest/v1/histories?user_id=eq.${user.id}&order=created_at.desc&limit=${limit}&offset=${offset}`,
-        { headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON } }
-      );
-      const d = await r.json();
-      return res.status(200).json({ histories: d, page });
+      const { user, profile } = await getUserAndProfile(token);
+      if (!user || !profile || profile.status !== 'approved') return res.status(401).json({ error: 'Login dulu.' });
+      const page = parseInt(req.query.page || '1'), limit = 20, offset = (page-1)*limit;
+      const r = await fetch(`${SUPA_URL}/rest/v1/histories?user_id=eq.${user.id}&order=created_at.desc&limit=${limit}&offset=${offset}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON }
+      });
+      return res.status(200).json({ histories: await r.json(), page });
     }
 
-    // ── HISTORY: DELETE ──────────────────────────────────
+    // ── HISTORY: DELETE ───────────────────────────────────
     if (action === 'historyDelete' && req.method === 'DELETE') {
       const token = (req.headers.authorization || '').replace('Bearer ', '');
-      const user = await getUser(token);
+      const { user } = await getUserAndProfile(token);
       if (!user) return res.status(401).json({ error: 'Login dulu.' });
       const { id } = req.query;
       await fetch(`${SUPA_URL}/rest/v1/histories?id=eq.${id}&user_id=eq.${user.id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON },
+        method: 'DELETE', headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPA_ANON }
       });
       return res.status(200).json({ ok: true });
     }
 
-    // ── SAVE RESULT ──────────────────────────────────────
+    // ── SAVE RESULT ───────────────────────────────────────
     if (action === 'saveResult') {
       if (req.method !== 'POST') return res.status(405).end();
       const token = (req.headers.authorization || '').replace('Bearer ', '');
-      const user = await getUser(token);
-      if (!user) return res.status(200).json({ ok: false, reason: 'not_logged_in' });
-
+      const { user } = await getUserAndProfile(token);
+      if (!user) return res.status(200).json({ ok: false });
       const { type, model, prompt, ratio, resultUrls } = req.body;
-      if (!resultUrls || !resultUrls.length) return res.status(400).json({ error: 'resultUrls diperlukan.' });
-
-      // Upload ke storage (supaya permanent)
+      if (!resultUrls?.length) return res.status(400).json({ error: 'resultUrls diperlukan.' });
       const storageUrls = [];
       for (let i = 0; i < resultUrls.length; i++) {
-        const url = resultUrls[i];
-        const ext = url.includes('.mp4') ? 'mp4' : url.includes('.mp3') ? 'mp3' : 'jpg';
-        const filename = `${type}_${Date.now()}_${i}.${ext}`;
-        const stored = await uploadToStorage(user.id, url, filename);
+        const ext = resultUrls[i].includes('.mp4')?'mp4':resultUrls[i].includes('.mp3')?'mp3':'jpg';
+        const stored = await uploadToStorage(user.id, resultUrls[i], `${type}_${Date.now()}_${i}.${ext}`);
         if (stored) storageUrls.push(stored);
       }
-
-      const hist = await saveHistory(user.id, {
-        type, model, prompt, ratio,
-        result_urls: resultUrls,
-        storage_urls: storageUrls.length ? storageUrls : resultUrls,
+      await fetch(`${SUPA_URL}/rest/v1/histories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+        body: JSON.stringify({ user_id: user.id, type, model, prompt, ratio, result_urls: resultUrls, storage_urls: storageUrls.length ? storageUrls : resultUrls }),
       });
-
-      return res.status(200).json({ ok: true, history: hist });
+      return res.status(200).json({ ok: true });
     }
 
-    // ── UPLOAD ───────────────────────────────────────────
+    // ── UPLOAD ────────────────────────────────────────────
     if (action === 'upload') {
       if (req.method !== 'POST') return res.status(405).end();
       const apiKey = getKey('image');
-      if (!apiKey) return res.status(500).json({ error: 'KIE API key belum diset.' });
+      if (!apiKey) return res.status(500).json({ error: 'API key belum diset.' });
       const { imageBase64 } = req.body;
-      if (!imageBase64) return res.status(400).json({ error: 'imageBase64 diperlukan.' });
       const r = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ base64Data: imageBase64, uploadPath: 'images' }),
       });
       const d = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: 'Upload error: ' + JSON.stringify(d) });
+      if (!r.ok) return res.status(r.status).json({ error: 'Upload error.' });
       const url = d.data?.downloadUrl || d.data?.fileUrl || d.data?.url;
       if (!url) return res.status(500).json({ error: 'URL tidak ditemukan.' });
       return res.status(200).json({ url });
@@ -202,123 +251,96 @@ module.exports = async function handler(req, res) {
     // ── GENERATE ─────────────────────────────────────────
     if (action === 'generate') {
       if (req.method !== 'POST') return res.status(405).end();
-      const body = req.body;
-      const { type } = body;
+      const body = req.body, { type } = body;
 
-      // === SPEECH ===
       if (type === 'speech') {
         const apiKey = getKey('speech');
-        if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY_SPEECH belum diset.' });
         const { text, model, voice, speed, stability } = body;
-        if (!text) return res.status(400).json({ error: 'text diperlukan.' });
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: model || 'elevenlabs/text-to-speech-multilingual-v2',
-            input: {
-              text, voice: voice || 'Rachel',
-              stability: typeof stability === 'number' ? stability : 0.5,
-              similarity_boost: 0.75, style: 0,
-              speed: typeof speed === 'number' ? speed : 1.0,
-              timestamps: false, language_code: '',
-            },
-          }),
+          body: JSON.stringify({ model: model||'elevenlabs/text-to-speech-multilingual-v2', input: { text, voice: voice||'Rachel', stability: stability||0.5, similarity_boost: 0.75, style: 0, speed: speed||1.0, timestamps: false, language_code: '' } }),
         });
         const d = await r.json();
-        if (!r.ok) return res.status(r.status).json({ error: 'TTS error: ' + JSON.stringify(d) });
+        if (!r.ok) return res.status(r.status).json({ error: 'TTS error: '+JSON.stringify(d) });
         const taskId = d.data?.taskId;
-        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada: ' + JSON.stringify(d) });
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
         return res.status(200).json({ taskId });
       }
 
-      // === VIDEO ===
       if (type === 'video') {
         const apiKey = getKey('video');
-        if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY_VIDEO belum diset.' });
         const { model, imageUrl, prompt, duration, resolution } = body;
-        let input = { prompt, image_urls: [imageUrl], duration: String(duration || '5') };
+        let input = { prompt, image_urls: [imageUrl], duration: String(duration||'5') };
         if (model === 'kling-2.6/image-to-video') input.sound = false;
-        else if (model === 'grok-imagine/image-to-video') { input.mode = 'normal'; input.resolution = resolution || '720p'; input.aspect_ratio = '16:9'; }
-        else if (model.startsWith('wan')) input.resolution = resolution || '720p';
+        else if (model === 'grok-imagine/image-to-video') { input.mode='normal'; input.resolution=resolution||'720p'; input.aspect_ratio='16:9'; }
+        else if (model.startsWith('wan')) input.resolution = resolution||'720p';
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model, input }),
         });
         const d = await r.json();
-        if (!r.ok) return res.status(r.status).json({ error: 'Video error: ' + JSON.stringify(d) });
+        if (!r.ok) return res.status(r.status).json({ error: 'Video error: '+JSON.stringify(d) });
         const taskId = d.data?.taskId;
-        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada: ' + JSON.stringify(d) });
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
         return res.status(200).json({ taskId, taskType: 'jobs' });
       }
 
-      // === IMAGE ===
+      // Image
       const apiKey = getKey('image');
-      if (!apiKey) return res.status(500).json({ error: 'KIE_API_KEY_IMAGE belum diset.' });
       const { model, imageUrl, prompt, ratio, negPrompt, strength, quantity } = body;
-      if (!model || !prompt || !imageUrl) return res.status(400).json({ error: 'model, prompt, imageUrl diperlukan.' });
-      const qty = Math.min(Math.max(parseInt(quantity) || 1, 1), 20);
-      const ratioVal = ratio || '1:1';
-      const nanaSizeMap = { '1:1':'square_hd', '9:16':'portrait', '16:9':'landscape', '4:5':'portrait', '2:3':'portrait', '3:2':'landscape' };
+      const qty = Math.min(Math.max(parseInt(quantity)||1,1),20);
+      const ratioVal = ratio||'1:1';
+      const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
 
-      if (model === 'flux-kontext-pro' || model === 'flux-kontext-max') {
+      if (model === 'flux-kontext-pro') {
         const r = await fetch('https://api.kie.ai/api/v1/flux/kontext/generate', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt, model, aspectRatio: ratioVal, outputFormat: 'jpeg', promptUpsampling: false, safetyTolerance: 2, imageUrl }),
         });
         const d = await r.json();
-        if (!r.ok) return res.status(r.status).json({ error: 'Flux error: ' + JSON.stringify(d) });
+        if (!r.ok) return res.status(r.status).json({ error: 'Flux error: '+JSON.stringify(d) });
         const taskId = d.data?.taskId || d.data?.id;
-        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada: ' + JSON.stringify(d) });
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
         return res.status(200).json({ taskIds: [taskId], taskType: 'flux' });
       }
 
       let input = { prompt };
-      if (model === 'gpt-image/1.5-image-to-image') {
-        input.input_urls = [imageUrl]; input.aspect_ratio = ratioVal; input.quality = 'medium';
-      } else if (model === 'google/nano-banana') {
-        input.image_input = [imageUrl]; input.image_size = nanaSizeMap[ratioVal] || 'square_hd'; input.output_format = 'png';
-      } else if (model === 'nano-banana-2') {
-        input.image_input = [imageUrl]; input.aspect_ratio = ratioVal; input.resolution = '1K'; input.output_format = 'png';
-      } else if (model === 'grok-imagine/image-to-image') {
-        input.image_urls = [imageUrl]; input.quality_mode = true;
-      } else {
-        input.image_url = imageUrl; input.aspect_ratio = ratioVal; input.output_format = 'png';
-      }
+      if (model === 'gpt-image/1.5-image-to-image') { input.input_urls=[imageUrl]; input.aspect_ratio=ratioVal; input.quality='medium'; }
+      else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
+      else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
+      else if (model === 'grok-imagine/image-to-image') { input.image_urls=[imageUrl]; input.quality_mode=true; }
+      else { input.image_url=imageUrl; input.aspect_ratio=ratioVal; input.output_format='png'; }
 
-      const tasks = await Promise.all(Array.from({ length: qty }, () =>
+      const tasks = await Promise.all(Array.from({length:qty},()=>
         fetch('https://api.kie.ai/api/v1/jobs/createTask', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, input }),
-        }).then(r => r.json())
+          method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'},
+          body: JSON.stringify({model,input}),
+        }).then(r=>r.json())
       ));
-      const taskIds = tasks.map(d => d.data?.taskId).filter(Boolean);
-      if (!taskIds.length) return res.status(500).json({ error: 'Semua task gagal: ' + JSON.stringify(tasks[0]) });
+      const taskIds = tasks.map(d=>d.data?.taskId).filter(Boolean);
+      if (!taskIds.length) return res.status(500).json({ error: 'Semua task gagal.' });
       return res.status(200).json({ taskIds, taskType: 'jobs' });
     }
 
-    // ── STATUS ───────────────────────────────────────────
+    // ── STATUS ────────────────────────────────────────────
     if (action === 'status') {
       if (req.method !== 'GET') return res.status(405).end();
       const { taskId, type } = req.query;
-      if (!taskId) return res.status(400).json({ error: 'taskId diperlukan.' });
-      const apiKey = getKey(type === 'video' ? 'video' : 'image');
-      const kieUrl = type === 'flux'
+      const apiKey = getKey(type==='video'?'video':'image');
+      const kieUrl = type==='flux'
         ? `https://api.kie.ai/api/v1/flux/kontext/detail?taskId=${taskId}`
         : `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
       const r = await fetch(kieUrl, { headers: { 'Authorization': `Bearer ${apiKey}` } });
       const d = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: 'Status error: ' + JSON.stringify(d) });
-
-      const data   = d.data;
+      if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
+      const data = d.data;
       const status = data?.state || data?.status || 'waiting';
-      const DONE   = ['success','SUCCESS','completed','COMPLETED'];
-      const FAIL   = ['fail','FAIL','failed','FAILED','error','ERROR'];
-
-      let imageUrl = null, videoUrl = null, imageUrls = [];
+      const DONE = ['success','SUCCESS','completed','COMPLETED'];
+      const FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
+      let imageUrl=null, videoUrl=null, imageUrls=[];
       if (DONE.includes(status)) {
         if (data?.resultJson) {
           try {
@@ -326,50 +348,37 @@ module.exports = async function handler(req, res) {
             const allUrls = result?.resultUrls || result?.images || [];
             if (allUrls.length > 0) {
               const firstUrl = allUrls[0];
-              if (firstUrl.includes('.mp4') || firstUrl.includes('.webm')) videoUrl = firstUrl;
-              else { imageUrls = allUrls; imageUrl = firstUrl; }
+              if (firstUrl.includes('.mp4')||firstUrl.includes('.webm')) videoUrl=firstUrl;
+              else { imageUrls=allUrls; imageUrl=firstUrl; }
             } else {
-              const singleUrl = result?.audio_url || result?.audioUrl || result?.image_url || result?.url || null;
-              if (singleUrl) {
-                if (singleUrl.includes('.mp4') || singleUrl.includes('.webm')) videoUrl = singleUrl;
-                else { imageUrl = singleUrl; imageUrls = [singleUrl]; }
-              }
+              const singleUrl = result?.audio_url||result?.audioUrl||result?.image_url||result?.url||null;
+              if (singleUrl) { if(singleUrl.includes('.mp4')) videoUrl=singleUrl; else { imageUrl=singleUrl; imageUrls=[singleUrl]; } }
             }
           } catch(e) {}
         }
         if (!imageUrl && !videoUrl) {
-          const tries = [data?.output?.audio_url, data?.output?.image_url, data?.output?.url, data?.output?.images?.[0], data?.imageUrl, data?.image_url, data?.url];
-          const found = tries.find(c => typeof c === 'string' && c.startsWith('http'));
-          if (found) {
-            if (found.includes('.mp4') || found.includes('.webm')) videoUrl = found;
-            else { imageUrl = found; imageUrls = [found]; }
-          }
+          const tries = [data?.output?.audio_url,data?.output?.image_url,data?.output?.url,data?.output?.images?.[0],data?.imageUrl,data?.image_url,data?.url];
+          const found = tries.find(c=>typeof c==='string'&&c.startsWith('http'));
+          if (found) { if(found.includes('.mp4')) videoUrl=found; else { imageUrl=found; imageUrls=[found]; } }
         }
       }
       return res.status(200).json({ status, imageUrl, imageUrls, videoUrl, isFail: FAIL.includes(status) });
     }
 
-    // ── VOICE PREVIEW ────────────────────────────────────
+    // ── VOICE PREVIEW ─────────────────────────────────────
     if (action === 'preview') {
-      if (req.method !== 'GET') return res.status(405).end();
       const { voiceId } = req.query;
       if (!voiceId) return res.status(400).json({ error: 'voiceId diperlukan.' });
-      const urls = [
-        `https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`,
-        `https://storage.googleapis.com/eleven-public-prod/premade/voices/${voiceId}/preview.mp3`,
-      ];
+      const urls = [`https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`, `https://storage.googleapis.com/eleven-public-prod/premade/voices/${voiceId}/preview.mp3`];
       let audioRes = null;
-      for (const url of urls) {
-        try { const r = await fetch(url); if (r.ok) { audioRes = r; break; } } catch(e) {}
-      }
+      for (const url of urls) { try { const r=await fetch(url); if(r.ok){audioRes=r;break;} } catch(e){} }
       if (!audioRes) return res.status(404).json({ error: 'Preview tidak tersedia.' });
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Cache-Control', 'public, max-age=604800');
-      const buf = await audioRes.arrayBuffer();
-      return res.status(200).send(Buffer.from(buf));
+      res.setHeader('Content-Type','audio/mpeg');
+      res.setHeader('Cache-Control','public, max-age=604800');
+      return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
     }
 
-    return res.status(400).json({ error: 'Action tidak dikenal: ' + action });
+    return res.status(400).json({ error: 'Action tidak dikenal: '+action });
 
   } catch(err) {
     console.error('[proxy]', err);
@@ -377,6 +386,4 @@ module.exports = async function handler(req, res) {
   }
 };
 
-module.exports.config = {
-  api: { bodyParser: { sizeLimit: '15mb' } },
-};
+module.exports.config = { api: { bodyParser: { sizeLimit: '15mb' } } };
