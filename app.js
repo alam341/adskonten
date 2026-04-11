@@ -24,7 +24,16 @@ document.addEventListener('DOMContentLoaded', function() {
   setupTabs();
   setupUpload('img', function(v){ uploadedImageBase64=v; }, function(m){ uploadedMimeType=m; }, 'imgRatioGrid', function(r){ imgRatio=r; });
   setupUpload('vid', function(v){ vidBase64=v; }, function(m){ vidMime=m; }, null, null);
-  setupModelList('imgModelList', function(m){ imgModel=m; });
+  setupModelList('imgModelList', function(m){
+    imgModel = m;
+    // Grok tidak support ratio pilihan — sembunyikan grid, tampilkan note
+    var isGrok = m === 'grok-imagine/image-to-image';
+    var grid = document.getElementById('imgRatioGrid');
+    var note = document.getElementById('grokRatioNote');
+    if (grid) grid.style.opacity = isGrok ? '0.3' : '1';
+    if (grid) grid.style.pointerEvents = isGrok ? 'none' : '';
+    if (note) note.style.display = isGrok ? 'block' : 'none';
+  });
   setupModelList('vidModelList', function(m){ vidModel=m; });
   setupModelList('ttsModelList', function(m){ ttsModel=m; });
   setupRatioGrid('imgRatioGrid', function(v){ imgRatio=v; });
