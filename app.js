@@ -58,13 +58,13 @@ document.addEventListener('DOMContentLoaded', function() {
   $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); setupAnalyzeTab(); });
   $('btnCekIklan') && $('btnCekIklan').addEventListener('click', function() { showView('cekiklan'); setupCekIklan(); });
   $('btnImageEdit') && $('btnImageEdit').addEventListener('click', function() { showView('imageedit'); setupImageEdit(); });
-  $('btnBackFromImageEdit') && $('btnBackFromImageEdit').addEventListener('click', function() { showView('app'); });
+  $('btnBackFromImageEdit') && $('btnBackFromImageEdit').addEventListener('click', function() { showView('image'); });
   $('btnCopywriting') && $('btnCopywriting').addEventListener('click', function() { showView('copywriting'); setupCopywriting(); });
   $('btnCloneLP') && $('btnCloneLP').addEventListener('click', function() { showView('clonelp'); });
-  $('btnBackFromCloneLP') && $('btnBackFromCloneLP').addEventListener('click', function() { showView('app'); });
-  $('btnBackFromCopywriting') && $('btnBackFromCopywriting').addEventListener('click', function() { showView('app'); });
-  $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { showView('app'); });
-  $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
+  $('btnBackFromCloneLP') && $('btnBackFromCloneLP').addEventListener('click', function() { showView('image'); });
+  $('btnBackFromCopywriting') && $('btnBackFromCopywriting').addEventListener('click', function() { showView('image'); });
+  $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { showView('image'); });
+  $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('image'); });
 
   // Mobile bottom nav tabs
   $('tabHistory') && $('tabHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
@@ -102,8 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
-  $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('app'); });
-  $('btnBackToApp') && $('btnBackToApp').addEventListener('click', function() { showView('app'); });
+  $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('image'); });
+  $('btnBackToApp') && $('btnBackToApp').addEventListener('click', function() { showView('image'); });
 });
 
 // ── Views ─────────────────────────────────────────────────
@@ -216,7 +216,7 @@ function doLogout() {
   localStorage.removeItem('adstudio_token');
   clearUser();
   showToast('Logout berhasil.', 'success');
-  if (activeView === 'history') showView('app');
+  if (activeView === 'history') showView('image');
 }
 
 function setUser(user, profile) {
