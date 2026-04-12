@@ -47,7 +47,11 @@
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M4 7.5h7M4 5h7M4 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Admin
       </button>
-<button class="nav-icon-btn" id="btnCopywriting" style="display:none">
+<button class="nav-icon-btn" id="btnCloneLP" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 2h8v2H2zM2 6h8v1H2zM2 9h5v1H2z" fill="currentColor" opacity=".4"/><rect x="6" y="7" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        Clone LP
+      </button>
+      <button class="nav-icon-btn" id="btnCopywriting" style="display:none">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Copywriting
       </button>
@@ -1014,6 +1018,78 @@
               Download
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clone LP View -->
+  <div class="history-view" id="cloneLPView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromCloneLP">← Kembali</button>
+      <h2 class="history-title">Clone Copy Landing Page</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+
+        <div class="panel-group">
+          <div class="panel-label">URL Landing Page Kompetitor</div>
+          <input type="url" id="cloneLPUrl" class="apikey-field" style="width:100%" placeholder="https://contoh.com/landing-page" />
+          <div style="font-size:10px;color:var(--text-5);margin-top:4px">Paste URL landing page yang ingin di-clone strukturnya</div>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Info Produk Kamu</div>
+          <textarea id="cloneLPProduct" class="textarea-field" rows="4" placeholder="Nama produk, keunggulan, harga, target audience...&#10;&#10;Contoh: AdStudio by Adsy — platform AI untuk buat konten iklan otomatis, untuk tim marketing &amp; UMKM, harga mulai Rp99rb/bulan"></textarea>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Bahasa Output</div>
+          <select id="cloneLPLang" class="voice-select" style="width:100%">
+            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+            <option value="English">English</option>
+          </select>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Yang Ingin Di-clone</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneHero" checked style="accent-color:var(--accent)"> Hero Section (Headline + Subheadline + CTA)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneFeatures" checked style="accent-color:var(--accent)"> Fitur / Benefit Section
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneSocial" checked style="accent-color:var(--accent)"> Social Proof / Testimoni
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="clonePricing" style="accent-color:var(--accent)"> Pricing Section
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneFAQ" style="accent-color:var(--accent)"> FAQ Section
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneCTA" checked style="accent-color:var(--accent)"> CTA Section (Penutup)
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-generate" id="btnStartCloneLP">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="white" stroke-width="1.3"/><path d="M4 5h7M4 8h5" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Clone & Generate Copy
+        </button>
+
+      </div>
+      <div class="analyze-right" id="cloneLPRight">
+        <div id="cloneLPEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="28" height="36" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><rect x="16" y="14" width="28" height="30" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M12 14h12M12 20h8M12 26h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/></svg>
+          <p>Paste URL landing page kompetitor<br/>lalu klik Clone & Generate Copy</p>
+        </div>
+        <div id="cloneLPLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px" id="cloneLPLoadingText">Mengambil konten landing page...</p>
         </div>
       </div>
     </div>
