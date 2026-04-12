@@ -4,13 +4,89 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AdStudio by Adsy</title>
-  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+  <!-- TOP NAV -->
+  <nav class="topnav">
+    <div class="nav-left">
+      <div class="logo">
+        <img src="/favicon.png" width="28" height="28" style="border-radius:6px;object-fit:contain" alt="Adsy" />
+        <span class="logo-name">AdStudio</span>
+        <span class="logo-sub">by Adsy</span>
+      </div>
+    </div>
+    <div class="nav-center">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="image">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 9l3-3 2.5 2.5L10 5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Gambar
+        </button>
+        <button class="tab-btn" data-tab="video">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 5.5l3-2v7l-3-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Video
+        </button>
+        <button class="tab-btn" data-tab="music">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 4v2a3 3 0 0 0 6 0V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 9c.5 2 2.5 3.5 5 3.5s4.5-1.5 5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Speech
+        </button>
+        <button class="tab-btn" data-tab="clone">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+          Clone Style
+        </button>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="btn-admin nav-icon-btn" id="btnAdmin" style="display:none" title="Admin Panel">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M4 7.5h7M4 5h7M4 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Admin
+      </button>
+<button class="nav-icon-btn" id="btnCloneLP" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 2h8v2H2zM2 6h8v1H2zM2 9h5v1H2z" fill="currentColor" opacity=".4"/><rect x="6" y="7" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        Clone LP
+      </button>
+      <button class="nav-icon-btn" id="btnCopywriting" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Copywriting
+      </button>
+      <button class="nav-icon-btn" id="btnImageEdit" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 10l3-3 2 2 2-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Image Edit
+      </button>
+      <button class="nav-icon-btn" id="btnCekIklan" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cek Iklan
+      </button>
+      <button class="nav-icon-btn" id="btnAnalyze" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 11L5 7l3 3 5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Analisis
+      </button>
+      <button class="btn-history nav-icon-btn" id="btnHistory" style="display:none" title="History">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 1 0 13A6.5 6.5 0 0 1 7.5 1z" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 4v4l2.5 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        History
+      </button>
+      <div class="user-info" id="userInfo" style="display:none">
+        <span class="user-email" id="userEmail"></span>
+        <button class="btn-logout" id="btnLogout">Logout</button>
+      </div>
+      <button class="btn-auth nav-icon-btn" id="btnAuthToggle">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 12c0-2.5 2.5-4 5.5-4s5.5 1.5 5.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Login
+      </button>
+      <button class="theme-toggle" id="themeToggle" title="Light / Dark">
+        <svg class="icon-sun" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1v1M7.5 13v1M1 7.5H2M13 7.5h1M3.05 3.05l.7.7M11.25 11.25l.7.7M11.25 3.75l-.7.7M3.75 11.25l-.7.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="7.5" r="3" stroke="currentColor" stroke-width="1.3"/></svg>
+        <svg class="icon-moon" width="15" height="15" viewBox="0 0 15 15" fill="none" style="display:none"><path d="M12 7.5A4.5 4.5 0 0 1 5 2.1 6 6 0 1 0 12.9 10 4.5 4.5 0 0 1 12 7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- LOGIN SCREEN -->
   <!-- Welcome / Mood Screen -->
   <div class="welcome-screen" id="welcomeScreen" style="display:none">
     <div class="welcome-card">
@@ -70,128 +146,21 @@
       <p class="login-footer">Dengan masuk, kamu setuju dengan syarat penggunaan.</p>
     </div>
   </div>
-  <!-- MAIN APP -->
-  <div class="app-shell" id="appShell" style="display:none">
+  <!-- Motivation Bar -->
+  <div class="motivation-bar" id="motivationBar" style="display:none">
+    <span class="motivation-icon" id="motivationIcon">✨</span>
+    <span class="motivation-text" id="motivationText">Semangat berkarya hari ini!</span>
+  </div>
 
-    <!-- LEFT SIDEBAR NAV -->
-    <aside class="left-nav">
+  <!-- APP LAYOUT -->
+  <div class="app-layout" id="appLayout" style="display:none">
 
-      <div class="left-nav-logo">
-        <img src="favicon.png" width="32" height="32" style="border-radius:8px;flex-shrink:0" />
-        <div>
-          <div class="left-nav-brand">AdStudio</div>
-          <div class="left-nav-sub">by Adsy</div>
-        </div>
-      </div>
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
 
-      <!-- Motivasi -->
-      <div class="left-nav-motivation" id="motivationBar" style="display:none">
-        <span id="motivationIcon">✨</span>
-        <span id="motivationText" class="motivation-text">Semangat berkarya!</span>
-      </div>
-
-      <!-- Menu scroll area -->
-      <div class="left-nav-scroll">
-
-        <div class="left-nav-label">Generate</div>
-        <nav class="left-nav-menu">
-          <button class="left-nav-item active" data-view="image">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 10.5l3.5-3.5 2.5 2.5 2.5-3.5L13 10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Gambar</span>
-          </button>
-          <button class="left-nav-item" data-view="video">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="3" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M10 5.5l4-2v8l-4-2V5.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-            <span>Video</span>
-          </button>
-          <button class="left-nav-item" data-view="speech">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5v9M4.5 3.5v5M10.5 3.5v5M1.5 7v1M13.5 7v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5.5 13h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <span>Speech</span>
-          </button>
-          <button class="left-nav-item" data-view="clone">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="8.5" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="5.5" y="5.5" width="8.5" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
-            <span>Clone Style</span>
-          </button>
-        </nav>
-
-        <div class="left-nav-label">Tools AI</div>
-        <nav class="left-nav-menu">
-          <button class="left-nav-item" data-view="imageedit" id="btnImageEdit" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 10.5l2.5-2.5 2 2 2-3 2.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Image Edit</span>
-            <span class="nav-badge">Seed</span>
-          </button>
-          <button class="left-nav-item" data-view="copywriting" id="btnCopywriting" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <span>Copywriting</span>
-            <span class="nav-badge">AI</span>
-          </button>
-          <button class="left-nav-item" data-view="clonelp" id="btnCloneLP" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="8" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="6" y="3" width="8" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 4.5h4M3.5 6.5h3M3.5 8.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <span>Clone LP</span>
-            <span class="nav-badge">AI</span>
-          </button>
-          <button class="left-nav-item" data-view="cekiklan" id="btnCekIklan" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7.5l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Cek Iklan</span>
-            <span class="nav-badge">AI</span>
-          </button>
-          <button class="left-nav-item" data-view="analyze" id="btnAnalyze" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 11L4.5 7l3 3 3.5-4.5L15 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Analisis Video</span>
-            <span class="nav-badge">AI</span>
-          </button>
-        </nav>
-
-        <div class="left-nav-label">Lainnya</div>
-        <nav class="left-nav-menu">
-          <button class="left-nav-item" data-view="history" id="btnHistory" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 4.5V7.5l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <span>History</span>
-          </button>
-          <button class="left-nav-item" data-view="admin" id="btnAdmin" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h7M4 7.5h7M4 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <span>Admin</span>
-          </button>
-        </nav>
-
-      </div><!-- end left-nav-scroll -->
-
-      <!-- Footer -->
-      <div class="left-nav-footer">
-        <div class="left-nav-user" id="userInfo" style="display:none">
-          <div class="left-nav-avatar" id="userAvatar">A</div>
-          <div style="flex:1;min-width:0">
-            <div class="left-nav-username" id="userEmail">-</div>
-            <button class="left-nav-logout" id="btnLogout">Logout</button>
-          </div>
-          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 1v1.2M6.5 10.8V12M1 6.5h1.2M10.8 6.5H12M2.7 2.7l.85.85M9.45 9.45l.85.85M2.7 10.3l.85-.85M9.45 3.55l.85-.85" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-        <div class="left-nav-login-btn" id="loginBtnWrap">
-          <button class="btn-auth nav-icon-btn" id="btnAuthToggle" style="width:100%">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="4" r="2.3" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 11.5c0-2.2 2.2-3.5 5-3.5s5 1.3 5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            Login
-          </button>
-          <button class="theme-toggle" id="themeToggleLogin" title="Toggle theme">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 1v1.2M6.5 10.8V12M1 6.5h1.2M10.8 6.5H12M2.7 2.7l.85.85M9.45 9.45l.85.85M2.7 10.3l.85-.85M9.45 3.55l.85-.85" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-      </div>
-
-    </aside><!-- end left-nav -->
-
-    <!-- MAIN CONTENT AREA -->
-    <div class="main-content">
-
-      <!-- Generate views -->
-      <div class="gen-layout" id="genLayout" style="display:flex">
-
-        <!-- Settings panel -->
-        <aside class="sidebar" id="sidebarPanel">
-          <div class="sidebar-inner" id="sidebarInner">
-
-            <div class="gen-panel" data-panel="image">
+        <!-- ===== TAB: GAMBAR ===== -->
+        <div class="tab-panel" data-panel="image">
 
           <div class="panel-group">
             <div class="panel-label">Gambar Referensi</div>
@@ -301,9 +270,7 @@
         </div>
 
         <!-- ===== TAB: VIDEO ===== -->
-        <div
-
-            <div class="gen-panel" data-panel="video" style="display:none">
+        <div class="tab-panel" data-panel="video" style="display:none">
 
           <div class="panel-group">
             <div class="panel-label">Gambar Referensi</div>
@@ -378,9 +345,7 @@
         </div>
 
         <!-- ===== TAB: SPEECH ===== -->
-        <div
-
-            <div class="gen-panel" data-panel="speech" style="display:none">
+        <div class="tab-panel" data-panel="music" style="display:none">
 
           <div class="panel-group">
             <div class="panel-label">Teks Narasi</div>
@@ -523,9 +488,7 @@
         </div>
 
 <!-- ===== TAB: CLONE STYLE ===== -->
-        <div
-
-            <div class="gen-panel" data-panel="clone" style="display:none">
+        <div class="tab-panel" data-panel="clone" style="display:none">
 
           <div class="panel-group">
             <div class="panel-label">Iklan Kompetitor <span style="font-size:10px;color:#7C6EFA;font-weight:400;text-transform:none">(referensi style)</span></div>
@@ -604,20 +567,25 @@
               <button class="ratio-cell" data-ratio="4:5"><div class="rv rv-4-5"></div><span>4:5</span><small>Portrait</small></button>
               <button class="ratio-cell" data-ratio="3:2"><div class="rv rv-3-2"></div><span>3:2</span><small>Wide</small></button>
               <button class="ratio-cell" data-ratio="2:3"><div class="rv rv-2-3"></div><span>2:3</span><small>Tall</small></button>
-
-          </div></div></div></div></div><!-- end sidebar-inner -->
-
-          <!-- Generate CTA -->
-          <div class="sidebar-cta" style="width:300px;max-width:300px;box-sizing:border-box">
-            <button class="btn-generate" id="btnGenerate">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3l5 5-5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Generate
-            </button>
+            </div>
           </div>
 
-        </aside><!-- end sidebar -->
 
-        <main class="canvas-area">
+      </div>
+
+      </div>
+
+      <!-- Generate CTA -->
+      <div class="sidebar-cta" style="width:300px;max-width:300px;box-sizing:border-box">
+        <button class="btn-generate" id="btnGenerate">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="btnGenerateLabel">Generate Gambar</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============ CANVAS ============ -->
+    <main class="canvas-area">
 
       <!-- Empty -->
       <div class="state-empty" id="stateEmpty">
@@ -752,11 +720,14 @@
         <button class="preview-dl-btn" id="previewDl"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg> Download</button>
       </div>
     </div>
+  </div>
 
-      </div><!-- end gen-layout -->
+  <div class="toast" id="toast"></div>
 
-      <!-- Fullpage views -->
-      <div class="history-view" id="historyView" style="display:none">
+
+
+  <!-- History View -->
+  <div class="history-view" id="historyView" style="display:none">
     <div class="history-header">
       <button class="btn-ghost" id="btnBackToApp">← Kembali</button>
       <h2 class="history-title">History Generate</h2>
@@ -1124,14 +1095,6 @@
     </div>
   </div>
 
-    </div><!-- end main-content -->
-
-  </div><!-- end app-shell -->
-
-  <div class="toast" id="toast"></div>
-
-    </div>
-  </div>
   <script src="app.js"></script>
 </body>
 </html>
