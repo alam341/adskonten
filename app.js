@@ -60,9 +60,46 @@ document.addEventListener('DOMContentLoaded', function() {
   $('btnImageEdit') && $('btnImageEdit').addEventListener('click', function() { showView('imageedit'); setupImageEdit(); });
   $('btnBackFromImageEdit') && $('btnBackFromImageEdit').addEventListener('click', function() { showView('app'); });
   $('btnCopywriting') && $('btnCopywriting').addEventListener('click', function() { showView('copywriting'); setupCopywriting(); });
+  $('btnCloneLP') && $('btnCloneLP').addEventListener('click', function() { showView('clonelp'); });
+  $('btnBackFromCloneLP') && $('btnBackFromCloneLP').addEventListener('click', function() { showView('app'); });
   $('btnBackFromCopywriting') && $('btnBackFromCopywriting').addEventListener('click', function() { showView('app'); });
   $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { showView('app'); });
   $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
+
+  // Mobile bottom nav tabs
+  $('tabHistory') && $('tabHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
+  $('tabTools') && $('tabTools').addEventListener('click', function() {
+    // Tools dropdown — tampilkan pilihan
+    var tools = [
+      { label: 'Analisis Video', view: 'analyze', fn: setupAnalyzeTab },
+      { label: 'Cek Iklan', view: 'cekiklan', fn: setupCekIklan },
+      { label: 'Copywriting', view: 'copywriting', fn: setupCopywriting },
+      { label: 'Image Edit', view: 'imageedit', fn: setupImageEdit },
+    ];
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:flex-end';
+    var box = document.createElement('div');
+    box.style.cssText = 'background:var(--bg-nav);width:100%;border-radius:20px 20px 0 0;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom))';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:12px;color:var(--text-4);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;text-align:center';
+    title.textContent = 'Tools';
+    box.appendChild(title);
+    tools.forEach(function(t) {
+      var btn = document.createElement('button');
+      btn.style.cssText = 'display:block;width:100%;padding:14px 16px;background:var(--bg-surface);border:none;border-radius:10px;margin-bottom:8px;font-family:inherit;font-size:14px;color:var(--text-1);text-align:left;cursor:pointer';
+      btn.textContent = t.label;
+      btn.onclick = function() { document.body.removeChild(sheet); showView(t.view); t.fn && t.fn(); };
+      box.appendChild(btn);
+    });
+    var cancel = document.createElement('button');
+    cancel.style.cssText = 'display:block;width:100%;padding:14px;background:none;border:none;font-family:inherit;font-size:14px;color:var(--text-4);cursor:pointer;margin-top:4px';
+    cancel.textContent = 'Batal';
+    cancel.onclick = function() { document.body.removeChild(sheet); };
+    box.appendChild(cancel);
+    sheet.appendChild(box);
+    sheet.onclick = function(e) { if(e.target===sheet) document.body.removeChild(sheet); };
+    document.body.appendChild(sheet);
+  });
 
   $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
   $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('app'); });
@@ -86,6 +123,8 @@ function showView(v) {
   if (imageEditView) imageEditView.style.display = v==='imageedit' ? 'flex' : 'none';
   var copyView = $('copywritingView');
   if (copyView) copyView.style.display = v==='copywriting' ? 'flex' : 'none';
+  var cloneLPView = $('cloneLPView');
+  if (cloneLPView) cloneLPView.style.display = v==='clonelp' ? 'flex' : 'none';
 
 }
 
@@ -192,12 +231,19 @@ function setUser(user, profile) {
   if (btnHist) btnHist.style.display = 'flex';
   var btnAn = $('btnAnalyze');
   if (btnAn) btnAn.style.display = 'flex';
+  // Mobile: show History & Tools tabs in bottom nav
+  if (window.innerWidth <= 768) {
+    var tabHist = $('tabHistory'); if (tabHist) tabHist.style.display = 'flex';
+    var tabTools = $('tabTools'); if (tabTools) tabTools.style.display = 'flex';
+  }
   var btnCek = $('btnCekIklan');
   if (btnCek) btnCek.style.display = 'flex';
   var btnIE = $('btnImageEdit');
   if (btnIE) btnIE.style.display = 'flex';
   var btnCopy = $('btnCopywriting');
   if (btnCopy) btnCopy.style.display = 'flex';
+  var btnCLP = $('btnCloneLP');
+  if (btnCLP) btnCLP.style.display = 'flex';
 
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
@@ -228,6 +274,8 @@ function clearUser() {
   if (btnIE2) btnIE2.style.display = 'none';
   var btnCopy2 = $('btnCopywriting');
   if (btnCopy2) btnCopy2.style.display = 'none';
+  var btnCLP2 = $('btnCloneLP');
+  if (btnCLP2) btnCLP2.style.display = 'none';
 
   showLoginScreen();
 }
@@ -1182,6 +1230,69 @@ async function startCopywriting() {
   }
   if (btn) btn.disabled = false;
 }
+
+// ── Clone LP ─────────────────────────────────────────────
+async function startCloneLP() {
+  var url = $('cloneLPUrl') ? $('cloneLPUrl').value.trim() : '';
+  var productInfo = $('cloneLPProduct') ? $('cloneLPProduct').value.trim() : '';
+  if (!url) { showToast('Paste URL landing page dulu.', 'error'); return; }
+  if (!productInfo) { showToast('Isi info produk dulu.', 'error'); return; }
+
+  var loading = $('cloneLPLoading');
+  var loadingText = $('cloneLPLoadingText');
+  var empty = $('cloneLPEmpty');
+  var right = $('cloneLPRight');
+  var btn = $('btnStartCloneLP');
+  var lang = $('cloneLPLang') ? $('cloneLPLang').value : 'Bahasa Indonesia';
+
+  var sections = [];
+  if ($('cloneHero') && $('cloneHero').checked) sections.push('Hero Section');
+  if ($('cloneFeatures') && $('cloneFeatures').checked) sections.push('Fitur & Benefit');
+  if ($('cloneSocial') && $('cloneSocial').checked) sections.push('Social Proof & Testimoni');
+  if ($('clonePricing') && $('clonePricing').checked) sections.push('Pricing');
+  if ($('cloneFAQ') && $('cloneFAQ').checked) sections.push('FAQ');
+  if ($('cloneCTA') && $('cloneCTA').checked) sections.push('CTA Penutup');
+
+  if (empty) empty.style.display = 'none';
+  if (loading) loading.style.display = 'block';
+  if (loadingText) loadingText.textContent = 'Mengambil konten landing page...';
+  if (btn) btn.disabled = true;
+
+  try {
+    if (loadingText) loadingText.textContent = 'Menganalisis & generate copy...';
+    var res = await fetch('/api/proxy?action=clonelp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+(authToken||localStorage.getItem('adstudio_token')||'') },
+      body: JSON.stringify({ url, productInfo, lang, sections })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gagal.');
+
+    if (loading) loading.style.display = 'none';
+    if (right) {
+      var copyBtn = document.createElement('button');
+      copyBtn.className = 'btn-ghost';
+      copyBtn.textContent = '📋 Copy Semua';
+      var textDiv = document.createElement('div');
+      textDiv.style.cssText = 'font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;margin-top:16px;padding-bottom:40px';
+      textDiv.textContent = data.copy;
+      copyBtn.onclick = function() { navigator.clipboard.writeText(textDiv.textContent); showToast('Disalin!','success'); };
+      right.innerHTML = '';
+      right.appendChild(copyBtn);
+      right.appendChild(textDiv);
+    }
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    if (empty) empty.style.display = 'flex';
+    showToast(e.message, 'error');
+  }
+  if (btn) btn.disabled = false;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = $('btnStartCloneLP');
+  if (btn) btn.addEventListener('click', startCloneLP);
+});
 
 // ── Welcome Screen ───────────────────────────────────────
 function showWelcomeScreen(username) {
