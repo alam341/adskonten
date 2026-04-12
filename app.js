@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
   $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
   $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); setupAnalyzeTab(); });
   $('btnCekIklan') && $('btnCekIklan').addEventListener('click', function() { showView('cekiklan'); setupCekIklan(); });
+  $('btnImageEdit') && $('btnImageEdit').addEventListener('click', function() { showView('imageedit'); setupImageEdit(); });
+  $('btnBackFromImageEdit') && $('btnBackFromImageEdit').addEventListener('click', function() { showView('app'); });
   $('btnCopywriting') && $('btnCopywriting').addEventListener('click', function() { showView('copywriting'); setupCopywriting(); });
   $('btnBackFromCopywriting') && $('btnBackFromCopywriting').addEventListener('click', function() { showView('app'); });
   $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { showView('app'); });
@@ -80,6 +82,8 @@ function showView(v) {
   if (analyzeView) analyzeView.style.display = v==='analyze' ? 'flex' : 'none';
   var cekIklanView = $('cekIklanView');
   if (cekIklanView) cekIklanView.style.display = v==='cekiklan' ? 'flex' : 'none';
+  var imageEditView = $('imageEditView');
+  if (imageEditView) imageEditView.style.display = v==='imageedit' ? 'flex' : 'none';
   var copyView = $('copywritingView');
   if (copyView) copyView.style.display = v==='copywriting' ? 'flex' : 'none';
 
@@ -190,6 +194,8 @@ function setUser(user, profile) {
   if (btnAn) btnAn.style.display = 'flex';
   var btnCek = $('btnCekIklan');
   if (btnCek) btnCek.style.display = 'flex';
+  var btnIE = $('btnImageEdit');
+  if (btnIE) btnIE.style.display = 'flex';
   var btnCopy = $('btnCopywriting');
   if (btnCopy) btnCopy.style.display = 'flex';
 
@@ -218,6 +224,8 @@ function clearUser() {
   if (btnAn2) btnAn2.style.display = 'none';
   var btnCek2 = $('btnCekIklan');
   if (btnCek2) btnCek2.style.display = 'none';
+  var btnIE2 = $('btnImageEdit');
+  if (btnIE2) btnIE2.style.display = 'none';
   var btnCopy2 = $('btnCopywriting');
   if (btnCopy2) btnCopy2.style.display = 'none';
 
@@ -969,6 +977,111 @@ async function startCekIklan() {
       right.appendChild(copyBtn);
       right.appendChild(textDiv);
     }
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    if (empty) empty.style.display = 'flex';
+    showToast(e.message, 'error');
+  }
+  if (btn) btn.disabled = false;
+}
+
+// ── Image Edit ───────────────────────────────────────────
+var imageEditFile = null;
+
+function setupImageEdit() {
+  var zone = $('imageEditUploadZone');
+  var input = $('imageEditInput');
+  var preview = $('imageEditPreview');
+  var empty = $('imageEditUploadEmpty');
+  var btn = $('btnStartImageEdit');
+  if (!zone || zone._initialized) return;
+  zone._initialized = true;
+
+  zone.addEventListener('click', function() {
+    if (preview && preview.style.display !== 'none') return;
+    input.click();
+  });
+  empty && empty.addEventListener('click', function(e) { e.stopPropagation(); input.click(); });
+
+  input.addEventListener('change', function(e) {
+    var f = e.target.files[0]; if (!f) return;
+    if (f.size > 10*1024*1024) { showToast('Maks 10MB.','error'); return; }
+    imageEditFile = f;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      if (preview) { preview.src = ev.target.result; preview.style.display = 'block'; }
+      if (empty) empty.style.display = 'none';
+      if (btn) btn.disabled = false;
+    };
+    reader.readAsDataURL(f);
+  });
+
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor='var(--accent)'; });
+  zone.addEventListener('dragleave', function() { zone.style.borderColor=''; });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault(); zone.style.borderColor='';
+    var f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) { input.files=e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+  });
+
+  if (btn) btn.addEventListener('click', startImageEdit);
+}
+
+async function startImageEdit() {
+  if (!imageEditFile) { showToast('Upload gambar dulu.','error'); return; }
+  var prompt = $('imageEditPrompt') ? $('imageEditPrompt').value.trim() : '';
+  if (!prompt) { showToast('Tulis instruksi edit dulu.','error'); return; }
+
+  var loading = $('imageEditLoading');
+  var empty = $('imageEditEmpty');
+  var result = $('imageEditResult');
+  var btn = $('btnStartImageEdit');
+  var ratio = $('imageEditSize') ? $('imageEditSize').value : '1:1';
+
+  if (empty) empty.style.display = 'none';
+  if (result) result.style.display = 'none';
+  if (loading) loading.style.display = 'block';
+  if (btn) btn.disabled = true;
+
+  try {
+    // Upload gambar dulu
+    var reader = new FileReader();
+    var base64 = await new Promise(function(res) {
+      reader.onload = function(e) { res(e.target.result); };
+      reader.readAsDataURL(imageEditFile);
+    });
+
+    var upRes = await fetch('/api/proxy?action=upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+(authToken||localStorage.getItem('adstudio_token')||'') },
+      body: JSON.stringify({ imageBase64: base64, mimeType: imageEditFile.type, type: 'image' })
+    });
+    var upData = await upRes.json();
+    if (!upRes.ok) throw new Error(upData.error || 'Upload gagal.');
+
+    // Generate edit
+    var genRes = await fetch('/api/proxy?action=imageedit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+(authToken||localStorage.getItem('adstudio_token')||'') },
+      body: JSON.stringify({ imageUrl: upData.url, prompt, ratio })
+    });
+    var genData = await genRes.json();
+    if (!genRes.ok) throw new Error(genData.error || 'Edit gagal.');
+
+    // Poll status
+    updateSub && updateSub('Mengedit gambar...');
+    var resultUrl = await pollStatus(genData.taskId, 'jobs', 60);
+
+    if (loading) loading.style.display = 'none';
+    if (result) result.style.display = 'block';
+    var img = $('imageEditResultImg');
+    if (img) img.src = Array.isArray(resultUrl) ? resultUrl[0] : resultUrl;
+    var dlBtn = $('imageEditDownload');
+    if (dlBtn) dlBtn.onclick = function() {
+      var url = Array.isArray(resultUrl) ? resultUrl[0] : resultUrl;
+      var a = document.createElement('a'); a.href=url; a.download='edit-'+Date.now()+'.jpg'; a.target='_blank'; a.click();
+    };
+
   } catch(e) {
     if (loading) loading.style.display = 'none';
     if (empty) empty.style.display = 'flex';
