@@ -606,3 +606,102 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .analyze-upload-zone:hover { border-color: var(--accent); }
 
 .tab-panel { width: 100%; }
+
+/* ═══════════════════════════════════════════════
+   MOBILE RESPONSIVE — tambahan saja, tidak ubah yang lama
+   ═══════════════════════════════════════════════ */
+
+/* Tablet (768px ke bawah) */
+@media (max-width: 768px) {
+  /* Navbar */
+  .topnav { padding: 0 12px; gap: 8px; }
+  .logo-sub { display: none; }
+  .nav-center { display: none; } /* sembunyikan tab di navbar, pakai bawah */
+
+  /* Tab nav pindah ke bawah */
+  .tab-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    border-radius: 0;
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    background: var(--bg-nav);
+    padding: 4px 8px;
+    display: flex; justify-content: space-around;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; flex-direction: column; gap: 2px; padding: 6px 10px; font-size: 10px; }
+  .tab-btn svg { width: 16px; height: 16px; }
+
+  /* App layout */
+  .app-layout { flex-direction: column; height: calc(100vh - 48px); }
+  .sidebar {
+    width: 100% !important; min-width: 100% !important; max-width: 100% !important;
+    height: auto; max-height: 55vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .sidebar-inner { overflow-y: auto; padding-bottom: 80px; }
+  .canvas-area { flex: 1; min-height: 40vh; }
+
+  /* Navbar right buttons - lebih compact */
+  .nav-right { gap: 6px; }
+  .nav-icon-btn { padding: 4px 8px; font-size: 11px; gap: 3px; }
+  .nav-icon-btn svg { width: 12px; height: 12px; }
+
+  /* Btn generate */
+  .sidebar-cta { padding: 10px 12px; }
+  .btn-generate { height: 42px; font-size: 13px; }
+
+  /* History/Analyze/fullpage views */
+  .history-view { flex-direction: column; }
+  .analyze-body { flex-direction: column; }
+  .analyze-left {
+    width: 100% !important; min-width: 100% !important;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 50vh; overflow-y: auto;
+  }
+  .analyze-right { min-height: 300px; }
+
+  /* Result grid */
+  .result-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Modal */
+  .modal-overlay { align-items: flex-end; }
+  .modal-box { width: 100%; border-radius: 16px 16px 0 0; max-height: 90vh; }
+
+  /* Welcome screen */
+  .welcome-card { padding: 28px 20px; }
+  .mood-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .mood-emoji { font-size: 24px; }
+
+  /* Motivation bar */
+  .motivation-bar { font-size: 11px; padding: 0 12px; }
+}
+
+/* Mobile kecil (480px ke bawah) */
+@media (max-width: 480px) {
+  .nav-icon-btn span { display: none; } /* hanya tampilkan icon */
+  .nav-icon-btn { padding: 6px; min-width: 32px; justify-content: center; }
+  .user-email { max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .result-grid { grid-template-columns: repeat(1, 1fr) !important; }
+  .history-header { padding: 12px 16px; }
+  .history-title { font-size: 14px; }
+
+  /* Ratio grid lebih compact */
+  .ratio-grid { gap: 4px; }
+  .ratio-cell { padding: 4px 2px; font-size: 10px; }
+
+  /* Model list */
+  .model-row-price { display: none; }
+
+  /* Sidebar padding */
+  .sidebar { padding: 0; }
+  .panel-group { padding: 12px 12px 0; }
+  .sidebar-cta { padding: 12px; }
+}
