@@ -51,6 +51,10 @@
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Copywriting
       </button>
+      <button class="nav-icon-btn" id="btnImageEdit" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 10l3-3 2 2 2-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Image Edit
+      </button>
       <button class="nav-icon-btn" id="btnCekIklan" style="display:none">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Cek Iklan
@@ -948,6 +952,68 @@
         <div id="copywritingLoading" style="display:none;text-align:center;padding:60px 40px">
           <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
           <p style="color:var(--text-4);font-size:13px">Menulis copywriting...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Edit View -->
+  <div class="history-view" id="imageEditView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromImageEdit">← Kembali</button>
+      <h2 class="history-title">Image Edit</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+        <div class="panel-group">
+          <div class="panel-label">Upload Gambar</div>
+          <div class="analyze-upload-zone" id="imageEditUploadZone">
+            <input type="file" id="imageEditInput" accept="image/*" hidden />
+            <div id="imageEditUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload gambar yang ingin diedit</p>
+              <p style="font-size:10px;color:var(--text-6)">PNG, JPG · maks 10MB</p>
+            </div>
+            <img id="imageEditPreview" style="display:none;width:100%;border-radius:8px;max-height:200px;object-fit:contain" />
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Instruksi Edit</div>
+          <textarea id="imageEditPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan perubahan yang diinginkan...&#10;&#10;Contoh:&#10;- Ganti background jadi putih bersih&#10;- Tambahkan teks DISKON 50% di pojok kanan&#10;- Ubah warna produk jadi merah&#10;- Hapus objek di belakang produk"></textarea>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Ukuran Output</div>
+          <select id="imageEditSize" class="voice-select" style="width:100%">
+            <option value="1:1">1:1 — Feed</option>
+            <option value="9:16">9:16 — Stories/Reels</option>
+            <option value="16:9">16:9 — Banner</option>
+            <option value="4:5">4:5 — Portrait</option>
+            <option value="3:2">3:2 — Wide</option>
+          </select>
+        </div>
+        <button class="btn-generate" id="btnStartImageEdit" disabled>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="white" stroke-width="1.3"/><path d="M4 10l3-3 2 2 2-3" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Edit Gambar
+        </button>
+      </div>
+      <div class="analyze-right" id="imageEditRight">
+        <div id="imageEditEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="40" height="40" rx="8" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M12 36l10-12 8 8 6-8 8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+          <p>Upload gambar dan tulis instruksi edit</p>
+        </div>
+        <div id="imageEditLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px">Mengedit gambar...</p>
+        </div>
+        <div id="imageEditResult" style="display:none;padding:24px;text-align:center">
+          <img id="imageEditResultImg" style="max-width:100%;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2)" />
+          <div style="margin-top:16px">
+            <button class="btn-solid" id="imageEditDownload">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Download
+            </button>
+          </div>
         </div>
       </div>
     </div>
