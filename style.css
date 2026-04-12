@@ -683,25 +683,3 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
   /* Motivation bar */
   .motivation-bar { font-size: 11px; padding: 0 12px; }
 }
-
-/* Mobile kecil (480px ke bawah) */
-@media (max-width: 480px) {
-  .nav-icon-btn span { display: none; } /* hanya tampilkan icon */
-  .nav-icon-btn { padding: 6px; min-width: 32px; justify-content: center; }
-  .user-email { max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .result-grid { grid-template-columns: repeat(1, 1fr) !important; }
-  .history-header { padding: 12px 16px; }
-  .history-title { font-size: 14px; }
-
-  /* Ratio grid lebih compact */
-  .ratio-grid { gap: 4px; }
-  .ratio-cell { padding: 4px 2px; font-size: 10px; }
-
-  /* Model list */
-  .model-row-price { display: none; }
-
-  /* Sidebar padding */
-  .sidebar { padding: 0; }
-  .panel-group { padding: 12px 12px 0; }
-  .sidebar-cta { padding: 12px; }
-}
