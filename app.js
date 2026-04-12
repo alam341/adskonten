@@ -264,9 +264,18 @@ function clearUser() {
   if (btnAuth) btnAuth.style.display = 'flex';
   var userInfo = $('userInfo');
   if (userInfo) userInfo.style.display = 'none';
-  ['btnHistory','btnAnalyze','btnCekIklan','btnImageEdit','btnCopywriting','btnCloneLP'].forEach(function(id) {
-    var el = $(id); if (el) el.style.display = 'none';
-  });
+  var btnHist = $('btnHistory');
+  if (btnHist) btnHist.style.display = 'none';
+  var btnAn2 = $('btnAnalyze');
+  if (btnAn2) btnAn2.style.display = 'none';
+  var btnCek2 = $('btnCekIklan');
+  if (btnCek2) btnCek2.style.display = 'none';
+  var btnIE2 = $('btnImageEdit');
+  if (btnIE2) btnIE2.style.display = 'none';
+  var btnCopy2 = $('btnCopywriting');
+  if (btnCopy2) btnCopy2.style.display = 'none';
+  var btnCLP2 = $('btnCloneLP');
+  if (btnCLP2) btnCLP2.style.display = 'none';
 
   showLoginScreen();
 }
@@ -350,7 +359,7 @@ function setupTabs() {
       activeTab = btn.dataset.tab;
       document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab===activeTab); });
       document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = p.dataset.panel===activeTab ? 'block':'none'; });
-      var labels = { image:'Generate Gambar', video:'Generate Video', speech:'Generate Speech', clone:'Clone Style' };
+      var labels = { image:'Generate Gambar', video:'Generate Video', music:'Generate Speech', clone:'Clone Style', analyze:'Mulai Analisis' };
       $('btnGenerateLabel') && ($('btnGenerateLabel').textContent = labels[activeTab]||'Generate');
       var titles = { image:'Generate Konten Iklan — Gambar', video:'Generate Konten Iklan — Video', music:'Generate Narasi / Voice Over', clone:'Clone Style Iklan Kompetitor', analyze:'Analisis Video Iklan Kompetitor' };
       $('emptyTitle') && ($('emptyTitle').textContent = titles[activeTab]||'');
