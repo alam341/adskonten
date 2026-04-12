@@ -277,6 +277,9 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 /* Sembunyikan topnav lama */
 .topnav { display: none !important; }
 
+/* Sembunyikan sidebar::before (logo sudah di HTML) */
+.sidebar::before { display: none !important; }
+
 /* App layout = flex row */
 .app-layout {
   flex-direction: row !important;
@@ -303,9 +306,12 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding-bottom: 120px !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-/* Tab nav jadi vertical */
+/* Tab nav jadi vertical - harus visible */
+.sidebar-inner { overflow: visible !important; }
 .tab-nav {
   flex-direction: column !important;
   gap: 1px !important;
@@ -480,4 +486,21 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 @media (max-width: 480px) {
   .tab-btn svg + * { display: none; }
   .tab-btn { padding: 7px !important; min-width: 34px !important; justify-content: center !important; }
+}
+
+/* ── Login & Welcome override ── */
+.login-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--bg) !important;
+  padding: 20px !important;
+}
+.welcome-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9998 !important;
 }
