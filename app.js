@@ -1076,11 +1076,12 @@ async function startImageEdit() {
     if (result) result.style.display = 'block';
     var img = $('imageEditResultImg');
     if (img) img.src = Array.isArray(resultUrl) ? resultUrl[0] : resultUrl;
+    var finalUrl = Array.isArray(resultUrl) ? resultUrl[0] : resultUrl;
     var dlBtn = $('imageEditDownload');
     if (dlBtn) dlBtn.onclick = function() {
-      var url = Array.isArray(resultUrl) ? resultUrl[0] : resultUrl;
-      var a = document.createElement('a'); a.href=url; a.download='edit-'+Date.now()+'.jpg'; a.target='_blank'; a.click();
+      var a = document.createElement('a'); a.href=finalUrl; a.download='edit-'+Date.now()+'.jpg'; a.target='_blank'; a.click();
     };
+    saveToHistory('image', 'seedream/4.5-edit', prompt, ratio, [finalUrl]);
 
   } catch(e) {
     if (loading) loading.style.display = 'none';
