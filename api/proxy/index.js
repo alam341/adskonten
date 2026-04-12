@@ -520,6 +520,33 @@ Tulis dalam Bahasa Indonesia yang natural, menjual, dan sesuai dengan kultur lok
       return res.status(200).json({ copy: d.content?.[0]?.text || '' });
     }
 
+    // ── IMAGE EDIT ────────────────────────────────────────────
+    if (action === 'imageedit') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const apiKey = getKey('image');
+      const { imageUrl, prompt, ratio } = req.body;
+      if (!imageUrl || !prompt) return res.status(400).json({ error: 'imageUrl dan prompt diperlukan.' });
+      const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'seedream/4.5-edit',
+          input: {
+            prompt,
+            image_urls: [imageUrl],
+            aspect_ratio: ratio || '1:1',
+            image_resolution: '2K',
+            nsfw_checker: true
+          }
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Image edit error: ' + JSON.stringify(d) });
+      const taskId = d.data?.taskId;
+      if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
+      return res.status(200).json({ taskId, taskType: 'jobs' });
+    }
+
     // ── CEK KUALITAS IKLAN ───────────────────────────────────
     if (action === 'cekiklan') {
       if (req.method !== 'POST') return res.status(405).end();
