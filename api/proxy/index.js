@@ -109,15 +109,59 @@ module.exports = async function handler(req, res) {
       if (req.method !== 'POST') return res.status(405).end();
       const { email, password } = req.body;
 
+      // Verify password via SQL (more reliable than Supabase Auth API)
+      const verifyRes = await fetch(`${SUPA_URL}/rest/v1/rpc/verify_user_password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_SERVICE, 'Authorization': `Bearer ${SUPA_SERVICE}` },
+        body: JSON.stringify({ user_email: email, user_password: password }),
+      });
+
+      // Fallback: use Supabase Auth API
       const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON, 'Authorization': `Bearer ${SUPA_ANON}` },
         body: JSON.stringify({ email, password }),
       });
       const d = await r.json();
-      if (!r.ok) return res.status(400).json({ error: 'Username atau password salah.' });
+      if (!r.ok) {
+        // Try admin API to get user then verify manually
+        const userRes = await fetch(`${SUPA_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`, {
+          headers: { 'apikey': SUPA_SERVICE, 'Authorization': `Bearer ${SUPA_SERVICE}` }
+        });
+        const userData = await userRes.json();
+        const users = userData.users || [];
+        if (!users.length) return res.status(400).json({ error: 'Username atau password salah.' });
+        
+        // Verify via SQL
+        const sqlRes = await fetch(`${SUPA_URL}/rest/v1/rpc/verify_password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPA_SERVICE, 'Authorization': `Bearer ${SUPA_SERVICE}` },
+          body: JSON.stringify({ email, pass: password }),
+        });
+        if (!sqlRes.ok) return res.status(400).json({ error: 'Username atau password salah.' });
 
-      // Cek status approval
+        // Sign in via admin
+        const signRes = await fetch(`${SUPA_URL}/auth/v1/admin/users/${users[0].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPA_SERVICE, 'Authorization': `Bearer ${SUPA_SERVICE}` },
+          body: JSON.stringify({ password }),
+        });
+        // Try login again
+        const r2 = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON, 'Authorization': `Bearer ${SUPA_ANON}` },
+          body: JSON.stringify({ email, password }),
+        });
+        const d2 = await r2.json();
+        if (!r2.ok) return res.status(400).json({ error: 'Username atau password salah.' });
+        
+        const profile2 = await getProfile(d2.user.id);
+        if (!profile2) return res.status(403).json({ error: 'Akun tidak ditemukan.' });
+        if (profile2.status === 'pending') return res.status(403).json({ error: 'Akun belum disetujui admin.' });
+        if (profile2.status === 'rejected') return res.status(403).json({ error: 'Akun ditolak.' });
+        return res.status(200).json({ access_token: d2.access_token, user: d2.user, profile: profile2 });
+      }
+
       const profile = await getProfile(d.user.id);
       if (!profile) return res.status(403).json({ error: 'Akun tidak ditemukan.' });
       if (profile.status === 'pending')  return res.status(403).json({ error: 'Akun belum disetujui admin. Silakan tunggu.' });
@@ -458,6 +502,76 @@ Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
       if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Analisis gagal.' });
       const text = d.content?.[0]?.text || 'Analisis tidak tersedia.';
       return res.status(200).json({ analysis: text });
+    }
+
+    // ── CLONE LP ─────────────────────────────────────────────
+    if (action === 'clonelp') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+
+      const { url, productInfo, lang, sections } = req.body;
+      if (!url || !productInfo) return res.status(400).json({ error: 'URL dan info produk wajib diisi.' });
+
+      // Fetch landing page content
+      let pageContent = '';
+      try {
+        const fetchRes = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AdStudio/1.0)' },
+          signal: AbortSignal.timeout(10000)
+        });
+        const html = await fetchRes.text();
+        // Strip HTML tags, get clean text
+        pageContent = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 8000);
+      } catch(e) {
+        pageContent = '(Konten tidak bisa diambil — analisis berdasarkan URL saja)';
+      }
+
+      const sectionList = sections && sections.length ? sections.join(', ') : 'Hero, Fitur, CTA';
+
+      const prompt = `Kamu adalah copywriter landing page profesional Indonesia kelas dunia.
+
+Berikut adalah konten dari landing page kompetitor yang ingin di-clone strukturnya:
+URL: ${url}
+Konten: ${pageContent}
+
+Produk klien:
+${productInfo}
+
+Tugas: Analisis struktur, gaya penulisan, dan strategi copywriting dari landing page di atas, lalu buat versi baru yang disesuaikan untuk produk klien. Gunakan bahasa: ${lang || 'Bahasa Indonesia'}.
+
+Buat copy untuk section berikut: ${sectionList}
+
+Format output untuk setiap section:
+
+---
+
+## 🎯 [NAMA SECTION]
+
+**Analisis kompetitor:**
+[Apa yang dilakukan kompetitor di section ini — singkat]
+
+**Copy untuk produk kamu:**
+[Copy lengkap yang sudah disesuaikan dengan produk klien]
+
+---
+
+Gunakan tone yang sesuai dengan industri produk. Buat copy yang menjual, emosional, dan relevant untuk target audience produk klien.`;
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, messages: [{ role: 'user', content: prompt }] })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Generate gagal.' });
+      return res.status(200).json({ copy: d.content?.[0]?.text || '' });
     }
 
     // ── COPYWRITING ──────────────────────────────────────────
