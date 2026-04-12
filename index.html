@@ -13,74 +13,8 @@
 </head>
 <body>
 
-  <!-- TOP NAV -->
-  <nav class="topnav">
-    <div class="nav-left">
-      <div class="logo">
-        <img src="/favicon.png" width="28" height="28" style="border-radius:6px;object-fit:contain" alt="Adsy" />
-        <span class="logo-name">AdStudio</span>
-        <span class="logo-sub">by Adsy</span>
-      </div>
-    </div>
-    <div class="nav-center">
-      <div class="tab-nav">
-        <button class="tab-btn active" data-tab="image">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 9l3-3 2.5 2.5L10 5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Gambar
-        </button>
-        <button class="tab-btn" data-tab="video">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 5.5l3-2v7l-3-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Video
-        </button>
-        <button class="tab-btn" data-tab="music">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 4v2a3 3 0 0 0 6 0V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 9c.5 2 2.5 3.5 5 3.5s4.5-1.5 5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          Speech
-        </button>
-        <button class="tab-btn" data-tab="clone">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
-          Clone Style
-        </button>
-      </div>
-    </div>
-    <div class="nav-right">
-      <button class="btn-admin nav-icon-btn" id="btnAdmin" style="display:none" title="Admin Panel">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M4 7.5h7M4 5h7M4 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Admin
-      </button>
-<button class="nav-icon-btn" id="btnCopywriting" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Copywriting
-      </button>
-      <button class="nav-icon-btn" id="btnImageEdit" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 10l3-3 2 2 2-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Image Edit
-      </button>
-      <button class="nav-icon-btn" id="btnCekIklan" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Cek Iklan
-      </button>
-      <button class="nav-icon-btn" id="btnAnalyze" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 11L5 7l3 3 5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Analisis
-      </button>
-      <button class="btn-history nav-icon-btn" id="btnHistory" style="display:none" title="History">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 1 0 13A6.5 6.5 0 0 1 7.5 1z" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 4v4l2.5 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        History
-      </button>
-      <div class="user-info" id="userInfo" style="display:none">
-        <span class="user-email" id="userEmail"></span>
-        <button class="btn-logout" id="btnLogout">Logout</button>
-      </div>
-      <button class="btn-auth nav-icon-btn" id="btnAuthToggle">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 12c0-2.5 2.5-4 5.5-4s5.5 1.5 5.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Login
-      </button>
-      <button class="theme-toggle" id="themeToggle" title="Light / Dark">
-        <svg class="icon-sun" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1v1M7.5 13v1M1 7.5H2M13 7.5h1M3.05 3.05l.7.7M11.25 11.25l.7.7M11.25 3.75l-.7.7M3.75 11.25l-.7.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="7.5" r="3" stroke="currentColor" stroke-width="1.3"/></svg>
-        <svg class="icon-moon" width="15" height="15" viewBox="0 0 15 15" fill="none" style="display:none"><path d="M12 7.5A4.5 4.5 0 0 1 5 2.1 6 6 0 1 0 12.9 10 4.5 4.5 0 0 1 12 7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
-  </nav>
+  <!-- TOP NAV (hidden via CSS) -->
+  <nav class="topnav"></nav>
 
   <!-- LOGIN SCREEN -->
   <!-- Welcome / Mood Screen -->
@@ -142,18 +76,29 @@
       <p class="login-footer">Dengan masuk, kamu setuju dengan syarat penggunaan.</p>
     </div>
   </div>
-  <!-- Motivation Bar -->
-  <div class="motivation-bar" id="motivationBar" style="display:none">
-    <span class="motivation-icon" id="motivationIcon">✨</span>
-    <span class="motivation-text" id="motivationText">Semangat berkarya hari ini!</span>
-  </div>
 
   <!-- APP LAYOUT -->
   <div class="app-layout" id="appLayout" style="display:none">
 
     <!-- ============ SIDEBAR ============ -->
     <aside class="sidebar">
-      <div class="sidebar-inner">
+
+      <!-- Sidebar Logo -->
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 14px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <img src="/favicon.png" width="30" height="30" style="border-radius:7px;object-fit:contain;flex-shrink:0" />
+        <div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--text-1);letter-spacing:-0.3px">AdStudio</div>
+          <div style="font-size:10px;color:var(--text-5)">by Adsy</div>
+        </div>
+      </div>
+      <!-- Motivasi -->
+      <div id="motivationBar" style="display:none;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;font-size:11px;color:var(--text-4);background:rgba(124,110,250,0.05)">
+        <span id="motivationIcon">✨</span> <span id="motivationText" style="font-style:italic">Semangat berkarya!</span>
+      </div>
+      <!-- Generate label -->
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-6);padding:12px 14px 4px;flex-shrink:0">Generate</div>
+
+      <div class="sidebar-inner" id="sidebarInner">
 
         <!-- ===== TAB: GAMBAR ===== -->
         <div class="tab-panel" data-panel="image">
@@ -578,6 +523,34 @@
           <span id="btnGenerateLabel">Generate Gambar</span>
         </button>
       </div>
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <!-- Hidden buttons untuk JS compatibility -->
+      <div id="grokRatioNote" style="display:none"></div>
+      <button id="tabHistory" style="display:none"></button>
+      <button id="tabTools" style="display:none"></button>
+      <button id="btnImageEdit" style="display:none"></button>
+      <button id="btnCopywriting" style="display:none"></button>
+      <button id="btnCloneLP" style="display:none"></button>
+      <button id="btnCekIklan" style="display:none"></button>
+      <button id="btnAnalyze" style="display:none"></button>
+      <button id="btnHistory" style="display:none"></button>
+      <button id="btnAdmin" style="display:none"></button>
+      <div class="nav-actions-row">
+        <div id="userInfo" style="display:none;flex:1;min-width:0">
+          <div class="user-email" id="userEmail"></div>
+          <button class="btn-logout" id="btnLogout">Logout</button>
+        </div>
+        <button class="btn-auth nav-icon-btn" id="btnAuthToggle">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="4" r="2.3" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 11.5c0-2.2 2.2-3.5 5-3.5s5 1.3 5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Login
+        </button>
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 1v1.2M6.5 10.8V12M1 6.5h1.2M10.8 6.5H12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
     </aside>
 
     <!-- ============ CANVAS ============ -->
@@ -808,7 +781,7 @@
           <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
             <button class="btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('analyzeResultText').innerText);showToast('Disalin!','success')">📋 Copy Hasil</button>
           </div>
-          <div id="analyzeResultText" style="font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap"></div>
+          <div id="analyzeResultText2" style="font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap"></div>
         </div>
       </div>
     </div>
@@ -1014,6 +987,78 @@
               Download
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clone LP View -->
+  <div class="history-view" id="cloneLPView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromCloneLP">← Kembali</button>
+      <h2 class="history-title">Clone Copy Landing Page</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+
+        <div class="panel-group">
+          <div class="panel-label">URL Landing Page Kompetitor</div>
+          <input type="url" id="cloneLPUrl" class="apikey-field" style="width:100%" placeholder="https://contoh.com/landing-page" />
+          <div style="font-size:10px;color:var(--text-5);margin-top:4px">Paste URL landing page yang ingin di-clone strukturnya</div>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Info Produk Kamu</div>
+          <textarea id="cloneLPProduct" class="textarea-field" rows="4" placeholder="Nama produk, keunggulan, harga, target audience...&#10;&#10;Contoh: AdStudio by Adsy — platform AI untuk buat konten iklan otomatis, untuk tim marketing &amp; UMKM, harga mulai Rp99rb/bulan"></textarea>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Bahasa Output</div>
+          <select id="cloneLPLang" class="voice-select" style="width:100%">
+            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+            <option value="English">English</option>
+          </select>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Yang Ingin Di-clone</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneHero" checked style="accent-color:var(--accent)"> Hero Section (Headline + Subheadline + CTA)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneFeatures" checked style="accent-color:var(--accent)"> Fitur / Benefit Section
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneSocial" checked style="accent-color:var(--accent)"> Social Proof / Testimoni
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="clonePricing" style="accent-color:var(--accent)"> Pricing Section
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneFAQ" style="accent-color:var(--accent)"> FAQ Section
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="cloneCTA" checked style="accent-color:var(--accent)"> CTA Section (Penutup)
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-generate" id="btnStartCloneLP">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="white" stroke-width="1.3"/><path d="M4 5h7M4 8h5" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Clone & Generate Copy
+        </button>
+
+      </div>
+      <div class="analyze-right" id="cloneLPRight">
+        <div id="cloneLPEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="28" height="36" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><rect x="16" y="14" width="28" height="30" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M12 14h12M12 20h8M12 26h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/></svg>
+          <p>Paste URL landing page kompetitor<br/>lalu klik Clone & Generate Copy</p>
+        </div>
+        <div id="cloneLPLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px" id="cloneLPLoadingText">Mengambil konten landing page...</p>
         </div>
       </div>
     </div>
