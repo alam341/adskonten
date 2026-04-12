@@ -535,8 +535,8 @@ Tulis dalam Bahasa Indonesia yang natural, menjual, dan sesuai dengan kultur lok
             prompt,
             image_urls: [imageUrl],
             aspect_ratio: ratio || '1:1',
-            image_resolution: '2K',
-            nsfw_checker: true
+            quality: 'basic',
+            max_images: 1
           }
         })
       });
