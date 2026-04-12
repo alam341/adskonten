@@ -268,31 +268,6 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .toast.success { border-color: rgba(124,110,250,0.4); color: #a294fa; }
 
 /* ── RESPONSIVE ── */
-/* ── HISTORY ─────────────────────────────────────────────── */
-.history-view { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-.history-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg-nav); }
-.history-title { font-size: 15px; font-weight: 600; color: var(--text-1); }
-.history-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  padding: 20px 24px;
-  overflow-y: auto;
-  flex: 1;
-}
-.history-card { background: var(--bg-surface); border: 1px solid var(--border-input); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
-.history-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-.history-thumb-placeholder { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--bg-hover); }
-.history-card-info { padding: 8px 10px 4px; flex: 1; }
-.history-card-type { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; }
-.history-card-model { font-size: 10px; color: var(--text-5); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.history-card-date { font-size: 10px; color: var(--text-6); margin-top: 2px; }
-.history-card-actions { display: flex; gap: 6px; padding: 6px 10px 8px; }
-.btn-dl-hist, .btn-del-hist { flex: 1; padding: 5px; border-radius: 6px; border: 1px solid var(--border-input); background: var(--bg-hover); color: var(--text-3); cursor: pointer; font-size: 13px; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
-.btn-dl-hist:hover { border-color: var(--accent); color: var(--accent); }
-.btn-del-hist:hover { border-color: #ef4444; color: #ef4444; }
-.history-loading { grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-5); font-size: 13px; }
-.history-empty { grid-column: 1/-1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 12px; color: var(--text-5); font-size: 13px; opacity: 0.5; }
 
 /* ═══ MOBILE & TABLET RESPONSIVE ═══════════════════════════ */
 
