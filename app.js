@@ -54,17 +54,17 @@ document.addEventListener('DOMContentLoaded', function() {
   $('imgBtnRegenerate') && $('imgBtnRegenerate').addEventListener('click', generate);
   $('vidBtnRegenerate') && $('vidBtnRegenerate').addEventListener('click', generate);
   $('musicBtnRegenerate') && $('musicBtnRegenerate').addEventListener('click', generate);
-  // Tool buttons handled via onclick in HTML
+  $('btnHistory') && $('btnHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
   $('btnAnalyze') && $('btnAnalyze').addEventListener('click', function() { showView('analyze'); setupAnalyzeTab(); });
   $('btnCekIklan') && $('btnCekIklan').addEventListener('click', function() { showView('cekiklan'); setupCekIklan(); });
   $('btnImageEdit') && $('btnImageEdit').addEventListener('click', function() { showView('imageedit'); setupImageEdit(); });
-  $('btnBackFromImageEdit') && $('btnBackFromImageEdit').addEventListener('click', function() { lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image'); });
+  $('btnBackFromImageEdit') && $('btnBackFromImageEdit').addEventListener('click', function() { showView('app'); });
   $('btnCopywriting') && $('btnCopywriting').addEventListener('click', function() { showView('copywriting'); setupCopywriting(); });
   $('btnCloneLP') && $('btnCloneLP').addEventListener('click', function() { showView('clonelp'); });
-  $('btnBackFromCloneLP') && $('btnBackFromCloneLP').addEventListener('click', function() { lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image'); });
-  $('btnBackFromCopywriting') && $('btnBackFromCopywriting').addEventListener('click', function() { lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image'); });
-  $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image'); });
-  $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image'); });
+  $('btnBackFromCloneLP') && $('btnBackFromCloneLP').addEventListener('click', function() { showView('app'); });
+  $('btnBackFromCopywriting') && $('btnBackFromCopywriting').addEventListener('click', function() { showView('app'); });
+  $('btnBackFromCekIklan') && $('btnBackFromCekIklan').addEventListener('click', function() { showView('app'); });
+  $('btnBackFromAnalyze') && $('btnBackFromAnalyze').addEventListener('click', function() { showView('app'); });
 
   // Mobile bottom nav tabs
   $('tabHistory') && $('tabHistory').addEventListener('click', function() { showView('history'); loadHistory(); });
@@ -102,8 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   $('btnAdmin') && $('btnAdmin').addEventListener('click', function() { showView('admin'); loadAdminUsers('pending'); });
-  $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image'); });
-  $('btnBackToApp') && $('btnBackToApp').addEventListener('click', function() { lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image'); });
+  $('btnBackFromAdmin') && $('btnBackFromAdmin').addEventListener('click', function() { showView('app'); });
+  $('btnBackToApp') && $('btnBackToApp').addEventListener('click', function() { showView('app'); });
 });
 
 // ── Views ─────────────────────────────────────────────────
@@ -216,7 +216,7 @@ function doLogout() {
   localStorage.removeItem('adstudio_token');
   clearUser();
   showToast('Logout berhasil.', 'success');
-  if (activeView === 'history') lsClick(document.querySelector('.ls-item[data-tab="image"]'),'image');
+  if (activeView === 'history') showView('app');
 }
 
 function setUser(user, profile) {
@@ -264,9 +264,18 @@ function clearUser() {
   if (btnAuth) btnAuth.style.display = 'flex';
   var userInfo = $('userInfo');
   if (userInfo) userInfo.style.display = 'none';
-  ['btnHistory','btnAnalyze','btnCekIklan','btnImageEdit','btnCopywriting','btnCloneLP'].forEach(function(id) {
-    var el = $(id); if (el) el.style.display = 'none';
-  });
+  var btnHist = $('btnHistory');
+  if (btnHist) btnHist.style.display = 'none';
+  var btnAn2 = $('btnAnalyze');
+  if (btnAn2) btnAn2.style.display = 'none';
+  var btnCek2 = $('btnCekIklan');
+  if (btnCek2) btnCek2.style.display = 'none';
+  var btnIE2 = $('btnImageEdit');
+  if (btnIE2) btnIE2.style.display = 'none';
+  var btnCopy2 = $('btnCopywriting');
+  if (btnCopy2) btnCopy2.style.display = 'none';
+  var btnCLP2 = $('btnCloneLP');
+  if (btnCLP2) btnCLP2.style.display = 'none';
 
   showLoginScreen();
 }
@@ -345,38 +354,19 @@ async function loadHistory(page) {
 
 // ── Tabs ──────────────────────────────────────────────────
 function setupTabs() {
-  // Back buttons
-  ['btnBackFromAnalyze','btnBackFromCekIklan','btnBackFromCopywriting',
-   'btnBackFromImageEdit','btnBackFromCloneLP'].forEach(function(id) {
-    var el = $(id);
-    if (el) el.addEventListener('click', function() {
-      lsClick(document.querySelector('.ls-item[data-tab="image"]'), 'image');
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      activeTab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab===activeTab); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = p.dataset.panel===activeTab ? 'block':'none'; });
+      var labels = { image:'Generate Gambar', video:'Generate Video', music:'Generate Speech', clone:'Clone Style', analyze:'Mulai Analisis' };
+      $('btnGenerateLabel') && ($('btnGenerateLabel').textContent = labels[activeTab]||'Generate');
+      var titles = { image:'Generate Konten Iklan — Gambar', video:'Generate Konten Iklan — Video', music:'Generate Narasi / Voice Over', clone:'Clone Style Iklan Kompetitor', analyze:'Analisis Video Iklan Kompetitor' };
+      $('emptyTitle') && ($('emptyTitle').textContent = titles[activeTab]||'');
+      showState('empty');
+      if (activeTab === 'analyze') setupAnalyzeTab();
     });
   });
-}
-
-function lsClick(el, tab) {
-  if (!el) return;
-  activeTab = tab;
-  document.querySelectorAll('.ls-item').forEach(function(b) { b.classList.remove('active'); });
-  el.classList.add('active');
-  document.querySelectorAll('.tab-panel').forEach(function(p) {
-    var isActive = p.dataset.panel === tab;
-    p.style.display = isActive ? 'block' : 'none';
-    p.classList.toggle('active', isActive);
-  });
-  var genLayout = $('genLayout');
-  if (genLayout) genLayout.style.display = 'flex';
-  ['historyView','adminView','analyzeView','cekIklanView','copywritingView','cloneLPView','imageEditView'].forEach(function(id) {
-    var v = $(id); if (v) v.style.display = 'none';
-  });
-  showState('empty');
-  updateGenUI();
-}
-
-function lsView(v) {
-  document.querySelectorAll('.ls-item').forEach(function(b) { b.classList.remove('active'); });
-  showView(v);
 }
 
 // ── Upload ────────────────────────────────────────────────
