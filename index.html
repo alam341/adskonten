@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdStudio by Adsy</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <nav class="topnav">
+    <div class="nav-left">
+      <div class="logo">
+        <img src="/favicon.png" width="28" height="28" style="border-radius:6px;object-fit:contain" alt="Adsy" />
+        <span class="logo-name">AdStudio</span>
+        <span class="logo-sub">by Adsy</span>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="user-info" id="userInfo" style="display:none">
+        <span class="user-email" id="userEmail"></span>
+        <button class="btn-logout" id="btnLogout">Logout</button>
+      </div>
+      <button class="btn-auth nav-icon-btn" id="btnAuthToggle">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 12c0-2.5 2.5-4 5.5-4s5.5 1.5 5.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Login
+      </button>
+      <button class="theme-toggle" id="themeToggle" title="Light / Dark">
+        <svg class="icon-sun" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1v1M7.5 13v1M1 7.5H2M13 7.5h1M3.05 3.05l.7.7M11.25 11.25l.7.7M11.25 3.75l-.7.7M3.75 11.25l-.7.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="7.5" r="3" stroke="currentColor" stroke-width="1.3"/></svg>
+        <svg class="icon-moon" width="15" height="15" viewBox="0 0 15 15" fill="none" style="display:none"><path d="M12 7.5A4.5 4.5 0 0 1 5 2.1 6 6 0 1 0 12.9 10 4.5 4.5 0 0 1 12 7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- LOGIN SCREEN -->
+  <!-- Welcome / Mood Screen -->
+  <div class="welcome-screen" id="welcomeScreen" style="display:none">
+    <div class="welcome-card">
+      <div class="welcome-greeting" id="welcomeGreeting">Selamat Pagi,</div>
+      <div class="welcome-name" id="welcomeName">👋</div>
+      <p class="welcome-sub">Bagaimana perasaan kamu hari ini?</p>
+      <div class="mood-grid">
+        <button class="mood-btn" data-mood="bahagia" data-emoji="😄"><span class="mood-emoji">😄</span><span class="mood-label">Bahagia</span></button>
+        <button class="mood-btn" data-mood="semangat" data-emoji="🤩"><span class="mood-emoji">🤩</span><span class="mood-label">Semangat</span></button>
+        <button class="mood-btn" data-mood="biasa" data-emoji="😌"><span class="mood-emoji">😌</span><span class="mood-label">Biasa Aja</span></button>
+        <button class="mood-btn" data-mood="lelah" data-emoji="😪"><span class="mood-emoji">😪</span><span class="mood-label">Lelah</span></button>
+        <button class="mood-btn" data-mood="sedih" data-emoji="😢"><span class="mood-emoji">😢</span><span class="mood-label">Sedih</span></button>
+        <button class="mood-btn" data-mood="stres" data-emoji="😤"><span class="mood-emoji">😤</span><span class="mood-label">Stres</span></button>
+        <button class="mood-btn" data-mood="onfire" data-emoji="🔥"><span class="mood-emoji">🔥</span><span class="mood-label">On Fire!</span></button>
+        <button class="mood-btn" data-mood="kurangsehat" data-emoji="🤧"><span class="mood-emoji">🤧</span><span class="mood-label">Kurang Sehat</span></button>
+        <button class="mood-btn" data-mood="siaptempur" data-emoji="💪"><span class="mood-emoji">💪</span><span class="mood-label">Siap Tempur</span></button>
+      </div>
+      <button class="welcome-skip" id="welcomeSkip">Lewati →</button>
+    </div>
+  </div>
+
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="/favicon.png" width="48" height="48" style="border-radius:8px;object-fit:contain" alt="Adsy" />
+        <div>
+          <div class="login-logo-name">AdStudio</div>
+          <div class="login-logo-sub">AI Ad Content Generator · by Adsy</div>
+        </div>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="authTabLogin">Login</button>
+        <button class="auth-tab" id="authTabRegister">Daftar</button>
+      </div>
+      <div id="authFormLogin">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="loginEmail" class="apikey-field" style="width:100%" placeholder="Username" autocomplete="username" />
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" class="apikey-field" style="width:100%" placeholder="Password" />
+        </div>
+        <button class="btn-generate" id="btnLogin" style="margin-top:8px">Login</button>
+      </div>
+      <div id="authFormRegister" style="display:none">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="registerEmail" class="apikey-field" style="width:100%" placeholder="Username (huruf, angka, _)" autocomplete="username" />
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="registerPassword" class="apikey-field" style="width:100%" placeholder="Min 6 karakter" />
+        </div>
+        <button class="btn-generate" id="btnRegister" style="margin-top:8px">Daftar</button>
+      </div>
+      <p class="login-footer">Dengan masuk, kamu setuju dengan syarat penggunaan.</p>
+    </div>
+  </div>
+  <!-- Motivation Bar -->
+  <div class="motivation-bar" id="motivationBar" style="display:none">
+    <span class="motivation-icon" id="motivationIcon">✨</span>
+    <span class="motivation-text" id="motivationText">Semangat berkarya hari ini!</span>
+  </div>
+
+  <!-- APP LAYOUT -->
+  <div class="app-layout" id="appLayout" style="display:none">
+
+    <!-- ============ ICON SIDEBAR ============ -->
+    <nav class="icon-sidebar">
+      <div class="icon-sidebar-top">
+        <!-- Tab Buttons -->
+        <button class="tab-btn icon-tab active" data-tab="image" title="Gambar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 13l4-4 3.5 3.5L14 8l4 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="icon-tab-label">Gambar</span>
+        </button>
+        <button class="tab-btn icon-tab" data-tab="video" title="Video">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 7.5l6-3v11l-6-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="icon-tab-label">Video</span>
+        </button>
+        <button class="tab-btn icon-tab" data-tab="music" title="Speech">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="7" y="1" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 10a7 7 0 0 0 14 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 17v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="icon-tab-label">Speech</span>
+        </button>
+        <button class="tab-btn icon-tab" data-tab="clone" title="Clone Style">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="icon-tab-label">Clone</span>
+        </button>
+
+        <div class="icon-sidebar-divider"></div>
+
+        <!-- Tool Buttons -->
+        <button class="icon-tool-btn" id="btnCopywriting" style="display:none" title="Copywriting">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h10M3 15h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="icon-tab-label">Copy</span>
+        </button>
+        <button class="icon-tool-btn" id="btnImageEdit" style="display:none" title="Image Edit">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="icon-tab-label">Edit</span>
+        </button>
+        <button class="icon-tool-btn" id="btnCekIklan" style="display:none" title="Cek Iklan">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="icon-tab-label">Cek</span>
+        </button>
+        <button class="icon-tool-btn" id="btnAnalyze" style="display:none" title="Analisis Video">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 15l5-6 4 4 4-6 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="icon-tab-label">Analisis</span>
+        </button>
+      </div>
+
+      <div class="icon-sidebar-bottom">
+        <button class="icon-tool-btn" id="btnHistory" style="display:none" title="History">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 5v5.5l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="icon-tab-label">History</span>
+        </button>
+        <button class="icon-tool-btn" id="btnAdmin" style="display:none" title="Admin Panel">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M6 10h8M6 6.5h8M6 13.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="icon-tab-label">Admin</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+
+        <!-- ===== TAB: GAMBAR ===== -->
+        <div class="tab-panel" data-panel="image">
+
+          <div class="panel-group">
+            <div class="panel-label">Gambar Referensi</div>
+            <div class="upload-zone" id="imgUploadZone">
+              <input type="file" id="imgInput" accept="image/*" hidden />
+              <div class="upload-empty" id="imgUploadEmpty">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="upload-empty-label">Upload atau drag & drop</p>
+                <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+              </div>
+              <div class="upload-filled" id="imgUploadFilled" style="display:none">
+                <img id="imgPreview" src="" alt="preview" />
+                <button class="remove-btn" id="imgRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Prompt</div>
+            <textarea id="imgPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan konten iklan yang ingin dibuat..."></textarea>
+          </div>
+
+          <div class="panel-group">
+            <button class="collapse-btn" id="imgNegTrigger">
+              <span>Negative Prompt</span>
+              <svg class="collapse-arrow" id="imgNegArrow" width="14" height="14" viewBox="0 0 14 14"><path d="M3.5 5.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div id="imgNegBody" style="display:none; padding-top:8px">
+              <textarea id="imgNegPrompt" class="textarea-field" rows="2" placeholder="blurry, ugly, low quality..."></textarea>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Model AI</div>
+            <div class="model-list" id="imgModelList">
+              <label class="model-row active" data-model="gpt-image/1.5-image-to-image">
+                <input type="radio" name="imgModel" value="gpt-image/1.5-image-to-image" checked hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">GPT Image 1.5</span><span class="badge badge-purple">Teks</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="grok-imagine/image-to-image">
+                <input type="radio" name="imgModel" value="grok-imagine/image-to-image" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="google/nano-banana">
+                <input type="radio" name="imgModel" value="google/nano-banana" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Nano Banana</span><span class="badge badge-green">Cepat</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="nano-banana-2">
+                <input type="radio" name="imgModel" value="nano-banana-2" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Nano Banana 2</span><span class="badge badge-teal">Seimbang</span></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel-group" id="imgStrengthGroup" style="display:none">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Strength</span>
+              <span class="val-badge" id="imgStrengthVal">0.80</span>
+            </div>
+            <input type="range" id="imgStrength" min="0" max="1" step="0.05" value="0.8" class="slider" />
+            <div class="slider-ends"><span>Mirip asli</span><span>Bebas</span></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Ukuran</div>
+            <div class="ratio-grid" id="imgRatioGrid">
+              <button class="ratio-cell active" data-ratio="1:1"><div class="rv rv-1-1"></div><span>1:1</span><small>Feed</small></button>
+              <button class="ratio-cell" data-ratio="9:16"><div class="rv rv-9-16"></div><span>9:16</span><small>Stories</small></button>
+              <button class="ratio-cell" data-ratio="16:9"><div class="rv rv-16-9"></div><span>16:9</span><small>Banner</small></button>
+              <button class="ratio-cell" data-ratio="4:5"><div class="rv rv-4-5"></div><span>4:5</span><small>Portrait</small></button>
+              <button class="ratio-cell" data-ratio="3:2"><div class="rv rv-3-2"></div><span>3:2</span><small>Wide</small></button>
+              <button class="ratio-cell" data-ratio="2:3"><div class="rv rv-2-3"></div><span>2:3</span><small>Tall</small></button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Jumlah Generate</span>
+              <span class="val-badge" id="imgQtyDisplay">1</span>
+            </div>
+            <div class="qty-row">
+              <button class="qty-dec" id="imgQtyDec">−</button>
+              <input type="number" id="imgQtyInput" class="qty-input" value="1" min="1" max="20" />
+              <button class="qty-inc" id="imgQtyInc">+</button>
+            </div>
+            <div class="qty-hint">Maks 20 gambar sekaligus</div>
+          </div>
+
+        </div>
+
+        <!-- ===== TAB: VIDEO ===== -->
+        <div class="tab-panel" data-panel="video" style="display:none">
+
+          <div class="panel-group">
+            <div class="panel-label">Gambar Referensi</div>
+            <div class="upload-zone" id="vidUploadZone">
+              <input type="file" id="vidInput" accept="image/*" hidden />
+              <div class="upload-empty" id="vidUploadEmpty">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="upload-empty-label">Upload gambar untuk dijadikan video</p>
+                <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+              </div>
+              <div class="upload-filled" id="vidUploadFilled" style="display:none">
+                <img id="vidPreview" src="" alt="preview" />
+                <button class="remove-btn" id="vidRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Prompt Gerakan</div>
+            <textarea id="vidPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan gerakan yang diinginkan...&#10;&#10;Contoh: kamera perlahan zoom in ke produk, cahaya berkilau dari kiri, efek partikel mengambang..."></textarea>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Model Video</div>
+            <div class="model-list" id="vidModelList">
+              <label class="model-row active" data-model="kling-2.6/image-to-video">
+                <input type="radio" name="vidModel" value="kling-2.6/image-to-video" checked hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Kling 2.6</span><span class="badge badge-purple">Realistis</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="grok-imagine/image-to-video">
+                <input type="radio" name="vidModel" value="grok-imagine/image-to-video" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
+                </div>
+              </label>
+              <label class="model-row" data-model="wan-2.6/image-to-video">
+                <input type="radio" name="vidModel" value="wan-2.6/image-to-video" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Wan 2.6</span><span class="badge badge-teal">Cepat</span></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Durasi</div>
+            <div class="ratio-grid" id="vidDurationGrid" style="grid-template-columns: repeat(3, 1fr)">
+              <button class="ratio-cell active" data-dur="5"><span>5s</span></button>
+              <button class="ratio-cell" data-dur="10"><span>10s</span></button>
+              <button class="ratio-cell" data-dur="15"><span>15s</span></button>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Resolusi</div>
+            <div class="ratio-grid" style="grid-template-columns: repeat(3, 1fr)">
+              <button class="ratio-cell" data-res="480p"><span>480p</span></button>
+              <button class="ratio-cell active" data-res="720p"><span>720p</span></button>
+              <button class="ratio-cell" data-res="1080p"><span>1080p</span></button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===== TAB: SPEECH ===== -->
+        <div class="tab-panel" data-panel="music" style="display:none">
+
+          <div class="panel-group">
+            <div class="panel-label">Teks Narasi</div>
+            <textarea id="musicPrompt" class="textarea-field" rows="6" placeholder="Ketik teks yang ingin diubah jadi suara...&#10;&#10;Contoh: Primagold, susu kambing etawa terbaik untuk kesehatan sendi Anda. Dapatkan sekarang hanya 115 ribu, dapat 4 box!"></textarea>
+            <div class="qty-hint" id="ttsCharCount" style="text-align:right; margin-top:4px">0 karakter</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Model</div>
+            <div class="model-list" id="ttsModelList">
+              <label class="model-row active" data-model="elevenlabs/text-to-speech-multilingual-v2">
+                <input type="radio" name="ttsModel" value="elevenlabs/text-to-speech-multilingual-v2" checked hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Multilingual v2</span><span class="badge badge-purple">Kualitas</span></div>
+                  <div class="model-row-price" style="font-size:11px;color:#44444e">ElevenLabs · Support Bahasa Indonesia</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-group">
+            <div class="panel-label">Suara (Voice)</div>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+              <select id="ttsVoiceSelect" class="voice-select" style="flex:1; min-width:0; margin-bottom:0">
+                <optgroup label="Wanita">
+              <option value="21m00Tcm4TlvDq8ikWAM" selected>Rachel — Calm, conversational</option>
+              <option value="9BWtsMINqrJLrRacOk9x">Aria — Expressive, natural</option>
+              <option value="EXAVITQu4vr4xnSDxMaL">Sarah — Soft, friendly</option>
+              <option value="FGY2WhTYpPnrIDTdsKH5">Laura — Enthusiast, quirky</option>
+              <option value="XB0fDUnXU5powFXDhCwa">Charlotte — Seductive, whisper</option>
+              <option value="Xb7hH8MSUJpSbSDYk0k2">Alice — Confident, British</option>
+              <option value="XrExE9yKIg1WjnnlVkGX">Matilda — Warm, authoritative</option>
+              <option value="cgSgspJ2msm6clMCkdW9">Jessica — Playful, bright, warm</option>
+              <option value="pFZP5JQG7iQjIQuC4Bku">Lily — Warm, expressive</option>
+              <option value="BIvP0GN1cAtSRTxNHnWS">Ellen — Serious, direct</option>
+              <option value="aMSt68OGf4xUZAnLpTU8">Juniper — Grounded, professional</option>
+              <option value="RILOU7YmBhvwJGDGjNmP">Jane — Audiobook reader</option>
+              <option value="Z3R5wn05IrDiVCyEkUrK">Arabella — Mysterious, emotive</option>
+              <option value="tnSpp4vdxKPjI9w0GnoV">Hope — Upbeat, clear</option>
+              <option value="exsUS4vynmxd379XN4yO">Blondie — Conversational</option>
+              <option value="BpjGufoPiobT79j2vtj4">Priyanka — Calm, neutral</option>
+              <option value="2zRM7PkgwBPiau2jvVXc">Monika Sogam — Deep, natural</option>
+              <option value="5l5f8iK3YPeGga21rQIX">Adeline — Feminine, conversational</option>
+              <option value="BZgkqPqms7Kj9ulSkVzn">Eve — Authentic, energetic</option>
+              <option value="hpp4J3VqNfWAUOO0d1Us">Bella — Professional, bright</option>
+              <option value="56AoDkrOh6qfVPDXZ7Pt">Cassidy — Crisp, direct</option>
+              <option value="lcMyyd2HUfFzxdCaC4Ta">Lucy — Fresh, casual</option>
+              <option value="6aDn1KB0hjpdcocrUkmq">Tiffany — Natural, welcoming</option>
+              <option value="ZF6FPAbjXT4488VcRRnw">Amelia — Enthusiastic, expressive</option>
+              <option value="1hlpeD1ydbI2ow0Tt3EW">Olivia — Smooth, warm</option>
+              <option value="FUfBrNit0NNZAwb58KWH">Angela — Conversational, friendly</option>
+              <option value="pPdl9cQBQq4p6mRkZy2Z">Emma — Adorable, upbeat</option>
+              <option value="aD6riP1btT197c6dACmy">Rachel M — British radio presenter</option>
+              <option value="MnUw1cSnpiLoLhpd3Hqp">Heather Rey — Rushed, friendly</option>
+              <option value="kPzsL2i3teMYv0FxEYQ6">Brittney — Social media, youthful</option>
+              <option value="Atp5cNFg1Wj5gyKD7HWV">Natasha — Gentle meditation</option>
+              <option value="1cxc5c3E9K6F1wlqOJGV">Emily — Gentle, soft, meditative</option>
+              <option value="Qggl4b0xRMiqOwhPtVWT">Clara — Relaxing, soothing</option>
+              <option value="zA6D7RyKdc2EClouEMkP">AImee — Tranquil ASMR</option>
+              <option value="1wGbFxmAM3Fgw63G1zZJ">Allison — Calm, meditative</option>
+              <option value="sH0WdfE5fsKuM2otdQZr">Koraly — Soft-spoken, gentle</option>
+              <option value="scOwDtmlUjD3prqpp97I">Sam — Support agent</option>
+              <option value="Sm1seazb4gs7RSlUVw7c">Anika — Animated, friendly</option>
+              <option value="wJqPPQ618aTW29mptyoc">Ana Rita — Smooth, expressive</option>
+                </optgroup>
+                <optgroup label="Pria">
+              <option value="CwhRBWXzGAHq8TQ4Fs17">Roger — Confident, assertive</option>
+              <option value="IKne3meq5aSn9XLyUdCD">Charlie — Natural, casual</option>
+              <option value="JBFqnCBsd6RMkjVDRZzb">George — Warm, deep British</option>
+              <option value="N2lVS1w4EtoT3dr4eOWO">Callum — Husky trickster</option>
+              <option value="SAz9YHcvj6GT2YYXdXww">River — Calm, gentle</option>
+              <option value="TX3LPaxmHKxFdv7VOQHJ">Liam — Energetic, social media</option>
+              <option value="bIHbv24MWmeRgasZH58o">Will — Friendly, approachable</option>
+              <option value="cjVigY5qzO86Huf0OWal">Eric — Friendly, positive</option>
+              <option value="iP95p4xoKVk53GoZ742B">Chris — Charming, down-to-earth</option>
+              <option value="nPczCjzI2devNBz1zQrb">Brian — Deep, resonant</option>
+              <option value="onwK4e9ZLuTAKqWW03F9">Daniel — News presenter</option>
+              <option value="pqHfZKP75CvOlQylNhV4">Bill — Trustworthy, grounded</option>
+              <option value="EkK5I93UQWFDigLMpZcX">James — Husky, engaging</option>
+              <option value="NNl6r8mD7vthiJatiJt1">Bradford — Expressive, articulate</option>
+              <option value="YOq2y2Up4RgXP2HyXjE5">Xavier — Announcer, metallic</option>
+              <option value="Bj9UqZbhQsanLzgalpEG">Austin — Deep, raspy</option>
+              <option value="c6SfcYrb2t09NHXiT80T">Jarnathan — Confident, versatile</option>
+              <option value="B8gJV1IhpuegLxdpXFOE">Kuon — Cheerful, clear</option>
+              <option value="1SM7GgM6IMuvQlz2BwM3">Mark — Casual, relaxed</option>
+              <option value="pNInz6obpgDQGcFmaJgB">Adam — Dominant, firm</option>
+              <option value="DGTOOUoGpoP6UZ9uSWfA">Célian — Documentary narrator</option>
+              <option value="x70vRnQBMBu4FAYhjJbO">Nathan — Virtual radio host</option>
+              <option value="P1bg08DkjqiVEzOn76yG">Viraj — Rich, soft</option>
+              <option value="qDuRKMlYmrm8trt5QyBn">Taksh — Calm, smooth</option>
+              <option value="vBKc2FfBKJfcZNyEt1n6">Finn — Youthful, eager</option>
+              <option value="gs0tAILXbY5DNrJrsM6F">Jeff — Classy, strong</option>
+              <option value="DTKMou8ccj1ZaWGBiotd">Jamahal — Young, vibrant</option>
+              <option value="IjnA9kwZJHJ20Fp7Vmy6">Matthew — Casual, friendly</option>
+              <option value="UgBBYS2sOqTuMpoF3BR0">Mark — Natural conversations</option>
+              <option value="KoQQbl9zjAdLgKZjm8Ol">Pro Narrator — Convincing storyteller</option>
+              <option value="Sq93GQT4X1lKDXsQcixO">Felix — Warm, contemporary</option>
+              <option value="TmNe0cCqkZBMwPWOd3RD">Smith — Mellow, bassy</option>
+              <option value="DYkrAHD8iwork3YSUBbs">Tom — Conversations & books</option>
+              <option value="FF7KdobWPaiR0vkcALHF">David — Movie trailer narrator</option>
+              <option value="6F5Zhi321D3Oq7v1oNT4">Hank — Deep, engaging narrator</option>
+              <option value="LG95yZDEHg6fCZdQjLqj">Phil — Explosive announcer</option>
+              <option value="CeNX9CMwmxDxUF5Q2Inm">Johnny Dynamite — Vintage radio DJ</option>
+              <option value="cTNP6ZM2mLTKj2BFhxEh">Paul French — Podcaster</option>
+              <option value="U1Vk2oyatMdYs096Ety7">Michael — Deep, dark, urban</option>
+              <option value="EiNlNiXeDU1pqqOPrYMO">John Doe — Deep</option>
+              <option value="qNkzaJoHLLdpvgh5tISm">Carter — Rich, smooth, rugged</option>
+              <option value="oR4uRy4fHDUGGISL0Rev">Myrrdin — Wise, magical narrator</option>
+              <option value="LruHrtVF6PSyGItzMNHS">Benjamin — Deep, warm, calming</option>
+              <option value="MJ0RnG71ty4LH3dvNfSd">Leon — Soothing, grounded</option>
+              <option value="HgyIHe81F3nXywNwkraY">Nate — Sultry, whispery</option>
+              <option value="AeRdCCKzvd23BpJoofzx">Nathaniel — British, calm</option>
+              <option value="Tsns2HvNFKfGiNjllgqo">Sven — Emotional, nice</option>
+              <option value="1U02n4nD6AdIZ9CjF053">Viraj — Smooth, gentle</option>
+              <option value="hqfrgApggtO1785R4Fsn">Theodore HQ — Serene, grounded</option>
+                </optgroup>
+              </select>
+              <button class="voice-play-btn" id="voicePlayBtn" title="Preview suara" style="flex-shrink:0; width:36px; height:36px; border-radius:8px; padding:0">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="3,1.5 11.5,6.5 3,11.5" fill="currentColor"/></svg>
+              </button>
+            </div>
+            <div class="voice-select-desc" id="voiceSelectDesc">Calm, conversational</div>
+            <audio id="voicePreviewAudio" style="display:none"></audio>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label-row">
+              <span class="panel-label" style="margin:0">Stabilitas</span>
+              <span class="val-badge" id="ttsStabilityVal">0.5</span>
+            </div>
+            <input type="range" id="ttsStability" min="0" max="1" step="0.05" value="0.5" class="slider" />
+            <div class="slider-ends"><span>Ekspresif</span><span>Stabil</span></div>
+          </div>
+
+        </div>
+
+<!-- ===== TAB: CLONE STYLE ===== -->
+        <div class="tab-panel" data-panel="clone" style="display:none">
+
+          <div class="panel-group">
+            <div class="panel-label">Iklan Kompetitor <span style="font-size:10px;color:#7C6EFA;font-weight:400;text-transform:none">(referensi style)</span></div>
+            <div class="upload-zone" id="cloneRefUploadZone">
+              <input type="file" id="cloneRefInput" accept="image/*" hidden />
+              <div class="upload-empty" id="cloneRefUploadEmpty">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="upload-empty-label">Upload iklan kompetitor</p>
+                <p class="upload-empty-sub">Style ini yang akan ditiru</p>
+              </div>
+              <div class="upload-filled" id="cloneRefUploadFilled" style="display:none">
+                <img id="cloneRefPreview" src="" alt="preview" />
+                <button class="remove-btn" id="cloneRefRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Foto Produk Kamu</div>
+            <div class="upload-zone" id="cloneProdUploadZone">
+              <input type="file" id="cloneProdInput" accept="image/*" hidden />
+              <div class="upload-empty" id="cloneProdUploadEmpty">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="upload-empty-label">Upload foto produk</p>
+                <p class="upload-empty-sub">Produk yang akan diiklankan</p>
+              </div>
+              <div class="upload-filled" id="cloneProdUploadFilled" style="display:none">
+                <img id="cloneProdPreview" src="" alt="preview" />
+                <button class="remove-btn" id="cloneProdRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Info Produk & Iklan</div>
+            <textarea id="clonePrompt" class="textarea-field" rows="3" placeholder="Nama produk, harga, tagline, keunggulan...&#10;&#10;Contoh: Primagold susu kambing etawa, Rp115.000, tagline: Sehat Alami Setiap Hari"></textarea>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Model AI</div>
+            <div class="model-list" id="cloneModelList">
+              <label class="model-row active" data-model="gpt-image/1.5-image-to-image">
+                <input type="radio" name="cloneModel" value="gpt-image/1.5-image-to-image" checked hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">GPT Image 1.5</span><span class="badge badge-purple">Terbaik</span></div>
+                  <div class="model-row-price" style="font-size:11px;color:#44444e">Paling akurat meniru style</div>
+                </div>
+              </label>
+
+              <label class="model-row" data-model="nano-banana-2" style="opacity:0.4;pointer-events:none;cursor:not-allowed" title="Segera hadir">
+                <input type="radio" name="cloneModel" value="nano-banana-2" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Nano Banana 2</span><span class="badge badge-green">Cepat</span></div>
+                  <div class="model-row-price" style="font-size:11px;color:#44444e">Cepat, support semua ratio</div>
+                </div>
+              </label>
+              <label class="model-row" data-model="grok-imagine/image-to-image" style="opacity:0.4;pointer-events:none;cursor:not-allowed" title="Segera hadir">
+                <input type="radio" name="cloneModel" value="grok-imagine/image-to-image" hidden />
+                <div class="model-row-dot"></div>
+                <div class="model-row-body">
+                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
+                  <div class="model-row-price" style="font-size:11px;color:#44444e">Gaya sinematik dramatis</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <div class="panel-label">Ukuran Output</div>
+            <div class="ratio-grid" id="cloneRatioGrid">
+              <button class="ratio-cell active" data-ratio="1:1"><div class="rv rv-1-1"></div><span>1:1</span><small>Feed</small></button>
+              <button class="ratio-cell" data-ratio="9:16"><div class="rv rv-9-16"></div><span>9:16</span><small>Stories</small></button>
+              <button class="ratio-cell" data-ratio="16:9"><div class="rv rv-16-9"></div><span>16:9</span><small>Banner</small></button>
+              <button class="ratio-cell" data-ratio="4:5"><div class="rv rv-4-5"></div><span>4:5</span><small>Portrait</small></button>
+              <button class="ratio-cell" data-ratio="3:2"><div class="rv rv-3-2"></div><span>3:2</span><small>Wide</small></button>
+              <button class="ratio-cell" data-ratio="2:3"><div class="rv rv-2-3"></div><span>2:3</span><small>Tall</small></button>
+            </div>
+          </div>
+
+
+      </div>
+
+      </div>
+
+      <!-- Generate CTA -->
+      <div class="sidebar-cta" style="width:300px;max-width:300px;box-sizing:border-box">
+        <button class="btn-generate" id="btnGenerate">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="btnGenerateLabel">Generate Gambar</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============ CANVAS ============ -->
+    <main class="canvas-area">
+
+      <!-- Empty -->
+      <div class="state-empty" id="stateEmpty">
+        <div class="empty-art">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <rect x="8" y="8" width="48" height="48" rx="12" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.3"/>
+            <path d="M20 44l12-16 12 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+            <circle cx="40" cy="26" r="5" stroke="currentColor" stroke-width="1.8" opacity="0.4"/>
+          </svg>
+        </div>
+        <h2 class="empty-title" id="emptyTitle">Generate Konten Iklan AI</h2>
+        <p class="empty-desc" id="emptyDesc">Upload gambar, isi prompt, pilih model, lalu klik Generate.</p>
+      </div>
+
+      <!-- Loading -->
+      <div class="state-loading" id="stateLoading" style="display:none">
+        <div class="spinner-wrap">
+          <div class="spinner-ring"></div>
+          <div class="spinner-logo">
+            <img src="/favicon.png" width="24" height="24" style="border-radius:4px;object-fit:contain" alt="Adsy" />
+          </div>
+        </div>
+        <p class="loading-title">Generating...</p>
+        <p class="loading-sub" id="loadingSub">AI sedang memproses</p>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      </div>
+
+      <!-- Result: Gambar -->
+      <div class="state-result" id="stateResultImg" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="imgResultMeta"></span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="imgBtnRegenerate">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Ulang
+            </button>
+            <button class="btn-solid" id="imgBtnDownloadAll" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Download Semua
+            </button>
+          </div>
+        </div>
+        <div class="result-img-area">
+          <div class="result-grid" id="imgResultGrid"></div>
+        </div>
+      </div>
+
+      <!-- Result: Video -->
+      <div class="state-result" id="stateResultVid" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="vidResultMeta"></span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="vidBtnRegenerate">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Ulang
+            </button>
+            <button class="btn-solid" id="vidBtnDownload">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Download
+            </button>
+          </div>
+        </div>
+        <div class="result-img-area" style="align-items:center; justify-content:center">
+          <video id="vidResult" controls style="max-width:100%; max-height:80vh; border-radius:12px"></video>
+        </div>
+      </div>
+
+      <!-- Result: Analyze -->
+      <div class="state-result" id="stateResultAnalyze" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="analyzeResultMeta">Hasil Analisis</span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="analyzeBtnCopy" onclick="navigator.clipboard.writeText(document.getElementById('analyzeResultText').innerText);showToast('Disalin!','success')">
+              📋 Copy
+            </button>
+          </div>
+        </div>
+        <div style="flex:1;overflow:auto;padding:24px">
+          <div id="analyzeResultText" style="font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;max-width:800px;margin:0 auto"></div>
+        </div>
+      </div>
+
+      <!-- Result: Clone -->
+      <div class="state-result" id="stateResultClone" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="cloneResultMeta"></span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="cloneBtnRegenerate">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Ulang
+            </button>
+            <button class="btn-solid" id="cloneBtnDownloadAll" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Download Semua
+            </button>
+          </div>
+        </div>
+        <div class="result-img-area">
+          <div class="result-grid" id="cloneResultGrid"></div>
+        </div>
+      </div>
+
+      <!-- Result: Music -->
+      <div class="state-result" id="stateResultMusic" style="display:none">
+        <div class="result-bar">
+          <span class="result-meta-text" id="musicResultMeta"></span>
+          <div class="result-btns">
+            <button class="btn-ghost" id="musicBtnRegenerate">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0 1 7 2c1.6 0 3 .77 3.9 1.97M12 7A5 5 0 0 1 7 12c-1.6 0-3-.77-3.9-1.97" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10.5 2v2.5H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12V9.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Ulang
+            </button>
+          </div>
+        </div>
+        <div class="result-img-area">
+          <div class="music-result-list" id="musicResultList"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Image Preview Modal -->
+  <div class="preview-modal" id="previewModal" style="display:none">
+    <div class="preview-modal-bg" id="previewModalBg"></div>
+    <div class="preview-modal-inner">
+      <button class="preview-close" id="previewClose"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <button class="preview-nav prev" id="previewPrev"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <img class="preview-modal-img" id="previewModalImg" src="" alt="preview" />
+      <button class="preview-nav next" id="previewNext"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 4l5 5-5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="preview-footer">
+        <span class="preview-counter" id="previewCounter">1 / 1</span>
+        <button class="preview-dl-btn" id="previewDl"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg> Download</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+
+
+  <!-- History View -->
+  <div class="history-view" id="historyView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackToApp">← Kembali</button>
+      <h2 class="history-title">History Generate</h2>
+      <div></div>
+    </div>
+    <div class="history-empty" id="historyEmpty" style="display:none">
+      <div style="font-size:48px">📂</div>
+      <p>Belum ada history. Generate sesuatu dulu!</p>
+    </div>
+    <div class="history-grid" id="historyGrid"></div>
+    <div style="text-align:center;padding:16px">
+      <button class="btn-ghost" id="historyLoadMore" style="display:none" onclick="loadHistory(historyPage+1)">Load More</button>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div class="history-view" id="adminView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromAdmin">← Kembali</button>
+      <h2 class="history-title">Admin Panel</h2>
+      <div class="admin-tabs">
+        <button class="admin-tab active" id="adminTabPending" onclick="loadAdminUsers('pending')">Pending</button>
+        <button class="admin-tab" id="adminTabApproved" onclick="loadAdminUsers('approved')">Approved</button>
+        <button class="admin-tab" id="adminTabRejected" onclick="loadAdminUsers('rejected')">Rejected</button>
+      </div>
+    </div>
+    <div class="admin-user-list" id="adminUserList">
+      <div style="text-align:center;padding:40px;color:#555">Memuat...</div>
+    </div>
+  </div>
+
+
+  <!-- Analyze View -->
+  <div class="history-view" id="analyzeView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromAnalyze">← Kembali</button>
+      <h2 class="history-title">Analisis Video Kompetitor</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+        <div class="panel-group">
+          <div class="panel-label">Upload Video Kompetitor</div>
+          <div class="analyze-upload-zone" id="analyzeUploadZone">
+            <input type="file" id="analyzeVideoInput" accept="video/*" hidden />
+            <div id="analyzeUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload video kompetitor</p>
+              <p style="font-size:10px;color:var(--text-6)">MP4, MOV · maks 50MB</p>
+            </div>
+            <video id="analyzeVideoPreview" style="display:none;width:100%;border-radius:8px;max-height:180px" controls></video>
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Atau Paste Link Video</div>
+          <input type="url" id="analyzeVideoUrl" class="apikey-field" style="width:100%" placeholder="https://youtube.com/... atau URL MP4" />
+          <div style="font-size:10px;color:var(--text-5);margin-top:4px">URL video MP4 publik</div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Info Produk Kamu <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <textarea id="analyzeProductInfo" class="textarea-field" rows="3" placeholder="Nama produk, kategori, target market..."></textarea>
+        </div>
+        <div id="analyzeFrameGrid" style="display:none;margin-bottom:12px">
+          <div class="panel-label" style="margin-bottom:6px">Frames yang dianalisis</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px" id="analyzeFrames"></div>
+        </div>
+        <button class="btn-generate" id="btnStartAnalyze" disabled>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 11L5 7l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Mulai Analisis
+        </button>
+      </div>
+      <div class="analyze-right" style="overflow-y:auto;flex:1;min-height:0">
+        <div class="analyze-empty" id="analyzeEmpty">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M4 36L16 22l8 8 14-16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+          <p>Upload video kompetitor lalu klik Mulai Analisis</p>
+        </div>
+        <div id="analyzeLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px" id="analyzeLoadingText">Memproses...</p>
+        </div>
+        <div id="analyzeResult" style="display:none;padding:24px;overflow:visible">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('analyzeResultText').innerText);showToast('Disalin!','success')">📋 Copy Hasil</button>
+          </div>
+          <div id="analyzeResultText" style="font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cek Iklan View -->
+  <div class="history-view" id="cekIklanView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromCekIklan">← Kembali</button>
+      <h2 class="history-title">Cek Kualitas Iklan</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+        <div class="panel-group">
+          <div class="panel-label">Upload Gambar Iklan</div>
+          <div class="analyze-upload-zone" id="cekIklanUploadZone">
+            <input type="file" id="cekIklanInput" accept="image/*" hidden />
+            <div id="cekIklanUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload gambar iklan</p>
+              <p style="font-size:10px;color:var(--text-6)">PNG, JPG, WEBP · maks 10MB</p>
+            </div>
+            <img id="cekIklanPreview" style="display:none;width:100%;border-radius:8px;max-height:220px;object-fit:contain" />
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Platform Target <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <select id="cekIklanPlatform" class="voice-select" style="width:100%">
+            <option value="">Semua Platform</option>
+            <option value="Instagram Feed">Instagram Feed</option>
+            <option value="Instagram Stories/Reels">Instagram Stories/Reels</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Marketplace (Tokopedia/Shopee)">Marketplace (Tokopedia/Shopee)</option>
+            <option value="WhatsApp">WhatsApp</option>
+          </select>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Info Produk <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <textarea id="cekIklanInfo" class="textarea-field" rows="3" placeholder="Nama produk, target audience, tujuan iklan..."></textarea>
+        </div>
+        <button class="btn-generate" id="btnStartCekIklan" disabled>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="white" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Cek Kualitas
+        </button>
+      </div>
+      <div class="analyze-right" id="cekIklanRight">
+        <div id="cekIklanEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M16 24l6 6 10-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+          <p>Upload gambar iklan lalu klik Cek Kualitas</p>
+        </div>
+        <div id="cekIklanLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px">Menganalisis kualitas iklan...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copywriting View -->
+  <div class="history-view" id="copywritingView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromCopywriting">← Kembali</button>
+      <h2 class="history-title">Generator Copywriting Iklan</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+
+        <div class="panel-group">
+          <div class="panel-label">Upload Gambar/Video <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <div class="analyze-upload-zone" id="copywritingUploadZone">
+            <input type="file" id="copywritingInput" accept="image/*,video/*" hidden />
+            <div id="copywritingUploadEmpty" style="padding:16px;text-align:center;cursor:pointer">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M11 13l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <p style="font-size:11px;color:var(--text-4);margin-top:6px">Upload gambar produk</p>
+            </div>
+            <img id="copywritingPreview" style="display:none;width:100%;border-radius:8px;max-height:160px;object-fit:contain" />
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Info Produk <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <textarea id="copywritingProductInfo" class="textarea-field" rows="3" placeholder="Nama produk, harga, keunggulan utama, target audience...&#10;&#10;Contoh: Susu kambing Primagold Rp115rb, untuk ibu hamil &amp; lansia, kaya kalsium &amp; protein"></textarea>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Platform</div>
+          <select id="copywritingPlatform" class="voice-select" style="width:100%">
+            <option value="Instagram">Instagram Feed</option>
+            <option value="Instagram Stories/Reels">Instagram Stories/Reels</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Marketplace">Marketplace (Tokopedia/Shopee)</option>
+            <option value="WhatsApp">WhatsApp Blast</option>
+          </select>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Tone / Gaya</div>
+          <select id="copywritingTone" class="voice-select" style="width:100%">
+            <option value="persuasif dan emosional">Persuasif & Emosional</option>
+            <option value="profesional dan terpercaya">Profesional & Terpercaya</option>
+            <option value="santai dan akrab">Santai & Akrab</option>
+            <option value="urgent dan FOMO">Urgent & FOMO</option>
+            <option value="storytelling">Storytelling</option>
+            <option value="humor">Humor</option>
+          </select>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Framework</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwAIDA" checked style="accent-color:var(--accent)"> AIDA (Attention → Interest → Desire → Action)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwPAS" checked style="accent-color:var(--accent)"> PAS (Problem → Agitate → Solution)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwBAB" style="accent-color:var(--accent)"> BAB (Before → After → Bridge)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);cursor:pointer">
+              <input type="checkbox" id="fwFAB" style="accent-color:var(--accent)"> FAB (Features → Advantages → Benefits)
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-generate" id="btnStartCopywriting">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 4h11M2 7.5h8M2 11h6" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Generate Copywriting
+        </button>
+
+      </div>
+      <div class="analyze-right" id="copywritingRight">
+        <div id="copywritingEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M8 12h32M8 20h24M8 28h20M8 36h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/></svg>
+          <p>Isi info produk lalu klik Generate Copywriting</p>
+        </div>
+        <div id="copywritingLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px">Menulis copywriting...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Edit View -->
+  <div class="history-view" id="imageEditView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromImageEdit">← Kembali</button>
+      <h2 class="history-title">Image Edit</h2>
+      <div></div>
+    </div>
+    <div class="analyze-body">
+      <div class="analyze-left">
+        <div class="panel-group">
+          <div class="panel-label">Upload Gambar</div>
+          <div class="analyze-upload-zone" id="imageEditUploadZone">
+            <input type="file" id="imageEditInput" accept="image/*" hidden />
+            <div id="imageEditUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload gambar yang ingin diedit</p>
+              <p style="font-size:10px;color:var(--text-6)">PNG, JPG · maks 10MB</p>
+            </div>
+            <img id="imageEditPreview" style="display:none;width:100%;border-radius:8px;max-height:200px;object-fit:contain" />
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Instruksi Edit</div>
+          <textarea id="imageEditPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan perubahan yang diinginkan...&#10;&#10;Contoh:&#10;- Ganti background jadi putih bersih&#10;- Tambahkan teks DISKON 50% di pojok kanan&#10;- Ubah warna produk jadi merah&#10;- Hapus objek di belakang produk"></textarea>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Ukuran Output</div>
+          <select id="imageEditSize" class="voice-select" style="width:100%">
+            <option value="1:1">1:1 — Feed</option>
+            <option value="9:16">9:16 — Stories/Reels</option>
+            <option value="16:9">16:9 — Banner</option>
+            <option value="4:5">4:5 — Portrait</option>
+            <option value="3:2">3:2 — Wide</option>
+          </select>
+        </div>
+        <button class="btn-generate" id="btnStartImageEdit" disabled>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="13" height="13" rx="2" stroke="white" stroke-width="1.3"/><path d="M4 10l3-3 2 2 2-3" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Edit Gambar
+        </button>
+      </div>
+      <div class="analyze-right" id="imageEditRight">
+        <div id="imageEditEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="40" height="40" rx="8" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M12 36l10-12 8 8 6-8 8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+          <p>Upload gambar dan tulis instruksi edit</p>
+        </div>
+        <div id="imageEditLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px">Mengedit gambar...</p>
+        </div>
+        <div id="imageEditResult" style="display:none;padding:24px;text-align:center">
+          <img id="imageEditResultImg" style="max-width:100%;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2)" />
+          <div style="margin-top:16px">
+            <button class="btn-solid" id="imageEditDownload">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
