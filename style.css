@@ -389,14 +389,135 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .toast.success { border-color: rgba(124,110,250,0.4); color: #a294fa; }
 
 /* ── RESPONSIVE ── */
-@media (max-width: 480px) {
-  html, body { overflow: auto; }
-  .app-layout { flex-direction: column; height: auto; }
-  .topnav { height: 52px; }
-  .icon-sidebar { display: none; }
-  .sidebar { width: 100%; min-width: 100%; max-width: 100%; height: auto; }
-  .sidebar-inner { overflow: visible; }
-  .canvas-area { min-height: 60vh; }
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE — max-width: 768px
+══════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Base ── */
+  html, body { overflow: hidden; height: 100%; }
+
+  /* ── Top Nav ── */
+  .topnav { height: 50px; padding: 0 14px; }
+  .logo-sub { display: none; }
+  .logo-name { font-size: 14px; }
+  .user-email { display: none; }
+  .nav-center { display: none; }
+
+  /* ── App Layout ── */
+  .app-layout { flex-direction: column; height: calc(100vh - 50px); overflow: hidden; }
+
+  /* ── Icon Sidebar → Bottom Nav ── */
+  .icon-sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: 58px;
+    flex-direction: row;
+    order: 10;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    padding: 0 8px;
+    overflow-x: auto;
+    justify-content: flex-start;
+    gap: 2px;
+    box-shadow: 0 -2px 12px rgba(91,91,214,0.06);
+    flex-shrink: 0;
+  }
+  .icon-sidebar-top { flex-direction: row; flex: 1; gap: 2px; align-items: center; }
+  .icon-sidebar-bottom { flex-direction: row; gap: 2px; align-items: center; padding-bottom: 0; padding-right: 4px; }
+  .icon-sidebar-divider { width: 1px; height: 28px; margin: 0 4px; }
+  .icon-dash-btn, .tab-btn.icon-tab, .icon-tool-btn {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+  }
+
+  /* ── Sidebar (panel kiri) → Full width ── */
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: calc(100vh - 50px - 58px);
+    overflow-y: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-inner { padding: 12px; gap: 10px; }
+  .panel-group { margin-bottom: 0; }
+
+  /* ── Canvas ── */
+  .canvas-area { flex: 1; min-height: 0; overflow-y: auto; }
+
+  /* ── Tab Nav (horizontal scroll) ── */
+  .tab-nav { overflow-x: auto; flex-wrap: nowrap; padding: 3px; border-radius: 10px; gap: 2px; }
+  .tab-btn { padding: 6px 12px; font-size: 12px; white-space: nowrap; }
+
+  /* ── Generate Button ── */
+  .btn-generate { width: 100%; justify-content: center; margin-top: 8px; }
+
+  /* ── Result Bar ── */
+  .result-bar { flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px 12px; }
+  .result-btns { width: 100%; display: flex; gap: 8px; }
+  .result-btns .btn-ghost, .result-btns .btn-solid { flex: 1; justify-content: center; }
+
+  /* ── Image Result Grid ── */
+  .result-img-area { padding: 10px; }
+  .result-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+  /* ── Resize Panel ── */
+  .resize-btns { gap: 6px; }
+  .resize-btn { padding: 6px 10px; font-size: 11px; }
+
+  /* ── History Grid ── */
+  .history-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 10px; }
+  .history-card-thumb { aspect-ratio: 1/1; }
+  .history-header { padding: 0 14px; height: 52px; }
+  .history-title { font-size: 14px; }
+
+  /* ── Dashboard ── */
+  .dashboard-panel { padding: 12px; }
+  .dash-greeting-card { padding: 16px; border-radius: 16px; margin-bottom: 10px; }
+  .dash-name { font-size: 20px; }
+  .dash-counter-row { grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 10px 12px; }
+  .dash-counter-card + .dash-counter-card { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 10px; }
+  .dash-counter-card:nth-child(odd) + .dash-counter-card { border-left: 1px solid var(--border); border-top: none; padding-left: 14px; padding-top: 0; }
+  .dash-tools-grid { grid-template-columns: 1fr; gap: 6px; }
+  .mascot-emoji { font-size: 36px; }
+
+  /* ── Admin Stats Grid ── */
+  .admin-stats-grid { grid-template-columns: 1fr; }
+  .admin-stats-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  /* ── Audience Recommender ── */
+  .audience-body { padding: 12px; }
+  .audience-input-row { flex-direction: column; }
+  .audience-input { width: 100%; }
+  .aud-grid { grid-template-columns: 1fr; }
+  .aud-result-header { flex-direction: column; gap: 8px; }
+
+  /* ── Modal Preview ── */
+  .preview-modal { padding: 0; }
+  .preview-modal-inner { width: 100%; height: 100%; border-radius: 0; padding: 12px; }
+  #previewModalImg { max-height: 70vh; }
+
+  /* ── History Views (fullscreen panels) ── */
+  .history-view { position: fixed; inset: 0; z-index: 200; }
+
+  /* ── Toast ── */
+  .toast { left: 12px; right: 12px; bottom: 70px; max-width: 100%; text-align: center; }
+
+  /* ── Copywriting / Cek Iklan body ── */
+  .copy-body, .cek-body, .analyze-body, .imageedit-body, .audience-body {
+    flex-direction: column;
+  }
+  .copy-left, .copy-right, .cek-left, .cek-right,
+  .analyze-left, .analyze-right, .imageedit-left, .imageedit-right {
+    width: 100%; min-width: 100%; max-width: 100%;
+  }
+
+  /* ── Music Result ── */
+  .music-track-item { flex-wrap: wrap; gap: 8px; }
+  .music-track-item audio { width: 100%; min-width: 100%; }
 }
 
 /* ── THEME TOGGLE ── */
