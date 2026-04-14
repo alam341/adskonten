@@ -837,6 +837,28 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 }
 .dash-mascot {
   filter: drop-shadow(0 8px 24px rgba(91,91,214,0.15));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.4s ease;
+}
+.mascot-emoji {
+  font-size: 64px;
+  line-height: 1;
+  animation: mascot-bounce 2.5s ease-in-out infinite;
+  display: block;
+}
+.mascot-label {
+  font-size: 11px;
+  color: var(--text-4);
+  text-align: center;
+  font-weight: 500;
+  white-space: nowrap;
+}
+@keyframes mascot-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 /* Tools Grid */
