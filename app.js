@@ -1102,8 +1102,10 @@ async function runAudienceAnalysis() {
           sizeStr = s >= 1000000 ? (s/1000000).toFixed(1)+'M' : s >= 1000 ? (s/1000).toFixed(0)+'K' : s;
           sizeStr = '<span class="aud-kw-size" title="Ukuran audience Meta">'+sizeStr+'</span>';
         }
+        var hiddenBadge = kw.hidden ? '<span class="aud-kw-hidden" title="Interest tersembunyi — tidak muncul di Ads Manager biasa">hidden</span>' : '';
         return '<div class="aud-kw-item" data-kw="'+kw.kata+'" title="'+kw.logika+'">' +
           '<span class="aud-kw-text">'+kw.kata+'</span>' +
+          hiddenBadge +
           sizeStr +
           '<span class="aud-kw-intent" style="color:'+intentColor+'">'+kw.intent+'</span>' +
           '</div>';
@@ -1144,6 +1146,9 @@ async function runAudienceAnalysis() {
     }
 
     $('audResultProduct').textContent = product;
+    var totalInterests = allKeywords.filter(function(v,i,a){return a.indexOf(v)===i;}).length;
+    var countEl = $('audResultCount');
+    if (countEl) countEl.textContent = totalInterests + ' interests ditemukan';
     $('audienceResult').style.display = 'block';
   } catch(e) {
     showToast('Gagal: '+e.message, 'error');
