@@ -658,13 +658,12 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       return res.status(200).json({ analysis: d.content?.[0]?.text || 'Analisis tidak tersedia.' });
     }
 
-    // ── VOICE PREVIEW ─────────────────────────────────────
+    // ── VOICE PREVIEW (submit only, frontend polls) ───────
     if (action === 'preview') {
-      const { voiceName } = req.query;
+      if (req.method !== 'POST') return res.status(405).end();
+      const { voiceName } = req.body;
       if (!voiceName) return res.status(400).json({ error: 'voiceName diperlukan.' });
       const apiKey = getKey('speech');
-
-      // 1. Submit TTS job with short sample text
       const sampleText = 'Halo! Ini adalah suara saya. Senang berkenalan dengan Anda.';
       const genRes = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
         method: 'POST',
@@ -676,36 +675,8 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       });
       const genData = await genRes.json();
       const taskId = genData.data?.taskId || genData.data?.task_id || genData.taskId || genData.task_id || genData.data?.id || genData.id;
-      if (!taskId) return res.status(500).json({ error: 'Gagal membuat preview.' });
-
-      // 2. Poll for result (max 15s)
-      let audioUrl = null;
-      for (let i = 0; i < 15; i++) {
-        await new Promise(r => setTimeout(r, 1000));
-        try {
-          const poll = await fetch(`https://api.kie.ai/api/v1/speech/jobs/${taskId}`, {
-            headers: { 'Authorization': `Bearer ${apiKey}` }
-          });
-          const pd = await poll.json();
-          const status = pd.data?.status || pd.status;
-          const outp = pd.data?.output || pd.output || {};
-          audioUrl = outp.audioUrl || outp.audio_url || outp.url || pd.data?.audioUrl;
-          if (audioUrl) break;
-          if (status === 'failed' || status === 'error') break;
-        } catch(e) {}
-      }
-      if (!audioUrl) return res.status(504).json({ error: 'Preview timeout. Coba lagi.' });
-
-      // 3. Proxy the audio back
-      try {
-        const audioRes = await fetch(audioUrl);
-        if (!audioRes.ok) return res.status(502).json({ error: 'Gagal mengambil audio.' });
-        res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-        return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
-      } catch(e) {
-        return res.status(502).json({ error: 'Gagal mengambil audio.' });
-      }
+      if (!taskId) return res.status(500).json({ error: 'Gagal membuat preview: '+JSON.stringify(genData).slice(0,200) });
+      return res.status(200).json({ taskId });
     }
 
     // ── AUDIENCE RECOMMENDER ─────────────────────────────────
