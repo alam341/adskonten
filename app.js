@@ -750,6 +750,7 @@ function resizeAndDownload(imgUrl, targetW, targetH, filename) {
   var img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function() {
+
     var canvas = document.createElement('canvas');
     canvas.width = targetW; canvas.height = targetH;
     var ctx = canvas.getContext('2d');
@@ -774,34 +775,40 @@ function resizeAndDownload(imgUrl, targetW, targetH, filename) {
     }, 'image/jpeg', 0.92);
   };
   img.onerror = function() { showToast('Gagal resize gambar. Coba download manual.', 'error'); };
-  img.src = imgUrl;
+  img.src = '/api/proxy?action=imgProxy&url=' + encodeURIComponent(imgUrl);
 }
 
 // ── Batch Download ZIP ─────────────────────────────────────
 async function batchDownloadZip(urls, prefix) {
   if (!urls || !urls.length) return;
   if (typeof JSZip === 'undefined') {
-    // Fallback: download satu per satu
     urls.forEach(function(url, i) { setTimeout(function() { var a=document.createElement('a');a.href=url;a.download=prefix+'-'+(i+1)+'.jpg';a.target='_blank';a.click(); }, i*300); });
     return;
   }
   showToast('Menyiapkan ZIP...', 'info');
   var zip = new JSZip();
   var folder = zip.folder(prefix);
+  var failed = 0;
   var promises = urls.map(function(url, i) {
-    return fetch(url)
-      .then(function(r){ return r.blob(); })
-      .then(function(blob){ folder.file(prefix+'-'+(i+1)+'.jpg', blob); })
-      .catch(function(){ });
+    var proxyUrl = '/api/proxy?action=imgProxy&url=' + encodeURIComponent(url);
+    return fetch(proxyUrl)
+      .then(function(r) {
+        if (!r.ok) throw new Error('gagal');
+        return r.blob();
+      })
+      .then(function(blob) { folder.file(prefix + '-' + (i+1) + '.jpg', blob); })
+      .catch(function() { failed++; });
   });
   await Promise.all(promises);
+  if (failed === urls.length) { showToast('Semua gambar gagal diunduh.', 'error'); return; }
   var content = await zip.generateAsync({ type: 'blob' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(content);
   a.download = prefix + '-' + Date.now() + '.zip';
   a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
-  showToast('ZIP berhasil diunduh!', 'success');
+  var msg = failed > 0 ? 'ZIP diunduh (' + failed + ' gambar gagal).' : 'ZIP berhasil diunduh!';
+  showToast(msg, failed > 0 ? 'info' : 'success');
 }
 
 // ── Toast ─────────────────────────────────────────────────
