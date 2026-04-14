@@ -683,9 +683,38 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
     if (action === 'audienceRec') {
       if (req.method !== 'POST') return res.status(405).end();
       const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      const FB_APP_ID = process.env.FB_APP_ID;
+      const FB_APP_SECRET = process.env.FB_APP_SECRET;
       if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+      if (!FB_APP_ID || !FB_APP_SECRET) return res.status(500).json({ error: 'FB_APP_ID / FB_APP_SECRET belum diset.' });
       const { product } = req.body;
       if (!product) return res.status(400).json({ error: 'Nama produk diperlukan.' });
+
+      // ── 1. Ambil interest dari Meta Targeting Search API ──────
+      const fbToken = `${FB_APP_ID}|${FB_APP_SECRET}`;
+      const metaUrl = `https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(product)}&limit=30&locale=id_ID&access_token=${fbToken}`;
+      const metaRes = await fetch(metaUrl);
+      const metaData = await metaRes.json();
+
+      let metaInterests = [];
+      if (metaData.data && Array.isArray(metaData.data)) {
+        metaInterests = metaData.data.map(function(item) {
+          return {
+            id: item.id,
+            nama: item.name,
+            audienceSize: item.audience_size || null,
+            path: item.path ? item.path.join(' > ') : ''
+          };
+        });
+      }
+
+      // ── 2. Kirim ke Claude untuk dikategorikan ────────────────
+      const metaList = metaInterests.length > 0
+        ? metaInterests.map(function(i) {
+            const size = i.audienceSize ? ` (${(i.audienceSize/1000000).toFixed(1)}M)` : '';
+            return `- ${i.nama}${size} [${i.path}]`;
+          }).join('\n')
+        : '(tidak ada data dari Meta, gunakan pengetahuanmu)';
 
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -695,28 +724,31 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
           max_tokens: 4000,
           messages: [{
             role: 'user',
-            content: `Kamu adalah pakar keyword research untuk Meta Ads dan Google Ads Indonesia. Tugasmu adalah mencari kata kunci yang SECARA LOGIS berhubungan dengan produk/topik, bukan hanya yang obvious.
+            content: `Kamu adalah pakar Meta Ads Indonesia. Berikut adalah interest NYATA dari Meta Ads untuk produk/topik "${product}":
 
-Contoh logika: "perawatan rambut" → sisir (alat untuk rambut), air (untuk keramas), salon (tempat perawatan), ketombe (masalah rambut).
+${metaList}
 
-Produk/Topik: "${product}"
+Tugasmu: kategorikan interest di atas ke dalam 6 kategori, tambahkan logika singkat untuk tiap interest, dan tentukan intent-nya.
+Jika ada interest yang tidak relevan sama sekali, masukkan ke negativeKeywords.
+Pilih 5 interest terbaik untuk topPicks.
 
 Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
 {
   "mainKeyword": "${product}",
   "categories": [
-    { "nama": "Alat & Perlengkapan", "icon": "🔧", "desc": "benda fisik yang digunakan bersamaan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli" }] },
-    { "nama": "Bahan & Kandungan", "icon": "🧪", "desc": "bahan atau kandungan yang dicari", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info" }] },
-    { "nama": "Aktivitas & Kebiasaan", "icon": "🏃", "desc": "aktivitas yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info" }] },
-    { "nama": "Masalah & Keluhan", "icon": "😤", "desc": "masalah yang mendorong pembelian", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "masalah" }] },
-    { "nama": "Tempat & Situasi", "icon": "📍", "desc": "tempat atau situasi penggunaan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info" }] },
-    { "nama": "Gaya Hidup & Identitas", "icon": "✨", "desc": "identitas pengguna produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli" }] }
+    { "nama": "Minat Langsung", "icon": "🎯", "desc": "interest yang langsung relevan dengan produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null }] },
+    { "nama": "Gaya Hidup", "icon": "✨", "desc": "interest gaya hidup yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
+    { "nama": "Aktivitas & Hobi", "icon": "🏃", "desc": "aktivitas atau hobi yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
+    { "nama": "Media & Brand", "icon": "📱", "desc": "media, brand, atau tokoh yang diikuti", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
+    { "nama": "Demografi & Perilaku", "icon": "👥", "desc": "karakteristik demografis atau perilaku", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
+    { "nama": "Niche & Spesifik", "icon": "🔍", "desc": "interest niche yang berpotensi konversi tinggi", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null }] }
   ],
   "topPicks": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "negativeKeywords": ["kw tidak relevan 1", "kw tidak relevan 2", "kw tidak relevan 3"]
+  "negativeKeywords": ["kw tidak relevan 1", "kw tidak relevan 2"]
 }
 
-Isi setiap kategori dengan 4-5 keyword saja. Logika harus singkat maksimal 6 kata. HANYA JSON.`
+Penting: untuk field "audienceSize" di tiap keyword, isi dengan angka audience size dari data Meta di atas (angka aslinya, bukan dalam juta). Jika tidak ada data, isi null.
+Logika maksimal 6 kata. HANYA JSON.`
           }]
         })
       });
@@ -724,10 +756,11 @@ Isi setiap kategori dengan 4-5 keyword saja. Logika harus singkat maksimal 6 kat
       if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Gagal.' });
       const text = d.content?.[0]?.text || '{}';
       try {
-        // Ekstrak JSON dari response meskipun ada teks tambahan
         const match = text.match(/\{[\s\S]*\}/);
         if (!match) return res.status(500).json({ error: 'Format response tidak valid.' });
         const parsed = JSON.parse(match[0]);
+        // Sertakan raw Meta interests untuk referensi
+        parsed.metaInterestsCount = metaInterests.length;
         return res.status(200).json(parsed);
       } catch(e) {
         return res.status(500).json({ error: 'Format response tidak valid: ' + e.message });
