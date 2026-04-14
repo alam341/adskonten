@@ -769,17 +769,20 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
 
 ${metaList}
 
-Keterangan: interest bertanda [hidden] adalah interest tersembunyi hasil Meta suggestion (tidak muncul di Ads Manager biasa).
+Keterangan: interest bertanda [hidden] adalah interest tersembunyi hasil Meta suggestion.
 
-Tugasmu: kelompokkan SEMUA interest di atas ke dalam 3 grup berikut:
+Tugasmu: kelompokkan ke dalam 3 grup. Untuk grup 1 dan 2, gunakan data Meta di atas. Untuk grup 3, WAJIB berpikir sendiri secara mendalam.
 
-1. "Sesuai Kata Kunci" — interest yang namanya langsung mengandung atau identik dengan "${product}". Contoh untuk "sepeda": Sepeda, Bersepeda, Cycling, Mountain Bike.
+1. "Sesuai Kata Kunci" — dari data Meta: interest yang namanya langsung mengandung atau identik dengan "${product}".
 
-2. "Relevan & Mirip" — interest yang sejenis atau satu kategori dengan "${product}", mirip tapi beda nama. Contoh untuk "sepeda": Fixie, BMX, Road Bike, Sepeda Lipat — sama-sama jenis sepeda.
+2. "Relevan & Mirip" — dari data Meta: interest yang sejenis atau satu kategori produk dengan "${product}".
 
-3. "Berhubungan" — interest yang DIGUNAKAN BERSAMA atau terikat perilaku/kebiasaan pengguna "${product}", bukan produk sejenis. Contoh untuk "sepeda": Helm, Jersey Sepeda, Pompa Ban, Komunitas Outdoor, Olahraga Pagi — bukan sepeda, tapi orang yang pakai sepeda pasti bersinggungan dengan ini.
+3. "Berhubungan" — GUNAKAN PIKIRANMU SENDIRI. Tanyakan: "Orang yang menggunakan/membeli ${product}, dalam keseharian mereka juga menggunakan apa, melakukan apa, memakai apa, pergi ke mana?"
+Pikirkan secara KONKRET dan SPESIFIK — bukan kategori umum.
+Contoh untuk "sepeda": kaos kaki (dipakai saat bersepeda), sendal (alas kaki saat bersepeda santai), sarung tangan (pelindung tangan), botol minum (selalu dibawa), earphone (dengerin musik saat gowes), topi (pelindung matahari), tas ransel (bawa barang), bengkel (servis rutin), teman nongkrong (aktivitas sosial pesepeda).
+Minimal 10 interest untuk grup ini. Jika ada yang cocok dengan data Meta, tambahkan audienceSize-nya. Jika tidak ada di data Meta, tetap masukkan dengan audienceSize: null.
 
-Interest yang sama sekali tidak nyambung → negativeKeywords.
+Interest yang benar-benar tidak nyambung → negativeKeywords.
 Pilih 5 terbaik untuk topPicks (utamakan [hidden] dan audience size besar).
 
 Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
@@ -788,16 +791,17 @@ Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
   "categories": [
     { "nama": "Sesuai Kata Kunci", "icon": "🎯", "desc": "interest yang langsung sesuai dengan kata kunci", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] },
     { "nama": "Relevan & Mirip", "icon": "🔗", "desc": "interest sejenis atau satu kategori", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] },
-    { "nama": "Berhubungan", "icon": "💡", "desc": "interest yang digunakan bersama atau terikat perilaku pengguna", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] }
+    { "nama": "Berhubungan", "icon": "💡", "desc": "item & perilaku yang digunakan bersamaan dengan produk ini", "keywords": [{ "kata": "contoh", "logika": "alasan konkret", "intent": "info", "audienceSize": null, "hidden": false }] }
   ],
   "topPicks": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "negativeKeywords": ["kw tidak relevan 1", "kw tidak relevan 2"]
 }
 
 Penting:
-- "audienceSize": isi angka asli dari data (bukan dalam juta). Null jika tidak ada.
+- "audienceSize": angka asli dari data Meta (bukan dalam juta). Null jika tidak ada di data Meta.
 - "hidden": true jika interest bertanda [hidden], false jika tidak.
-- Logika maksimal 6 kata. HANYA JSON.`
+- Logika harus KONKRET, jelaskan kenapa hubungannya, maksimal 6 kata.
+- HANYA JSON.`
           }]
         })
       });
