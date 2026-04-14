@@ -631,6 +631,45 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
     }
 
+    // ── ADMIN: STATISTIK PER USER ─────────────────────────────
+    if (action === 'adminStats') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile } = await getUserAndProfile(token);
+      if (!profile || !profile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
+
+      const dateParam = req.query.date || new Date().toISOString().split('T')[0];
+      const dateStart = dateParam + 'T00:00:00.000Z';
+      const dateEnd   = dateParam + 'T23:59:59.999Z';
+
+      const [usersR, histR] = await Promise.all([
+        fetch(`${SUPA_URL}/rest/v1/profiles?status=eq.approved&order=username.asc&select=*`, {
+          headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+        }),
+        fetch(`${SUPA_URL}/rest/v1/histories?created_at=gte.${dateStart}&created_at=lte.${dateEnd}&select=user_id,type`, {
+          headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+        })
+      ]);
+
+      const users = await usersR.json();
+      const histories = await histR.json();
+
+      const statsMap = {};
+      (Array.isArray(histories) ? histories : []).forEach(function(h) {
+        if (!statsMap[h.user_id]) statsMap[h.user_id] = { image: 0, speech: 0, clone: 0 };
+        if (h.type === 'image') statsMap[h.user_id].image++;
+        else if (h.type === 'speech') statsMap[h.user_id].speech++;
+        else if (h.type === 'clone') statsMap[h.user_id].clone++;
+      });
+
+      const result = (Array.isArray(users) ? users : []).map(function(u) {
+        const s = statsMap[u.id] || { image: 0, speech: 0, clone: 0 };
+        return { id: u.id, username: u.username, status: u.status, approved_at: u.approved_at, stats: s };
+      });
+
+      return res.status(200).json({ users: result, date: dateParam });
+    }
+
     // ── IMAGE PROXY (untuk batch download ZIP) ────────────────
     if (action === 'imgProxy') {
       if (req.method !== 'GET') return res.status(405).end();
