@@ -519,38 +519,46 @@ Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
       const { imageBase64, productInfo, platform, tone, frameworks } = req.body;
       // productInfo opsional - bisa kosong kalau ada gambar
 
-      const fwList = frameworks && frameworks.length ? frameworks.join(', ') : 'AIDA, PAS';
-      const prompt = `Kamu adalah copywriter iklan profesional Indonesia kelas dunia. Buat copywriting iklan yang menjual.
+      const isMeta = platform === 'meta_ads';
+      const isGoogle = platform === 'google_ads';
 
-${imageBase64 ? 'Analisis gambar/video yang dilampirkan secara mendalam — produk, keunggulan visual, warna, suasana, target audience yang terlihat — lalu buat copywriting yang sesuai.' : ''}
-${productInfo ? 'Info produk tambahan: ' + productInfo : ''}
-Platform: ${platform || 'Instagram'}
+      let prompt;
+      if (isMeta) {
+        prompt = `Kamu adalah copywriter Meta Ads (Facebook & Instagram) terbaik Indonesia.
+${imageBase64 ? 'Analisis gambar produk yang dilampirkan.' : ''}
+${productInfo ? 'Info produk: ' + productInfo : ''}
 Tone: ${tone || 'persuasif dan emosional'}
-Framework yang digunakan: ${fwList}
 
-Buat copywriting LENGKAP untuk setiap framework yang diminta. Format output:
+Buat 3 variasi ad copy Meta Ads. Output JSON (HANYA JSON):
+{
+  "type": "meta",
+  "variants": [
+    { "label": "Variasi A — Hook Masalah", "primaryText": "teks utama maks 125 kata, boleh emoji", "headline": "maks 40 karakter", "description": "maks 30 karakter", "cta": "Shop Now" },
+    { "label": "Variasi B — Social Proof", "primaryText": "...", "headline": "...", "description": "...", "cta": "Learn More" },
+    { "label": "Variasi C — FOMO / Urgensi", "primaryText": "...", "headline": "...", "description": "...", "cta": "Get Offer" }
+  ]
+}`;
+      } else if (isGoogle) {
+        prompt = `Kamu adalah copywriter Google Ads terbaik Indonesia.
+${productInfo ? 'Info produk: ' + productInfo : ''}
+Tone: ${tone || 'persuasif dan emosional'}
 
----
-
-## 📌 FRAMEWORK: [NAMA FRAMEWORK]
-
-**🎯 HEADLINE:**
-[headline yang kuat, max 10 kata]
-
-**💬 BODY COPY:**
-[body copy lengkap sesuai framework]
-
-**📣 CTA (Call to Action):**
-[CTA yang kuat dan spesifik]
-
-**#️⃣ HASHTAG:**
-[5-10 hashtag relevan untuk ${platform}]
-
----
-
-[ulangi untuk setiap framework]
-
-Tulis dalam Bahasa Indonesia yang natural, menjual, dan sesuai dengan kultur lokal. Gunakan kata-kata yang powerful dan emosional.`;
+Buat Responsive Search Ad (RSA). WAJIB: headline maks 30 karakter, description maks 90 karakter.
+Output JSON (HANYA JSON):
+{
+  "type": "google",
+  "headlines": [
+    {"text": "...", "chars": 0}
+  ],
+  "descriptions": [
+    {"text": "...", "chars": 0}
+  ],
+  "tips": "1-2 tips penggunaan RSA ini"
+}
+Buat 15 headlines dan 4 descriptions. Isi "chars" dengan panjang karakter teks.`;
+      } else {
+        return res.status(400).json({ error: 'Platform tidak valid.' });
+      }
 
       const msgContent = [];
       if (imageBase64) {
@@ -567,7 +575,17 @@ Tulis dalam Bahasa Indonesia yang natural, menjual, dan sesuai dengan kultur lok
       });
       const d = await r.json();
       if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Generate gagal.' });
-      return res.status(200).json({ copy: d.content?.[0]?.text || '' });
+      const rawText = d.content?.[0]?.text || '';
+      if (isMeta || isGoogle) {
+        try {
+          const match = rawText.match(/\{[\s\S]*\}/);
+          if (!match) return res.status(500).json({ error: 'Format tidak valid.' });
+          return res.status(200).json(JSON.parse(match[0]));
+        } catch(e) {
+          return res.status(500).json({ error: 'Format tidak valid.' });
+        }
+      }
+      return res.status(200).json({ copy: rawText });
     }
 
     // ── IMAGE EDIT ────────────────────────────────────────────
