@@ -522,38 +522,40 @@ Berikan analisis lengkap dalam Bahasa Indonesia dengan format:
       const isMeta = platform === 'meta_ads';
       const isGoogle = platform === 'google_ads';
 
+      const fwList = frameworks && frameworks.length ? frameworks.join(', ') : 'AIDA';
+
       let prompt;
       if (isMeta) {
         prompt = `Kamu adalah copywriter Meta Ads (Facebook & Instagram) terbaik Indonesia.
 ${imageBase64 ? 'Analisis gambar produk yang dilampirkan.' : ''}
 ${productInfo ? 'Info produk: ' + productInfo : ''}
 Tone: ${tone || 'persuasif dan emosional'}
+Framework: ${fwList}
 
-Buat 3 variasi ad copy Meta Ads. Output JSON (HANYA JSON):
+Buat ${frameworks.length} variasi ad copy Meta Ads — satu variasi per framework. Setiap primary text harus mengikuti struktur framework yang dipilih, namun tetap dalam format Meta Ads.
+
+Output JSON (HANYA JSON):
 {
   "type": "meta",
   "variants": [
-    { "label": "Variasi A — Hook Masalah", "primaryText": "teks utama maks 125 kata, boleh emoji", "headline": "maks 40 karakter", "description": "maks 30 karakter", "cta": "Shop Now" },
-    { "label": "Variasi B — Social Proof", "primaryText": "...", "headline": "...", "description": "...", "cta": "Learn More" },
-    { "label": "Variasi C — FOMO / Urgensi", "primaryText": "...", "headline": "...", "description": "...", "cta": "Get Offer" }
+    { "label": "Variasi [NAMA FRAMEWORK]", "primaryText": "ikuti struktur framework, maks 125 kata, boleh emoji", "headline": "maks 40 karakter", "description": "maks 30 karakter", "cta": "Shop Now" }
   ]
 }`;
       } else if (isGoogle) {
         prompt = `Kamu adalah copywriter Google Ads terbaik Indonesia.
 ${productInfo ? 'Info produk: ' + productInfo : ''}
 Tone: ${tone || 'persuasif dan emosional'}
+Framework: ${fwList}
 
-Buat Responsive Search Ad (RSA). WAJIB: headline maks 30 karakter, description maks 90 karakter.
+Buat Responsive Search Ad (RSA). Tulis headlines dan descriptions dengan mengikuti prinsip framework ${fwList} — ada yang fokus pada masalah, solusi, bukti, urgensi, sesuai framework.
+WAJIB: headline maks 30 karakter, description maks 90 karakter.
+
 Output JSON (HANYA JSON):
 {
   "type": "google",
-  "headlines": [
-    {"text": "...", "chars": 0}
-  ],
-  "descriptions": [
-    {"text": "...", "chars": 0}
-  ],
-  "tips": "1-2 tips penggunaan RSA ini"
+  "headlines": [{"text": "...", "chars": 0}],
+  "descriptions": [{"text": "...", "chars": 0}],
+  "tips": "tips singkat penggunaan RSA ini"
 }
 Buat 15 headlines dan 4 descriptions. Isi "chars" dengan panjang karakter teks.`;
       } else {
