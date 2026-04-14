@@ -1574,9 +1574,15 @@ async function startCopywriting() {
   var empty = $('copywritingEmpty');
   var right = $('copywritingRight');
   var btn = $('btnStartCopywriting');
-  var platform = $('copywritingPlatform') ? $('copywritingPlatform').value : 'Instagram';
+  var platform = $('copywritingPlatform') ? $('copywritingPlatform').value : 'meta_ads';
   var tone = $('copywritingTone') ? $('copywritingTone').value : 'persuasif dan emosional';
 
+  var frameworks = [];
+  if ($('fwAIDA') && $('fwAIDA').checked) frameworks.push('AIDA');
+  if ($('fwPAS') && $('fwPAS').checked) frameworks.push('PAS');
+  if ($('fwBAB') && $('fwBAB').checked) frameworks.push('BAB');
+  if ($('fwFAB') && $('fwFAB').checked) frameworks.push('FAB');
+  if (!frameworks.length) { showToast('Pilih minimal 1 framework.', 'error'); return; }
 
   if (empty) empty.style.display = 'none';
   if (loading) loading.style.display = 'block';
@@ -1586,7 +1592,7 @@ async function startCopywriting() {
     var res = await fetch('/api/proxy?action=copywriting', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+(authToken||localStorage.getItem('adstudio_token')||'') },
-      body: JSON.stringify({ imageBase64: copywritingBase64, productInfo, platform, tone })
+      body: JSON.stringify({ imageBase64: copywritingBase64, productInfo, platform, tone, frameworks })
     });
     var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Gagal.');
