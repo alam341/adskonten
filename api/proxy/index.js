@@ -644,7 +644,7 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1200,
+          max_tokens: 2500,
           messages: [{
             role: 'user',
             content: `Kamu adalah pakar riset pasar dan iklan digital Indonesia. Analisis produk/topik berikut dan berikan rekomendasi audience yang komprehensif.
