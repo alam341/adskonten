@@ -6,6 +6,7 @@ var imgModel = 'gpt-image/1.5-image-to-image';
 var vidModel = 'kling-2.6/image-to-video';
 var ttsModel = 'elevenlabs/text-to-speech-multilingual-v2';
 var ttsVoice = '21m00Tcm4TlvDq8ikWAM';
+var ttsVoiceName = 'Rachel';
 var ttsSpeed = 1.0, ttsStability = 0.5;
 var imgRatio = '1:1', vidDuration = '5', vidResolution = '720p', imgQty = 1;
 var activeTab = 'image', activeView = 'app'; // 'app' or 'history'
@@ -410,6 +411,7 @@ function setupVoiceDropdown() {
   var LOAD='<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 8"/></svg>';
   function updateDesc() {
     var opt=sel.options[sel.selectedIndex]; ttsVoice=sel.value;
+    if (opt) { var nameParts=opt.text.split(' \u2014 '); ttsVoiceName=nameParts[0].trim(); }
     if (descEl) { var parts=(opt?opt.text:'').split(' \u2014 '); descEl.textContent=parts.length>1?parts[1]:parts[0]; }
   }
   sel.addEventListener('change', function() {
@@ -565,7 +567,7 @@ async function generateSpeech() {
   showState('loading'); resetProgress();
   try {
     updateSub('Mengirim ke ElevenLabs...');
-    var gen=await proxyPost('generate',{type:'speech',text,model:ttsModel,voice:ttsVoice,speed:ttsSpeed,stability:ttsStability,languageCode:''});
+    var gen=await proxyPost('generate',{type:'speech',text,model:ttsModel,voice:ttsVoiceName,speed:ttsSpeed,stability:ttsStability,languageCode:''});
     if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
     updateSub('Generating suara...');
     var audioUrl=await pollStatus(gen.taskId,'speech',30);
