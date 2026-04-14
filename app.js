@@ -440,15 +440,49 @@ function setupVoiceDropdown() {
     updateDesc();
   });
   if (playBtn) {
-    playBtn.addEventListener('click', function() {
-      var vid=sel.value; if (!vid) return;
-      if (playBtn.classList.contains('playing')) { audio.pause();audio.src='';playBtn.classList.remove('playing');playBtn.innerHTML=PLAY+' Preview Suara'; return; }
-      playBtn.classList.add('loading'); playBtn.innerHTML=LOAD+' Generating...';
-      audio.src='/api/proxy?action=preview&voiceName='+encodeURIComponent(ttsVoiceName);
-      audio.oncanplay=function(){ playBtn.classList.remove('loading');playBtn.classList.add('playing');playBtn.innerHTML=PAUSE+' Stop';audio.play(); };
-      audio.onended=function(){ playBtn.classList.remove('playing');playBtn.innerHTML=PLAY+' Preview Suara'; };
-      audio.onerror=function(){ playBtn.classList.remove('loading','playing');playBtn.innerHTML=PLAY+' Preview Suara';showToast('Preview gagal. Coba lagi.','error'); };
-      audio.load();
+    playBtn.addEventListener('click', async function() {
+      if (!sel.value) return;
+      if (playBtn.classList.contains('playing')) {
+        audio.pause(); audio.src='';
+        playBtn.classList.remove('playing');
+        playBtn.innerHTML=PLAY+' Preview Suara';
+        return;
+      }
+      playBtn.classList.add('loading');
+      playBtn.innerHTML=LOAD+' Generating...';
+      playBtn.disabled=true;
+      try {
+        // Step 1: submit preview job
+        var gen = await proxyPost('preview', { voiceName: ttsVoiceName });
+        if (!gen.taskId) throw new Error('taskId tidak ditemukan');
+        // Step 2: poll for audio URL (same mechanism as generate)
+        var audioUrl = await pollStatus(gen.taskId, 'speech', 30);
+        // Step 3: play
+        audio.src = audioUrl;
+        audio.oncanplay = function() {
+          playBtn.classList.remove('loading');
+          playBtn.classList.add('playing');
+          playBtn.innerHTML = PAUSE+' Stop';
+          playBtn.disabled = false;
+          audio.play();
+        };
+        audio.onended = function() {
+          playBtn.classList.remove('playing');
+          playBtn.innerHTML = PLAY+' Preview Suara';
+        };
+        audio.onerror = function() {
+          playBtn.classList.remove('loading','playing');
+          playBtn.innerHTML = PLAY+' Preview Suara';
+          playBtn.disabled = false;
+          showToast('Preview gagal diputar.','error');
+        };
+        audio.load();
+      } catch(err) {
+        playBtn.classList.remove('loading','playing');
+        playBtn.innerHTML = PLAY+' Preview Suara';
+        playBtn.disabled = false;
+        showToast('Preview gagal: '+err.message,'error');
+      }
     });
   }
   updateDesc();
