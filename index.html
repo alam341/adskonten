@@ -1259,6 +1259,35 @@
       if (motEl && dashMotEl) dashMotEl.textContent = motEl.textContent;
     }
 
+    var mascotList = [
+      { emoji: '🐼', label: 'Panda lagi ngedit iklan' },
+      { emoji: '🦊', label: 'Rubah kreatif siap berkarya' },
+      { emoji: '🐸', label: 'Katak semangat hari ini!' },
+      { emoji: '🦄', label: 'Unicorn mode: ON' },
+      { emoji: '🐨', label: 'Koala santai tapi produktif' },
+      { emoji: '🐙', label: 'Gurita multitasking pro' },
+      { emoji: '🦁', label: 'Singa siap conquering the day' },
+      { emoji: '🐯', label: 'Harimau penuh semangat!' },
+      { emoji: '🦋', label: 'Kupu-kupu ide berterbangan' },
+      { emoji: '🐬', label: 'Lumba-lumba cerdas & gesit' },
+      { emoji: '🦝', label: 'Rakun jago ngatur strategi' },
+      { emoji: '🐧', label: 'Penguin cool & stylish' },
+    ];
+    var mascotIdx = Math.floor(Math.random() * mascotList.length);
+    var mascotTimer = null;
+
+    function updateMascot() {
+      var el = document.getElementById('dashMascot');
+      if (!el) return;
+      var m = mascotList[mascotIdx];
+      el.innerHTML =
+        '<div class="mascot-emoji">' + m.emoji + '</div>' +
+        '<div class="mascot-label">' + m.label + '</div>';
+      el.style.opacity = '0';
+      setTimeout(function() { el.style.opacity = '1'; }, 50);
+      mascotIdx = (mascotIdx + 1) % mascotList.length;
+    }
+
     function showDashboard() {
       dashPanel.style.display = 'flex';
       sidebar.style.display = 'none';
@@ -1266,6 +1295,10 @@
       document.querySelectorAll('.tab-btn.icon-tab').forEach(function(b) { b.classList.remove('active'); });
       document.querySelectorAll('.icon-dash-btn').forEach(function(b) { b.classList.add('active'); });
       updateDashUser();
+      updateMascot();
+      if (!mascotTimer) {
+        mascotTimer = setInterval(updateMascot, 10 * 60 * 1000);
+      }
       // Mirror tool visibility from nav buttons
       var map = {
         dashBtnCopywriting: 'btnCopywriting',
