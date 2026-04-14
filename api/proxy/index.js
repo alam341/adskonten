@@ -965,6 +965,86 @@ Penting:
       return res.status(200).json({ users: result, date: dateParam });
     }
 
+    // ── LANDING PAGE TEXT GENERATOR ──────────────────────────
+    if (action === 'landingPage') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+
+      const { productName, problem, benefits, priceOri, pricePromo, brand, tone } = req.body;
+      if (!productName) return res.status(400).json({ error: 'productName diperlukan.' });
+
+      const prompt = `Kamu adalah copywriter landing page iklan Indonesia terbaik. Buat teks untuk landing page mobile produk berikut.
+
+Produk: ${productName}
+Brand: ${brand||productName}
+Masalah yang diselesaikan: ${problem||'-'}
+Benefit/keunggulan: ${benefits||'-'}
+Harga promo: ${pricePromo||'-'}
+Harga normal (coret): ${priceOri||'-'}
+Tone: ${tone||'emosional dan persuasif'}
+
+Buat teks untuk semua section berikut dan kembalikan sebagai JSON (tanpa markdown):
+{
+  "heroBadge": "badge singkat, contoh: ✨ Produk Kecantikan #1",
+  "heroTitle": "headline utama yang kuat, 5-8 kata",
+  "heroSub": "sub headline 1-2 kalimat",
+  "heroCta": "teks tombol CTA hero",
+  "heroProof": "social proof singkat, contoh: ⭐⭐⭐⭐⭐ Dipercaya 50.000+ pelanggan",
+  "masalahEyebrow": "eyebrow text masalah",
+  "masalahTitle": "judul section masalah",
+  "masalahSub": "sub teks masalah 1-2 kalimat",
+  "painPoints": [
+    {"emoji": "😞", "text": "pain point 1"},
+    {"emoji": "😟", "text": "pain point 2"},
+    {"emoji": "😰", "text": "pain point 3"},
+    {"emoji": "😔", "text": "pain point 4"}
+  ],
+  "solusiTag": "tag solusi singkat, contoh: ✅ Solusi Terbukti Klinis",
+  "solusiTitle": "judul section solusi",
+  "solusiSub": "sub teks solusi 1-2 kalimat",
+  "benefits": [
+    {"icon": "✨", "text": "benefit singkat 1"},
+    {"icon": "💪", "text": "benefit singkat 2"},
+    {"icon": "🌿", "text": "benefit singkat 3"},
+    {"icon": "🏆", "text": "benefit singkat 4"},
+    {"icon": "⚡", "text": "benefit singkat 5"},
+    {"icon": "💰", "text": "benefit singkat 6"}
+  ],
+  "testiEyebrow": "eyebrow testimoni",
+  "testiTitle": "judul section testimoni",
+  "testimonials": [
+    {"name": "nama Indonesia 1", "location": "kota 1", "quote": "quote testimoni realistis 1"},
+    {"name": "nama Indonesia 2", "location": "kota 2", "quote": "quote testimoni realistis 2"},
+    {"name": "nama Indonesia 3", "location": "kota 3", "quote": "quote testimoni realistis 3"}
+  ],
+  "ctaTitle": "judul CTA section",
+  "ctaSub": "sub teks CTA yang mendorong action",
+  "ctaPrice": "${pricePromo||'Rp 0'}",
+  "ctaPriceOri": "${priceOri||''}",
+  "ctaBtn": "teks tombol order",
+  "ctaGuarantee": "teks garansi/kepercayaan"
+}
+
+Pastikan semua teks dalam bahasa Indonesia yang natural. Gunakan bahasa yang sesuai tone ${tone}. Kembalikan JSON saja, tanpa penjelasan.`;
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Generate gagal.' });
+      const rawText = d.content?.[0]?.text || '';
+      try {
+        const match = rawText.match(/\{[\s\S]*\}/);
+        if (!match) return res.status(500).json({ error: 'Format tidak valid.' });
+        return res.status(200).json(JSON.parse(match[0]));
+      } catch(e) {
+        return res.status(500).json({ error: 'Format JSON tidak valid.' });
+      }
+    }
+
     // ── IMAGE PROXY (untuk batch download ZIP) ────────────────
     if (action === 'imgProxy') {
       if (req.method !== 'GET') return res.status(405).end();
