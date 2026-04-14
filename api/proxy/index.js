@@ -321,13 +321,53 @@ module.exports = async function handler(req, res) {
       if (req.method !== 'GET') return res.status(405).end();
       const { taskId, type } = req.query;
       const apiKey = getKey(type==='video'?'video':type==='speech'?'speech':'image');
+      const DONE = ['success','SUCCESS','completed','COMPLETED'];
+      const FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
+      let data = null;
+
+      // For speech: try dedicated speech endpoint first
+      if (type === 'speech') {
+        try {
+          const sr = await fetch(`https://api.kie.ai/api/v1/speech/jobs/${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+          if (sr.ok) {
+            const sd = await sr.json();
+            const sdata = sd.data || sd;
+            const sstatus = sdata?.state || sdata?.status || 'waiting';
+            // Extract audio URL from speech endpoint response
+            let audioUrl = sdata?.output?.audio_url || sdata?.output?.audioUrl ||
+              sdata?.audio_url || sdata?.audioUrl || sdata?.url ||
+              sdata?.result?.audio_url || sdata?.result?.audioUrl;
+            // Also try resultJson
+            if (!audioUrl && sdata?.resultJson) {
+              try {
+                const rj = JSON.parse(sdata.resultJson);
+                const urls = rj?.resultUrls || rj?.audioUrls || [];
+                if (urls.length > 0) audioUrl = urls[0];
+                else audioUrl = rj?.audio_url || rj?.audioUrl || rj?.url;
+              } catch(e) {}
+            }
+            // Also try resultUrls array directly
+            if (!audioUrl && Array.isArray(sdata?.resultUrls) && sdata.resultUrls.length > 0) {
+              audioUrl = sdata.resultUrls[0];
+            }
+            if (DONE.includes(sstatus) || audioUrl) {
+              return res.status(200).json({ status: audioUrl ? 'success' : sstatus, audioUrl: audioUrl||null, imageUrl:null, imageUrls:[], videoUrl:null, isFail: FAIL.includes(sstatus), _raw: sdata });
+            }
+            if (FAIL.includes(sstatus)) {
+              return res.status(200).json({ status: sstatus, audioUrl:null, imageUrl:null, imageUrls:[], videoUrl:null, isFail: true });
+            }
+            // Not done yet, return waiting status
+            return res.status(200).json({ status: sstatus, audioUrl:null, imageUrl:null, imageUrls:[], videoUrl:null, isFail: false });
+          }
+        } catch(e) {}
+      }
+
+      // Default: jobs/recordInfo endpoint (image, video, fallback)
       const r = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
       if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
       const d = await r.json();
-      const data = d.data;
+      data = d.data;
       const status = data?.state || data?.status || 'waiting';
-      const DONE = ['success','SUCCESS','completed','COMPLETED'];
-      const FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
       let imageUrl=null, videoUrl=null, audioUrl=null, imageUrls=[];
       if (DONE.includes(status)) {
         if (data?.resultJson) {
