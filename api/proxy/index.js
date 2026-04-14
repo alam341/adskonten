@@ -532,15 +532,27 @@ ${productInfo ? 'Info produk: ' + productInfo : ''}
 Tone: ${tone || 'persuasif dan emosional'}
 Framework: ${fwList}
 
-Buat ${frameworks.length} variasi ad copy Meta Ads — satu variasi per framework. Setiap primary text harus mengikuti struktur framework yang dipilih, namun tetap dalam format Meta Ads.
+Buat ${frameworks.length} variasi ad copy Meta Ads — satu variasi per framework.
+Setiap variasi berisi:
+- primaryText: ikuti struktur framework, maks 125 kata, boleh emoji
+- headlines: 10 pilihan headline (maks 40 karakter tiap headline) — beragam angle
+- descriptions: 4 pilihan description (maks 30 karakter tiap description)
+- cta: tombol CTA yang sesuai
 
 Output JSON (HANYA JSON):
 {
   "type": "meta",
   "variants": [
-    { "label": "Variasi [NAMA FRAMEWORK]", "primaryText": "ikuti struktur framework, maks 125 kata, boleh emoji", "headline": "maks 40 karakter", "description": "maks 30 karakter", "cta": "Shop Now" }
+    {
+      "label": "Variasi [NAMA FRAMEWORK]",
+      "primaryText": "...",
+      "headlines": [{"text": "...", "chars": 0}],
+      "descriptions": [{"text": "...", "chars": 0}],
+      "cta": "Shop Now"
+    }
   ]
-}`;
+}
+Isi "chars" dengan panjang karakter teksnya.`;
       } else if (isGoogle) {
         prompt = `Kamu adalah copywriter Google Ads terbaik Indonesia.
 ${productInfo ? 'Info produk: ' + productInfo : ''}
