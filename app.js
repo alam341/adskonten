@@ -443,11 +443,11 @@ function setupVoiceDropdown() {
     playBtn.addEventListener('click', function() {
       var vid=sel.value; if (!vid) return;
       if (playBtn.classList.contains('playing')) { audio.pause();audio.src='';playBtn.classList.remove('playing');playBtn.innerHTML=PLAY+' Preview Suara'; return; }
-      playBtn.classList.add('loading'); playBtn.innerHTML=LOAD+' Loading...';
-      audio.src='/api/proxy?action=preview&voiceId='+vid;
+      playBtn.classList.add('loading'); playBtn.innerHTML=LOAD+' Generating...';
+      audio.src='/api/proxy?action=preview&voiceName='+encodeURIComponent(ttsVoiceName);
       audio.oncanplay=function(){ playBtn.classList.remove('loading');playBtn.classList.add('playing');playBtn.innerHTML=PAUSE+' Stop';audio.play(); };
       audio.onended=function(){ playBtn.classList.remove('playing');playBtn.innerHTML=PLAY+' Preview Suara'; };
-      audio.onerror=function(){ playBtn.classList.remove('loading','playing');playBtn.innerHTML=PLAY+' Preview Suara';showToast('Preview tidak tersedia.','error'); };
+      audio.onerror=function(){ playBtn.classList.remove('loading','playing');playBtn.innerHTML=PLAY+' Preview Suara';showToast('Preview gagal. Coba lagi.','error'); };
       audio.load();
     });
   }
