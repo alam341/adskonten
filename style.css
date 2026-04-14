@@ -588,7 +588,8 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .history-header { height:60px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 24px; border-bottom:1px solid var(--border); background:var(--bg-nav); box-shadow: 0 1px 12px rgba(91,91,214,0.06); }
 .history-title { font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:var(--text-1); }
 .history-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-5); font-size:14px; }
-.history-grid { flex:1; overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; padding:14px; align-content:start; }
+.history-scroll-area { flex:1; overflow-y:auto; }
+.history-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,160px)); justify-content:start; gap:8px; padding:14px; align-content:start; }
 .history-loading { grid-column:1/-1; text-align:center; color:var(--text-5); padding:40px; }
 .history-card { background:var(--bg-nav); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:all 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.04); cursor:pointer; }
 .history-card:hover { border-color:rgba(91,91,214,0.35); transform:translateY(-2px); box-shadow:0 6px 20px rgba(91,91,214,0.12); }

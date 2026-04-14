@@ -268,14 +268,20 @@ async function loadHistory(page) {
         card.className = 'history-card';
         var isVideo = url.includes('.mp4');
         var isAudio = url.includes('.mp3');
+
+        // Kumpulkan semua URL gambar dari item ini untuk preview
+        var itemImgUrls = (item.storage_urls && item.storage_urls.length ? item.storage_urls : (item.result_urls||[])).filter(function(u){ return !u.includes('.mp4')&&!u.includes('.mp3'); });
+        var imgIdx = itemImgUrls.indexOf(url);
+
         var thumbInner = isVideo
           ? '<div class="history-thumb-placeholder">🎬</div>'
           : isAudio
             ? '<div class="history-thumb-placeholder">🔊</div>'
             : '<div class="history-card-thumb"><img src="'+url+'" loading="lazy" />' +
               '<div class="history-card-overlay">' +
-                '<a href="'+url+'" download target="_blank" class="btn-dl-hist" title="Download" style="color:white;border-color:rgba(255,255,255,0.3);background:rgba(0,0,0,0.3);flex:none;width:30px;height:30px;border-radius:8px;font-size:13px">⬇</a>' +
+                '<span style="color:white;font-size:18px">🔍</span>' +
               '</div></div>';
+
         card.innerHTML = thumbInner +
           '<div class="history-card-info">' +
             '<div class="history-card-type">'+item.type+'</div>' +
@@ -283,9 +289,18 @@ async function loadHistory(page) {
             '<div class="history-card-date">'+new Date(item.created_at).toLocaleDateString('id-ID')+'</div>' +
           '</div>' +
           '<div class="history-card-actions">' +
-            (isVideo||isAudio ? '<a href="'+url+'" download target="_blank" class="btn-dl-hist" title="Download">⬇</a>' : '') +
-            (i===0 ? '<button class="btn-del-hist" data-id="'+item.id+'" title="Hapus">🗑</button>' : '') +
+            '<a href="'+url+'" download target="_blank" class="btn-dl-hist" title="Download" onclick="event.stopPropagation()">⬇</a>' +
+            (i===0 ? '<button class="btn-del-hist" data-id="'+item.id+'" title="Hapus" onclick="event.stopPropagation()">🗑</button>' : '') +
           '</div>';
+
+        // Klik card → buka modal preview
+        if (!isVideo && !isAudio && itemImgUrls.length) {
+          card.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-dl-hist,.btn-del-hist')) return;
+            if (typeof openModal === 'function') openModal(itemImgUrls, Math.max(imgIdx,0));
+          });
+        }
+
         grid.appendChild(card);
       });
     });
