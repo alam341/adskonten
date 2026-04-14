@@ -1301,6 +1301,30 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 @keyframes aud-run { 0%{content:'🏃'} 50%{content:'🚶'} }
 @keyframes aud-dot { 0%,80%,100%{background:var(--border);transform:scale(1)} 40%{background:#5b5bd6;transform:scale(1.4)} }
 
+/* Ad Copy Generator */
+.adcopy-platform-tabs { display:flex; gap:8px; }
+.adcopy-plat-btn { display:flex; align-items:center; gap:7px; padding:8px 16px; border-radius:8px; border:1.5px solid var(--border); background:var(--bg); color:var(--text-3); font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; flex:1; justify-content:center; }
+.adcopy-plat-btn:hover { border-color:#5b5bd6; color:#5b5bd6; }
+.adcopy-plat-btn.active { border-color:#5b5bd6; background:#5b5bd6; color:#fff; }
+.adcopy-card { background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; }
+.adcopy-card-label { font-size:12px; font-weight:700; color:var(--text-2); margin-bottom:12px; }
+.adcopy-field { margin-bottom:10px; }
+.adcopy-field-title { font-size:10px; font-weight:600; color:var(--text-4); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; display:flex; justify-content:space-between; }
+.adcopy-field-body { font-size:12px; color:var(--text-1); background:var(--bg-2); border-radius:8px; padding:10px 12px; line-height:1.6; border:1px solid var(--border); transition:border-color 0.15s; white-space:pre-wrap; }
+.adcopy-field-body:hover { border-color:#5b5bd6; }
+.adcopy-row { display:flex; gap:8px; }
+.adcopy-field-sm { flex:1; }
+.adcopy-chars { color:var(--text-5); font-weight:400; text-transform:none; }
+.adcopy-cta-badge { display:inline-block; margin-top:8px; background:#5b5bd6; color:#fff; border-radius:6px; padding:4px 12px; font-size:11px; font-weight:700; }
+.adcopy-rsa-grid { display:flex; flex-direction:column; gap:6px; }
+.adcopy-rsa-item, .adcopy-desc-item { display:flex; align-items:center; gap:8px; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; cursor:pointer; transition:border-color 0.15s; }
+.adcopy-rsa-item:hover, .adcopy-desc-item:hover { border-color:#5b5bd6; }
+.adcopy-rsa-num { font-size:10px; font-weight:700; color:var(--text-5); width:16px; flex-shrink:0; }
+.adcopy-rsa-text { font-size:12px; color:var(--text-1); flex:1; }
+.adcopy-rsa-chars { font-size:10px; font-weight:600; color:var(--text-4); flex-shrink:0; }
+.adcopy-rsa-chars.over, .adcopy-rsa-over { color:#ef4444 !important; border-color:#ef444440 !important; }
+.adcopy-tips { font-size:12px; color:var(--text-3); background:rgba(91,91,214,0.06); border:1px solid rgba(91,91,214,0.15); border-radius:8px; padding:10px 14px; line-height:1.6; }
+
 /* Resize Panel */
 .resize-panel {
   border-top: 1px solid var(--border);

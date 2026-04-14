@@ -1602,17 +1602,34 @@ async function startCopywriting() {
       right.innerHTML = '';
 
       if (data.type === 'meta' && data.variants) {
-        // ── Meta Ads: 3 variasi ──
         data.variants.forEach(function(v) {
           var card = document.createElement('div');
           card.className = 'adcopy-card';
-          card.innerHTML = '<div class="adcopy-card-label">' + escHtml(v.label) + '</div>' +
+
+          // Primary Text
+          var html = '<div class="adcopy-card-label">' + escHtml(v.label) + '</div>' +
             '<div class="adcopy-field"><div class="adcopy-field-title">Primary Text</div>' +
-            '<div class="adcopy-field-body" data-copy="' + escHtml(v.primaryText) + '">' + escHtml(v.primaryText) + '</div></div>' +
-            '<div class="adcopy-row">' +
-            '<div class="adcopy-field adcopy-field-sm"><div class="adcopy-field-title">Headline <span class="adcopy-chars">' + (v.headline||'').length + '/40</span></div><div class="adcopy-field-body" data-copy="' + escHtml(v.headline) + '">' + escHtml(v.headline) + '</div></div>' +
-            '<div class="adcopy-field adcopy-field-sm"><div class="adcopy-field-title">Description <span class="adcopy-chars">' + (v.description||'').length + '/30</span></div><div class="adcopy-field-body" data-copy="' + escHtml(v.description) + '">' + escHtml(v.description) + '</div></div>' +
-            '</div><div class="adcopy-cta-badge">' + escHtml(v.cta) + '</div>';
+            '<div class="adcopy-field-body" data-copy="' + escHtml(v.primaryText) + '">' + escHtml(v.primaryText) + '</div></div>';
+
+          // Headlines
+          html += '<div class="adcopy-field"><div class="adcopy-field-title">Headlines <span class="adcopy-chars">— maks 40 karakter, klik untuk salin</span></div><div class="adcopy-rsa-grid">';
+          (v.headlines||[]).forEach(function(h, i) {
+            var over = (h.text||'').length > 40;
+            html += '<div class="adcopy-rsa-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(h.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(h.text) + '</span><span class="adcopy-rsa-chars' + (over?' over':'') + '">' + (h.text||'').length + '</span></div>';
+          });
+          html += '</div></div>';
+
+          // Descriptions
+          html += '<div class="adcopy-field" style="margin-top:8px"><div class="adcopy-field-title">Descriptions <span class="adcopy-chars">— maks 30 karakter</span></div><div style="display:flex;flex-direction:column;gap:6px">';
+          (v.descriptions||[]).forEach(function(d, i) {
+            var over = (d.text||'').length > 30;
+            html += '<div class="adcopy-rsa-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(d.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(d.text) + '</span><span class="adcopy-rsa-chars' + (over?' over':'') + '">' + (d.text||'').length + '</span></div>';
+          });
+          html += '</div></div>';
+
+          html += '<div class="adcopy-cta-badge" style="margin-top:10px">' + escHtml(v.cta) + '</div>';
+
+          card.innerHTML = html;
           card.querySelectorAll('[data-copy]').forEach(function(el) {
             el.style.cursor = 'pointer'; el.title = 'Klik untuk salin';
             el.addEventListener('click', function() { navigator.clipboard && navigator.clipboard.writeText(el.dataset.copy); showToast('Disalin!','success'); });
@@ -1627,7 +1644,7 @@ async function startCopywriting() {
         var hlHtml = '<div class="adcopy-card-label">📌 Headlines <span style="font-size:11px;font-weight:400;color:var(--text-4)">— maks 30 karakter</span></div><div class="adcopy-rsa-grid">';
         (data.headlines||[]).forEach(function(h,i) {
           var over = (h.text||'').length > 30;
-          hlHtml += '<div class="adcopy-rsa-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(h.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(h.text) + '</span><span class="adcopy-rsa-chars' + (over?' over':'') + '">' + (h.text||'').length + '</span></div>';
+          hlHtml += '<div class="adcopy-rsa-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(h.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(h.text) + '</span></div>';
         });
         hlHtml += '</div>';
         hlCard.innerHTML = hlHtml;
@@ -1642,7 +1659,7 @@ async function startCopywriting() {
         var descHtml = '<div class="adcopy-card-label">📝 Descriptions <span style="font-size:11px;font-weight:400;color:var(--text-4)">— maks 90 karakter</span></div><div style="display:flex;flex-direction:column;gap:8px">';
         (data.descriptions||[]).forEach(function(d,i) {
           var over = (d.text||'').length > 90;
-          descHtml += '<div class="adcopy-desc-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(d.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(d.text) + '</span><span class="adcopy-rsa-chars' + (over?' over':'') + '">' + (d.text||'').length + '</span></div>';
+          descHtml += '<div class="adcopy-desc-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(d.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(d.text) + '</span></div>';
         });
         descHtml += '</div>';
         if (data.tips) descHtml += '<div class="adcopy-tips" style="margin-top:12px">💡 ' + escHtml(data.tips) + '</div>';
