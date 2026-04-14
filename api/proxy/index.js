@@ -647,28 +647,68 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
           max_tokens: 2500,
           messages: [{
             role: 'user',
-            content: `Kamu adalah pakar riset pasar dan iklan digital Indonesia. Analisis produk/topik berikut dan berikan rekomendasi audience yang komprehensif.
+            content: `Kamu adalah pakar keyword research untuk Meta Ads dan Google Ads Indonesia. Tugasmu adalah mencari kata kunci yang SECARA LOGIS berhubungan dengan produk/topik, bukan hanya yang obvious.
+
+Contoh logika: "perawatan rambut" → sisir (alat untuk rambut), air (untuk keramas), salon (tempat perawatan), ketombe (masalah rambut).
 
 Produk/Topik: "${product}"
 
-Berikan output dalam format JSON yang valid seperti ini (HANYA JSON, tanpa teks lain):
+Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
 {
-  "audience": [
-    { "segment": "nama segmen", "usia": "rentang usia", "gender": "L/P/Semua", "desc": "deskripsi singkat" }
+  "mainKeyword": "${product}",
+  "categories": [
+    {
+      "nama": "Alat & Perlengkapan",
+      "icon": "🔧",
+      "desc": "benda fisik yang digunakan bersamaan",
+      "keywords": [
+        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
+      ]
+    },
+    {
+      "nama": "Bahan & Kandungan",
+      "icon": "🧪",
+      "desc": "bahan atau kandungan yang dicari",
+      "keywords": [
+        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
+      ]
+    },
+    {
+      "nama": "Aktivitas & Kebiasaan",
+      "icon": "🏃",
+      "desc": "aktivitas yang berkaitan dengan produk",
+      "keywords": [
+        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
+      ]
+    },
+    {
+      "nama": "Masalah & Keluhan",
+      "icon": "😤",
+      "desc": "masalah yang membuat orang butuh produk ini",
+      "keywords": [
+        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
+      ]
+    },
+    {
+      "nama": "Tempat & Situasi",
+      "icon": "📍",
+      "desc": "tempat atau situasi penggunaan produk",
+      "keywords": [
+        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
+      ]
+    },
+    {
+      "nama": "Gaya Hidup & Identitas",
+      "icon": "✨",
+      "desc": "identitas atau gaya hidup pengguna produk",
+      "keywords": [
+        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
+      ]
+    }
   ],
-  "ekosistem": [
-    { "kategori": "nama kategori", "items": ["produk1", "produk2", "produk3"] }
-  ],
-  "painPoints": ["masalah1", "masalah2", "masalah3", "masalah4"],
-  "keywords": ["kata kunci1", "kata kunci2", "kata kunci3", "kata kunci4", "kata kunci5"],
-  "platform": [
-    { "nama": "Instagram", "alasan": "alasan singkat", "format": "format konten terbaik" },
-    { "nama": "TikTok", "alasan": "alasan singkat", "format": "format konten terbaik" }
-  ],
-  "hooks": ["hook iklan 1", "hook iklan 2", "hook iklan 3"]
-}
-
-Isi dengan data yang relevan, spesifik, dan actionable untuk tim kreatif iklan Indonesia.`
+  "topPicks": ["5 kata kunci terbaik untuk dipakai di Meta/Google Ads"],
+  "negativeKeywords": ["kata kunci yang TIDAK relevan dan harus dieksklusi dari ads"]
+}`
           }]
         })
       });
