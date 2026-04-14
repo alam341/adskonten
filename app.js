@@ -592,14 +592,14 @@ async function generateSpeech() {
   try {
     updateSub('Mengirim ke ElevenLabs...');
     var gen=await proxyPost('generate',{type:'speech',text,model:ttsModel,voice:ttsVoiceName,speed:ttsSpeed,stability:ttsStability,languageCode:''});
-    if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
-    updateSub('Generating suara...');
-    var audioUrl=await pollStatus(gen.taskId,'speech',30);
+    if (!gen.taskId) throw new Error('taskId tidak ditemukan. Response: '+JSON.stringify(gen));
+    updateSub('Generating suara... ('+ttsVoiceName+')');
+    var audioUrl=await pollStatus(gen.taskId,'speech',40);
     showSpeechResult(audioUrl);
     saveToHistory('speech',ttsModel,text,'',Array.isArray(audioUrl)?audioUrl:[audioUrl]);
     incrementCounter('speech');
     sendNotification('Suara Siap! 🔊', 'Voice over berhasil digenerate.');
-  } catch(err) { console.error(err); showToast(err.message,'error'); showState('empty'); }
+  } catch(err) { console.error('TTS Error:', err); showToast('TTS Gagal: '+err.message,'error'); showState('empty'); }
 }
 
 // ── Proxy helpers ─────────────────────────────────────────
