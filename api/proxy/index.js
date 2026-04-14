@@ -631,6 +631,19 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
     }
 
+    // ── IMAGE PROXY (untuk batch download ZIP) ────────────────
+    if (action === 'imgProxy') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const { url } = req.query;
+      if (!url || !url.startsWith('http')) return res.status(400).json({ error: 'URL tidak valid.' });
+      const r = await fetch(url);
+      if (!r.ok) return res.status(502).json({ error: 'Gagal fetch gambar.' });
+      const contentType = r.headers.get('content-type') || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.status(200).send(Buffer.from(await r.arrayBuffer()));
+    }
+
     return res.status(400).json({ error: 'Action tidak dikenal: '+action });
 
   } catch(err) {
