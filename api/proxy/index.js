@@ -690,29 +690,70 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       const { product } = req.body;
       if (!product) return res.status(400).json({ error: 'Nama produk diperlukan.' });
 
-      // ── 1. Ambil interest dari Meta Targeting Search API ──────
+      // ── 1. Ambil interest dari Meta — multi-keyword + suggestion ─
       const fbToken = `${FB_APP_ID}|${FB_APP_SECRET}`;
-      const metaUrl = `https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(product)}&limit=30&locale=id_ID&access_token=${fbToken}`;
-      const metaRes = await fetch(metaUrl);
-      const metaData = await metaRes.json();
 
+      // Buat variasi search: full phrase + tiap kata
+      const words = product.split(/\s+/).filter(w => w.length > 2);
+      const searchTerms = [product, ...words].slice(0, 4); // max 4 search terms
+
+      // Fetch semua search terms sekaligus (parallel)
+      const searchFetches = searchTerms.map(term =>
+        fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=25&access_token=${fbToken}`)
+          .then(r => r.json()).catch(() => ({ data: [] }))
+      );
+      const searchResults = await Promise.all(searchFetches);
+
+      // Gabungkan + deduplikasi by name (lowercase)
+      const seen = new Set();
       let metaInterests = [];
-      if (metaData.data && Array.isArray(metaData.data)) {
-        metaInterests = metaData.data.map(function(item) {
-          return {
-            id: item.id,
-            nama: item.name,
-            audienceSize: item.audience_size || null,
-            path: item.path ? item.path.join(' > ') : ''
-          };
+      searchResults.forEach(function(res) {
+        if (!res.data) return;
+        res.data.forEach(function(item) {
+          const key = item.name.toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            metaInterests.push({
+              id: item.id,
+              nama: item.name,
+              audienceSize: item.audience_size || null,
+              path: item.path ? item.path.join(' > ') : ''
+            });
+          }
         });
+      });
+
+      // ── 2. adinterestsuggestion — temukan interest tersembunyi ──
+      if (metaInterests.length > 0) {
+        const topNames = metaInterests.slice(0, 5).map(i => i.nama);
+        const suggUrl = `https://graph.facebook.com/v19.0/search?type=adinterestsuggestion&interest_list=${encodeURIComponent(JSON.stringify(topNames))}&access_token=${fbToken}`;
+        try {
+          const suggRes = await fetch(suggUrl);
+          const suggData = await suggRes.json();
+          if (suggData.data && Array.isArray(suggData.data)) {
+            suggData.data.forEach(function(item) {
+              const key = item.name.toLowerCase();
+              if (!seen.has(key)) {
+                seen.add(key);
+                metaInterests.push({
+                  id: item.id,
+                  nama: item.name,
+                  audienceSize: item.audience_size || null,
+                  path: item.path ? item.path.join(' > ') : '',
+                  suggested: true
+                });
+              }
+            });
+          }
+        } catch(e) { /* suggestion gagal, lanjut */ }
       }
 
-      // ── 2. Kirim ke Claude untuk dikategorikan ────────────────
+      // ── 3. Kirim ke Claude untuk dikategorikan ────────────────
       const metaList = metaInterests.length > 0
         ? metaInterests.map(function(i) {
             const size = i.audienceSize ? ` (${(i.audienceSize/1000000).toFixed(1)}M)` : '';
-            return `- ${i.nama}${size} [${i.path}]`;
+            const tag = i.suggested ? ' [hidden]' : '';
+            return `- ${i.nama}${size} [${i.path}]${tag}`;
           }).join('\n')
         : '(tidak ada data dari Meta, gunakan pengetahuanmu)';
 
@@ -724,31 +765,38 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
           max_tokens: 4000,
           messages: [{
             role: 'user',
-            content: `Kamu adalah pakar Meta Ads Indonesia. Berikut adalah interest NYATA dari Meta Ads untuk produk/topik "${product}":
+            content: `Kamu adalah pakar Meta Ads Indonesia. Berikut adalah ${metaInterests.length} interest NYATA dari Meta Ads untuk produk/topik "${product}":
 
 ${metaList}
 
-Tugasmu: kategorikan interest di atas ke dalam 6 kategori, tambahkan logika singkat untuk tiap interest, dan tentukan intent-nya.
-Jika ada interest yang tidak relevan sama sekali, masukkan ke negativeKeywords.
-Pilih 5 interest terbaik untuk topPicks.
+Keterangan: interest bertanda [hidden] adalah interest tersembunyi hasil Meta suggestion (tidak muncul di Ads Manager biasa).
+
+Tugasmu:
+- Kategorikan SEMUA interest di atas ke dalam 6 kategori (jangan ada yang dibuang kecuali benar-benar tidak relevan)
+- Tambahkan logika singkat untuk tiap interest
+- Tentukan intent-nya (beli / info / masalah)
+- Interest tidak relevan → negativeKeywords
+- Pilih 5 interest terbaik untuk topPicks (utamakan yang [hidden] dan audience size besar)
 
 Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
 {
   "mainKeyword": "${product}",
   "categories": [
-    { "nama": "Minat Langsung", "icon": "🎯", "desc": "interest yang langsung relevan dengan produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null }] },
-    { "nama": "Gaya Hidup", "icon": "✨", "desc": "interest gaya hidup yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
-    { "nama": "Aktivitas & Hobi", "icon": "🏃", "desc": "aktivitas atau hobi yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
-    { "nama": "Media & Brand", "icon": "📱", "desc": "media, brand, atau tokoh yang diikuti", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
-    { "nama": "Demografi & Perilaku", "icon": "👥", "desc": "karakteristik demografis atau perilaku", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null }] },
-    { "nama": "Niche & Spesifik", "icon": "🔍", "desc": "interest niche yang berpotensi konversi tinggi", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null }] }
+    { "nama": "Minat Langsung", "icon": "🎯", "desc": "interest yang langsung relevan dengan produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] },
+    { "nama": "Gaya Hidup", "icon": "✨", "desc": "interest gaya hidup yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
+    { "nama": "Aktivitas & Hobi", "icon": "🏃", "desc": "aktivitas atau hobi yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
+    { "nama": "Media & Brand", "icon": "📱", "desc": "media, brand, atau tokoh yang diikuti", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
+    { "nama": "Demografi & Perilaku", "icon": "👥", "desc": "karakteristik demografis atau perilaku", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
+    { "nama": "Niche & Spesifik", "icon": "🔍", "desc": "interest niche yang berpotensi konversi tinggi", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] }
   ],
   "topPicks": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "negativeKeywords": ["kw tidak relevan 1", "kw tidak relevan 2"]
 }
 
-Penting: untuk field "audienceSize" di tiap keyword, isi dengan angka audience size dari data Meta di atas (angka aslinya, bukan dalam juta). Jika tidak ada data, isi null.
-Logika maksimal 6 kata. HANYA JSON.`
+Penting:
+- "audienceSize": isi angka asli dari data (bukan dalam juta). Null jika tidak ada.
+- "hidden": true jika interest bertanda [hidden], false jika tidak.
+- Logika maksimal 6 kata. HANYA JSON.`
           }]
         })
       });
