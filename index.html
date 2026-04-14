@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -593,6 +594,26 @@
           </div>
         </div>
 
+        <!-- Usage Counter -->
+        <div class="dash-counter-row" id="dashCounterRow">
+          <div class="dash-counter-card">
+            <div class="dash-counter-num" id="cntImage">0</div>
+            <div class="dash-counter-label">Gambar</div>
+          </div>
+          <div class="dash-counter-card">
+            <div class="dash-counter-num" id="cntSpeech">0</div>
+            <div class="dash-counter-label">Suara</div>
+          </div>
+          <div class="dash-counter-card">
+            <div class="dash-counter-num" id="cntClone">0</div>
+            <div class="dash-counter-label">Clone</div>
+          </div>
+          <div class="dash-counter-card dash-counter-total">
+            <div class="dash-counter-num" id="cntTotal">0</div>
+            <div class="dash-counter-label">Total Hari Ini</div>
+          </div>
+        </div>
+
         <!-- Tools Grid -->
         <div class="dash-section-label">Pilih Tool</div>
         <div class="dash-tools-grid">
@@ -735,6 +756,27 @@
         </div>
         <div class="result-img-area">
           <div class="result-grid" id="imgResultGrid"></div>
+        </div>
+        <!-- Resize Panel -->
+        <div class="resize-panel" id="resizePanel" style="display:none">
+          <div class="resize-panel-label">Resize untuk Platform</div>
+          <div class="resize-btns">
+            <button class="resize-btn" data-w="1080" data-h="1080" data-label="IG Feed">
+              <span class="resize-icon">◼</span> IG Feed<small>1:1</small>
+            </button>
+            <button class="resize-btn" data-w="1080" data-h="1920" data-label="IG Story">
+              <span class="resize-icon">▬</span> Story<small>9:16</small>
+            </button>
+            <button class="resize-btn" data-w="1080" data-h="1920" data-label="TikTok">
+              <span class="resize-icon">▬</span> TikTok<small>9:16</small>
+            </button>
+            <button class="resize-btn" data-w="1200" data-h="628" data-label="FB Ad">
+              <span class="resize-icon">▬</span> FB Ad<small>1.91:1</small>
+            </button>
+            <button class="resize-btn" data-w="1200" data-h="675" data-label="Twitter">
+              <span class="resize-icon">▬</span> Twitter<small>16:9</small>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1296,6 +1338,7 @@
       document.querySelectorAll('.icon-dash-btn').forEach(function(b) { b.classList.add('active'); });
       updateDashUser();
       updateMascot();
+      if (typeof updateCounterUI === 'function') updateCounterUI();
       if (!mascotTimer) {
         mascotTimer = setInterval(updateMascot, 10 * 60 * 1000);
       }

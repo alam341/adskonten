@@ -123,6 +123,7 @@ function showAppScreen() {
   var ls = $('loginScreen'), al = $('appLayout');
   if (ls) ls.style.display = 'none';
   if (al) al.style.display = 'flex';
+  setupNotifications();
 }
 
 function switchAuthTab(t) {
@@ -471,6 +472,8 @@ async function generateImage() {
     if (!urls.length) throw new Error('Semua generate gagal.');
     showImageResult(urls);
     saveToHistory('image',imgModel,prompt,imgRatio,urls);
+    incrementCounter('image');
+    sendNotification('Gambar Siap! 🎨', urls.length+' gambar berhasil digenerate.');
   } catch(err) { console.error(err); showToast(err.message,'error'); showState('empty'); }
 }
 
@@ -539,6 +542,8 @@ async function generateClone() {
       dlAll.onclick = function() { urls.forEach(function(url,i){ setTimeout(function(){ var a=document.createElement('a');a.href=url;a.download='clone-'+(i+1)+'.jpg';a.target='_blank';a.click(); },i*300); }); };
     }
     saveToHistory('image', cloneModel, clonePromptFull, cloneRatio, urls);
+    incrementCounter('clone');
+    sendNotification('Clone Style Siap! 🎭', 'Hasil clone style berhasil digenerate.');
   } catch(err) { console.error(err); showToast(err.message, 'error'); showState('empty'); }
 }
 
@@ -573,6 +578,8 @@ async function generateSpeech() {
     var audioUrl=await pollStatus(gen.taskId,'speech',30);
     showSpeechResult(audioUrl);
     saveToHistory('speech',ttsModel,text,'',Array.isArray(audioUrl)?audioUrl:[audioUrl]);
+    incrementCounter('speech');
+    sendNotification('Suara Siap! 🔊', 'Voice over berhasil digenerate.');
   } catch(err) { console.error(err); showToast(err.message,'error'); showState('empty'); }
 }
 
@@ -650,7 +657,8 @@ function showImageResult(urls) {
   var name=document.querySelector('#imgModelList .model-row.active .model-row-name');
   $('imgResultMeta')&&($('imgResultMeta').textContent=(name?name.textContent:imgModel)+' · '+imgRatio+' · '+urls.length+' gambar · '+new Date().toLocaleTimeString('id-ID'));
   var dlAll=$('imgBtnDownloadAll');
-  if (dlAll) { dlAll.style.display=urls.length>1?'flex':'none'; dlAll.onclick=function(){ urls.forEach(function(url,i){ setTimeout(function(){ var a=document.createElement('a');a.href=url;a.download='adgen-'+(i+1)+'.jpg';a.target='_blank';a.click(); },i*300); }); }; }
+  if (dlAll) { dlAll.style.display=urls.length>1?'flex':'none'; dlAll.onclick=function(){ batchDownloadZip(urls,'adstudio-gambar'); }; }
+  setupResizePanel(urls);
 }
 function showVideoResult(videoUrl) {
   var v=$('vidResult'); if(v) v.src=videoUrl; showState('vid');
@@ -679,6 +687,121 @@ function setupModal() {
   next&&next.addEventListener('click',function(){ if(previewIdx<previewUrls.length-1){previewIdx++;render();} });
   document.addEventListener('keydown',function(e){ if(!modal||modal.style.display==='none')return; if(e.key==='Escape')closeModal(); if(e.key==='ArrowLeft'&&previewIdx>0){previewIdx--;render();} if(e.key==='ArrowRight'&&previewIdx<previewUrls.length-1){previewIdx++;render();} });
   window.openModal=function(urls,idx){ previewUrls=urls;previewIdx=idx;render();modal.style.display='flex';document.body.style.overflow='hidden'; };
+}
+
+// ── Browser Notification ──────────────────────────────────
+function setupNotifications() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+function sendNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (document.visibilityState === 'visible') return; // user masih di tab, tidak perlu notif
+  try {
+    new Notification(title, { body: body, icon: '/favicon.png' });
+  } catch(e) {}
+}
+
+// ── Usage Counter ─────────────────────────────────────────
+function getCounterKey() {
+  return 'adstudio_counter_' + new Date().toDateString();
+}
+function getCounter() {
+  try { return JSON.parse(localStorage.getItem(getCounterKey())) || { image:0, speech:0, clone:0 }; }
+  catch(e) { return { image:0, speech:0, clone:0 }; }
+}
+function incrementCounter(type) {
+  var c = getCounter();
+  if (c[type] !== undefined) c[type]++;
+  localStorage.setItem(getCounterKey(), JSON.stringify(c));
+  updateCounterUI();
+}
+function updateCounterUI() {
+  var c = getCounter();
+  var total = (c.image||0) + (c.speech||0) + (c.clone||0);
+  var el = {
+    cntImage: c.image||0, cntSpeech: c.speech||0,
+    cntClone: c.clone||0, cntTotal: total
+  };
+  Object.keys(el).forEach(function(id) {
+    var e = $(id); if (e) e.textContent = el[id];
+  });
+}
+
+// ── Resize Output ─────────────────────────────────────────
+var resizeUrls = [];
+function setupResizePanel(urls) {
+  resizeUrls = urls || [];
+  var panel = $('resizePanel');
+  if (!panel) return;
+  panel.style.display = resizeUrls.length ? 'block' : 'none';
+  panel.querySelectorAll('.resize-btn').forEach(function(btn) {
+    btn.onclick = function() {
+      var w = parseInt(btn.dataset.w), h = parseInt(btn.dataset.h), label = btn.dataset.label;
+      resizeUrls.forEach(function(url, i) {
+        resizeAndDownload(url, w, h, label + '-' + (i+1));
+      });
+    };
+  });
+}
+function resizeAndDownload(imgUrl, targetW, targetH, filename) {
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    var canvas = document.createElement('canvas');
+    canvas.width = targetW; canvas.height = targetH;
+    var ctx = canvas.getContext('2d');
+    // Crop & center (object-fit: cover style)
+    var srcRatio = img.width / img.height;
+    var dstRatio = targetW / targetH;
+    var sx, sy, sw, sh;
+    if (srcRatio > dstRatio) {
+      sh = img.height; sw = sh * dstRatio;
+      sx = (img.width - sw) / 2; sy = 0;
+    } else {
+      sw = img.width; sh = sw / dstRatio;
+      sx = 0; sy = (img.height - sh) / 2;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+    canvas.toBlob(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'adstudio-' + filename + '-' + Date.now() + '.jpg';
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    }, 'image/jpeg', 0.92);
+  };
+  img.onerror = function() { showToast('Gagal resize gambar. Coba download manual.', 'error'); };
+  img.src = imgUrl;
+}
+
+// ── Batch Download ZIP ─────────────────────────────────────
+async function batchDownloadZip(urls, prefix) {
+  if (!urls || !urls.length) return;
+  if (typeof JSZip === 'undefined') {
+    // Fallback: download satu per satu
+    urls.forEach(function(url, i) { setTimeout(function() { var a=document.createElement('a');a.href=url;a.download=prefix+'-'+(i+1)+'.jpg';a.target='_blank';a.click(); }, i*300); });
+    return;
+  }
+  showToast('Menyiapkan ZIP...', 'info');
+  var zip = new JSZip();
+  var folder = zip.folder(prefix);
+  var promises = urls.map(function(url, i) {
+    return fetch(url)
+      .then(function(r){ return r.blob(); })
+      .then(function(blob){ folder.file(prefix+'-'+(i+1)+'.jpg', blob); })
+      .catch(function(){ });
+  });
+  await Promise.all(promises);
+  var content = await zip.generateAsync({ type: 'blob' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(content);
+  a.download = prefix + '-' + Date.now() + '.zip';
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+  showToast('ZIP berhasil diunduh!', 'success');
 }
 
 // ── Toast ─────────────────────────────────────────────────
