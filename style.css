@@ -548,13 +548,40 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 
   /* ── Dashboard ── */
   .dashboard-panel { padding: 12px; }
-  .dash-greeting-card { padding: 16px; border-radius: 16px; margin-bottom: 10px; }
-  .dash-name { font-size: 20px; }
-  .dash-counter-row { grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 10px 12px; }
+  .dashboard-inner { width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; }
+
+  /* greeting card: stack vertically on mobile, no overflow */
+  .dash-greeting-card {
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    overflow: hidden;
+  }
+  .dash-greeting-left { width: 100%; min-width: 0; }
+  .dash-greeting-right { margin-left: 0; align-self: flex-end; }
+  .dash-name { font-size: 18px; }
+  .dash-motivation { max-width: 100%; font-size: 11px; }
+
+  /* counter: 2x2 grid */
+  .dash-counter-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 10px 12px;
+  }
   .dash-counter-card + .dash-counter-card { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 10px; }
   .dash-counter-card:nth-child(odd) + .dash-counter-card { border-left: 1px solid var(--border); border-top: none; padding-left: 14px; padding-top: 0; }
+  .dash-counter-label { white-space: normal; }
+  .dash-counter-num { font-size: 18px; }
+
+  /* tools: single column */
   .dash-tools-grid { grid-template-columns: 1fr; gap: 6px; }
-  .mascot-emoji { font-size: 36px; }
+  .dash-tool-card { padding: 11px 12px; }
+  .mascot-emoji { font-size: 32px; }
+  /* mascot SVG constraint */
+  .dash-mascot svg { width: 72px !important; height: 72px !important; max-width: 72px; }
 
   /* ── Admin Stats Grid ── */
   .admin-stats-grid { grid-template-columns: 1fr; }
