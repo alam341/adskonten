@@ -631,6 +631,58 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
     }
 
+    // ── AUDIENCE RECOMMENDER ─────────────────────────────────
+    if (action === 'audienceRec') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+      const { product } = req.body;
+      if (!product) return res.status(400).json({ error: 'Nama produk diperlukan.' });
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1200,
+          messages: [{
+            role: 'user',
+            content: `Kamu adalah pakar riset pasar dan iklan digital Indonesia. Analisis produk/topik berikut dan berikan rekomendasi audience yang komprehensif.
+
+Produk/Topik: "${product}"
+
+Berikan output dalam format JSON yang valid seperti ini (HANYA JSON, tanpa teks lain):
+{
+  "audience": [
+    { "segment": "nama segmen", "usia": "rentang usia", "gender": "L/P/Semua", "desc": "deskripsi singkat" }
+  ],
+  "ekosistem": [
+    { "kategori": "nama kategori", "items": ["produk1", "produk2", "produk3"] }
+  ],
+  "painPoints": ["masalah1", "masalah2", "masalah3", "masalah4"],
+  "keywords": ["kata kunci1", "kata kunci2", "kata kunci3", "kata kunci4", "kata kunci5"],
+  "platform": [
+    { "nama": "Instagram", "alasan": "alasan singkat", "format": "format konten terbaik" },
+    { "nama": "TikTok", "alasan": "alasan singkat", "format": "format konten terbaik" }
+  ],
+  "hooks": ["hook iklan 1", "hook iklan 2", "hook iklan 3"]
+}
+
+Isi dengan data yang relevan, spesifik, dan actionable untuk tim kreatif iklan Indonesia.`
+          }]
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Gagal.' });
+      const text = d.content?.[0]?.text || '{}';
+      try {
+        const parsed = JSON.parse(text);
+        return res.status(200).json(parsed);
+      } catch(e) {
+        return res.status(500).json({ error: 'Format response tidak valid.' });
+      }
+    }
+
     // ── ADMIN: STATISTIK PER USER ─────────────────────────────
     if (action === 'adminStats') {
       if (req.method !== 'GET') return res.status(405).end();
