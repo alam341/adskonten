@@ -1035,57 +1035,67 @@ async function runAudienceAnalysis() {
 
   try {
     var d = await proxyPost('audienceRec', { product });
+    var allKeywords = [];
 
-    // Audience segments
-    var segEl = $('audSegments'); segEl.innerHTML = '';
-    (d.audience||[]).forEach(function(s) {
-      var el = document.createElement('div'); el.className = 'aud-segment-card';
-      el.innerHTML = '<div class="aud-seg-top"><span class="aud-seg-name">'+s.segment+'</span><span class="aud-seg-gender">'+s.gender+'</span><span class="aud-seg-age">'+s.usia+'</span></div><div class="aud-seg-desc">'+s.desc+'</div>';
-      segEl.appendChild(el);
-    });
-
-    // Ekosistem
-    var ekoEl = $('audEkosistem'); ekoEl.innerHTML = '';
-    (d.ekosistem||[]).forEach(function(e) {
-      var el = document.createElement('div'); el.className = 'aud-eko-group';
-      el.innerHTML = '<div class="aud-eko-cat">'+e.kategori+'</div><div class="aud-eko-items">'+
-        (e.items||[]).map(function(it){ return '<span class="aud-eko-item">'+it+'</span>'; }).join('')+'</div>';
-      ekoEl.appendChild(el);
-    });
-
-    // Pain points
-    var ppEl = $('audPainPoints'); ppEl.innerHTML = '';
-    (d.painPoints||[]).forEach(function(p) {
-      var li = document.createElement('li'); li.textContent = p; ppEl.appendChild(li);
-    });
-
-    // Keywords
-    var kwEl = $('audKeywords'); kwEl.innerHTML = '';
-    (d.keywords||[]).forEach(function(k) {
-      var sp = document.createElement('span'); sp.className = 'aud-tag'; sp.textContent = k;
+    // Top Picks
+    var topEl = $('audTopPicks'); topEl.innerHTML = '';
+    (d.topPicks||[]).forEach(function(k) {
+      allKeywords.push(k);
+      var sp = document.createElement('span');
+      sp.className = 'aud-tag aud-tag-top';
+      sp.textContent = k;
+      sp.title = 'Klik untuk salin';
       sp.addEventListener('click', function(){ navigator.clipboard&&navigator.clipboard.writeText(k); showToast('"'+k+'" disalin!','success'); });
-      kwEl.appendChild(sp);
+      topEl.appendChild(sp);
     });
 
-    // Platform
-    var platEl = $('audPlatform'); platEl.innerHTML = '';
-    (d.platform||[]).forEach(function(p) {
-      var el = document.createElement('div'); el.className = 'aud-plat-item';
-      el.innerHTML = '<div class="aud-plat-name">'+p.nama+'</div><div class="aud-plat-reason">'+p.alasan+'</div><div class="aud-plat-format">📌 '+p.format+'</div>';
-      platEl.appendChild(el);
-    });
-
-    // Hooks
-    var hookEl = $('audHooks'); hookEl.innerHTML = '';
-    (d.hooks||[]).forEach(function(h) {
-      var el = document.createElement('div'); el.className = 'aud-hook-item';
-      el.innerHTML = '<span class="aud-hook-text">"'+h+'"</span>'+
-        '<button class="aud-hook-copy" title="Salin">📋</button>';
-      el.querySelector('.aud-hook-copy').addEventListener('click', function(){
-        navigator.clipboard&&navigator.clipboard.writeText(h); showToast('Hook disalin!','success');
+    // Categories
+    var catGrid = $('audCategoriesGrid'); catGrid.innerHTML = '';
+    (d.categories||[]).forEach(function(cat) {
+      var card = document.createElement('div');
+      card.className = 'aud-card';
+      var kwHtml = (cat.keywords||[]).map(function(kw) {
+        allKeywords.push(kw.kata);
+        var intentColor = kw.intent==='beli'?'#10b981':kw.intent==='masalah'?'#ef4444':'#f59e0b';
+        return '<div class="aud-kw-item" data-kw="'+kw.kata+'" title="'+kw.logika+'">' +
+          '<span class="aud-kw-text">'+kw.kata+'</span>' +
+          '<span class="aud-kw-intent" style="color:'+intentColor+'">'+kw.intent+'</span>' +
+          '</div>';
+      }).join('');
+      card.innerHTML =
+        '<div class="aud-card-title">'+cat.icon+' '+cat.nama+'</div>' +
+        '<div class="aud-card-desc">'+cat.desc+'</div>' +
+        '<div class="aud-kw-list">'+kwHtml+'</div>';
+      // Klik keyword → salin + tunjukkan logika
+      card.querySelectorAll('.aud-kw-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          var kw = item.dataset.kw;
+          navigator.clipboard&&navigator.clipboard.writeText(kw);
+          showToast('"'+kw+'" disalin!', 'success');
+        });
       });
-      hookEl.appendChild(el);
+      catGrid.appendChild(card);
     });
+
+    // Negative Keywords
+    var negEl = $('audNegative'); negEl.innerHTML = '';
+    (d.negativeKeywords||[]).forEach(function(k) {
+      var sp = document.createElement('span');
+      sp.className = 'aud-tag aud-tag-neg';
+      sp.textContent = '−'+k;
+      sp.addEventListener('click', function(){ navigator.clipboard&&navigator.clipboard.writeText(k); showToast('"'+k+'" disalin!','success'); });
+      negEl.appendChild(sp);
+    });
+
+    // Salin Semua
+    var copyAllBtn = $('audCopyAll');
+    if (copyAllBtn) {
+      copyAllBtn.onclick = function() {
+        var text = allKeywords.filter(function(v,i,a){return a.indexOf(v)===i;}).join('\n');
+        navigator.clipboard&&navigator.clipboard.writeText(text);
+        showToast('Semua keyword disalin ('+allKeywords.length+' kata)!', 'success');
+      };
+    }
 
     $('audResultProduct').textContent = product;
     $('audienceResult').style.display = 'block';

@@ -1180,46 +1180,26 @@
       <!-- Result -->
       <div id="audienceResult" style="display:none">
         <div class="aud-result-header">
-          <div class="aud-result-title">Hasil analisis untuk: <span id="audResultProduct" style="color:#5b5bd6;font-weight:700"></span></div>
+          <div>
+            <div class="aud-result-title">Keyword research untuk: <span id="audResultProduct" style="color:#5b5bd6;font-weight:700"></span></div>
+            <div style="font-size:11px;color:var(--text-5);margin-top:3px">Klik keyword untuk salin • Klik "Salin Semua" untuk copy semua sekaligus</div>
+          </div>
+          <button class="btn-solid" id="audCopyAll" style="padding:7px 16px;font-size:12px;flex-shrink:0">📋 Salin Semua</button>
         </div>
-        <div class="aud-grid">
 
-          <!-- Audience Segments -->
-          <div class="aud-card aud-card-wide">
-            <div class="aud-card-title">👥 Target Audience</div>
-            <div id="audSegments" class="aud-segments"></div>
-          </div>
+        <!-- Top Picks -->
+        <div class="aud-card aud-card-wide" style="margin-bottom:12px;background:rgba(91,91,214,0.05);border-color:rgba(91,91,214,0.2)">
+          <div class="aud-card-title">⭐ Top Picks — Terbaik untuk Meta & Google Ads</div>
+          <div id="audTopPicks" class="aud-tags"></div>
+        </div>
 
-          <!-- Ekosistem Produk -->
-          <div class="aud-card aud-card-wide">
-            <div class="aud-card-title">🛒 Ekosistem Produk Terkait</div>
-            <div id="audEkosistem" class="aud-ekosistem"></div>
-          </div>
+        <!-- Keyword Categories Grid -->
+        <div class="aud-grid" id="audCategoriesGrid"></div>
 
-          <!-- Pain Points -->
-          <div class="aud-card">
-            <div class="aud-card-title">😤 Pain Points</div>
-            <ul id="audPainPoints" class="aud-list"></ul>
-          </div>
-
-          <!-- Keywords -->
-          <div class="aud-card">
-            <div class="aud-card-title">🔑 Kata Kunci Iklan</div>
-            <div id="audKeywords" class="aud-tags"></div>
-          </div>
-
-          <!-- Platform -->
-          <div class="aud-card aud-card-wide">
-            <div class="aud-card-title">📱 Rekomendasi Platform</div>
-            <div id="audPlatform" class="aud-platform-list"></div>
-          </div>
-
-          <!-- Hooks -->
-          <div class="aud-card aud-card-wide">
-            <div class="aud-card-title">🎣 Hook Iklan Siap Pakai</div>
-            <div id="audHooks" class="aud-hooks"></div>
-          </div>
-
+        <!-- Negative Keywords -->
+        <div class="aud-card aud-card-wide" style="margin-top:12px;background:rgba(239,68,68,0.03);border-color:rgba(239,68,68,0.15)">
+          <div class="aud-card-title">🚫 Negative Keywords — Eksklusi dari Ads</div>
+          <div id="audNegative" class="aud-tags"></div>
         </div>
       </div>
     </div>
