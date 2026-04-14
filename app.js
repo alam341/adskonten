@@ -1072,8 +1072,26 @@ async function runAudienceAnalysis() {
   $('audienceLoading').style.display = 'block';
   $('audienceResult').style.display = 'none';
 
+  // Animasi teks loading yang berubah tiap beberapa detik
+  var loadingSteps = [
+    { text: 'Mencari interest di Meta...', emoji: '🔍' },
+    { text: 'Menemukan interest tersembunyi...', emoji: '🕵️' },
+    { text: 'AI lagi mikir keras nih...', emoji: '🧠' },
+    { text: 'Nyari yang berhubungan juga...', emoji: '🔗' },
+    { text: 'Hampir selesai, sabar ya...', emoji: '⚡' },
+  ];
+  var loadingIdx = 0;
+  var loadingEl = $('audLoadingText');
+  var runnerEl = $('audRunnerChar');
+  var loadingTimer = setInterval(function() {
+    loadingIdx = (loadingIdx + 1) % loadingSteps.length;
+    if (loadingEl) { loadingEl.style.opacity = '0'; setTimeout(function() { loadingEl.textContent = loadingSteps[loadingIdx].text; loadingEl.style.opacity = '1'; }, 150); }
+    if (runnerEl) runnerEl.textContent = loadingSteps[loadingIdx].emoji;
+  }, 2500);
+
   try {
     var d = await proxyPost('audienceRec', { product });
+    clearInterval(loadingTimer);
     var allKeywords = [];
 
     // Top Picks
@@ -1151,6 +1169,7 @@ async function runAudienceAnalysis() {
     if (countEl) countEl.textContent = totalInterests + ' interests ditemukan';
     $('audienceResult').style.display = 'block';
   } catch(e) {
+    clearInterval(loadingTimer);
     showToast('Gagal: '+e.message, 'error');
   } finally {
     $('audienceLoading').style.display = 'none';

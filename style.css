@@ -1285,6 +1285,22 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .aud-kw-size { font-size:10px; color:var(--text-3); background:var(--bg-2); border-radius:4px; padding:1px 5px; flex-shrink:0; font-weight:500; }
 .aud-kw-hidden { font-size:9px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.12); border-radius:3px; padding:1px 5px; flex-shrink:0; letter-spacing:0.3px; }
 
+/* Audience Loading Animation */
+.aud-loading-runner { margin:0 auto 20px; max-width:320px; }
+.aud-runner-track { position:relative; height:60px; background:var(--bg-2); border-radius:40px; overflow:hidden; border:1px solid var(--border); display:flex; align-items:center; padding:0 16px; }
+.aud-runner-char { font-size:32px; animation:aud-run 0.5s steps(1) infinite, aud-bounce 0.5s ease-in-out infinite; position:relative; z-index:2; flex-shrink:0; }
+.aud-runner-dots { display:flex; gap:8px; margin-left:12px; flex:1; }
+.aud-runner-dots span { width:8px; height:8px; border-radius:50%; background:var(--border); animation:aud-dot 1.4s ease-in-out infinite; flex-shrink:0; }
+.aud-runner-dots span:nth-child(1) { animation-delay:0s; }
+.aud-runner-dots span:nth-child(2) { animation-delay:0.2s; }
+.aud-runner-dots span:nth-child(3) { animation-delay:0.4s; }
+.aud-runner-dots span:nth-child(4) { animation-delay:0.6s; }
+.aud-runner-dots span:nth-child(5) { animation-delay:0.8s; }
+.aud-loading-text { color:var(--text-3); font-size:14px; font-weight:600; margin:0; transition:opacity 0.3s; }
+@keyframes aud-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes aud-run { 0%{content:'🏃'} 50%{content:'🚶'} }
+@keyframes aud-dot { 0%,80%,100%{background:var(--border);transform:scale(1)} 40%{background:#5b5bd6;transform:scale(1.4)} }
+
 /* Resize Panel */
 .resize-panel {
   border-top: 1px solid var(--border);

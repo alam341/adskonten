@@ -1172,9 +1172,17 @@
       </div>
 
       <!-- Loading -->
-      <div id="audienceLoading" style="display:none;text-align:center;padding:60px 0">
-        <div class="spinner-ring" style="margin:0 auto 16px"></div>
-        <p style="color:var(--text-4);font-size:14px">AI sedang menganalisis...</p>
+      <div id="audienceLoading" style="display:none;text-align:center;padding:60px 20px">
+        <div class="aud-loading-runner">
+          <div class="aud-runner-track">
+            <div class="aud-runner-char" id="audRunnerChar">🏃</div>
+            <div class="aud-runner-dots">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+        <p class="aud-loading-text" id="audLoadingText">Mencari interest di Meta...</p>
+        <p style="color:var(--text-5);font-size:11px;margin-top:6px">Ini butuh beberapa detik, lagi kerja keras 💪</p>
       </div>
 
       <!-- Result -->
