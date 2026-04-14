@@ -263,9 +263,9 @@ module.exports = async function handler(req, res) {
         });
         const d = await r.json();
         if (!r.ok) return res.status(r.status).json({ error: 'TTS error: '+JSON.stringify(d) });
-        const taskId = d.data?.taskId;
-        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
-        return res.status(200).json({ taskId });
+        const taskId = d.data?.taskId || d.data?.task_id || d.taskId || d.task_id || d.data?.id || d.id;
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada. Response: '+JSON.stringify(d).slice(0,200) });
+        return res.status(200).json({ taskId, taskType: 'jobs' });
       }
 
       if (type === 'video') {
@@ -320,7 +320,7 @@ module.exports = async function handler(req, res) {
     if (action === 'status') {
       if (req.method !== 'GET') return res.status(405).end();
       const { taskId, type } = req.query;
-      const apiKey = getKey(type==='video'?'video':'image');
+      const apiKey = getKey(type==='video'?'video':type==='speech'?'speech':'image');
       const r = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
       if (!r.ok) return res.status(r.status).json({ error: 'Status error.' });
       const d = await r.json();
@@ -328,7 +328,7 @@ module.exports = async function handler(req, res) {
       const status = data?.state || data?.status || 'waiting';
       const DONE = ['success','SUCCESS','completed','COMPLETED'];
       const FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
-      let imageUrl=null, videoUrl=null, imageUrls=[];
+      let imageUrl=null, videoUrl=null, audioUrl=null, imageUrls=[];
       if (DONE.includes(status)) {
         if (data?.resultJson) {
           try {
@@ -337,24 +337,34 @@ module.exports = async function handler(req, res) {
             if (allUrls.length > 0) {
               const firstUrl = allUrls[0];
               if (firstUrl.includes('.mp4')||firstUrl.includes('.webm')) videoUrl=firstUrl;
+              else if (firstUrl.includes('.mp3')||firstUrl.includes('.wav')||firstUrl.includes('.ogg')) audioUrl=firstUrl;
               else { imageUrls=allUrls; imageUrl=firstUrl; }
             } else {
-              const singleUrl = result?.audio_url||result?.audioUrl||result?.image_url||result?.url||null;
-              if (singleUrl) { if(singleUrl.includes('.mp4')) videoUrl=singleUrl; else { imageUrl=singleUrl; imageUrls=[singleUrl]; } }
+              const singleAudio = result?.audio_url||result?.audioUrl||null;
+              if (singleAudio) { audioUrl=singleAudio; }
+              else {
+                const singleUrl = result?.image_url||result?.url||null;
+                if (singleUrl) { if(singleUrl.includes('.mp4')) videoUrl=singleUrl; else { imageUrl=singleUrl; imageUrls=[singleUrl]; } }
+              }
             }
           } catch(e) {}
         }
-        if (!imageUrl && !videoUrl) {
-          const tries = [
-            data?.info?.resultImageUrl, data?.resultImageUrl, data?.result_image_url,
-            data?.output?.audio_url, data?.output?.image_url, data?.output?.url,
-            data?.output?.images?.[0], data?.imageUrl, data?.image_url, data?.url
-          ];
-          const found = tries.find(c=>typeof c==='string'&&c.startsWith('http'));
-          if (found) { if(found.includes('.mp4')) videoUrl=found; else { imageUrl=found; imageUrls=[found]; } }
+        if (!imageUrl && !videoUrl && !audioUrl) {
+          const audioTries = [data?.output?.audio_url, data?.output?.audioUrl, data?.audio_url, data?.audioUrl];
+          const foundAudio = audioTries.find(c=>typeof c==='string'&&c.startsWith('http'));
+          if (foundAudio) { audioUrl=foundAudio; }
+          else {
+            const tries = [
+              data?.info?.resultImageUrl, data?.resultImageUrl, data?.result_image_url,
+              data?.output?.image_url, data?.output?.url,
+              data?.output?.images?.[0], data?.imageUrl, data?.image_url, data?.url
+            ];
+            const found = tries.find(c=>typeof c==='string'&&c.startsWith('http'));
+            if (found) { if(found.includes('.mp4')) videoUrl=found; else { imageUrl=found; imageUrls=[found]; } }
+          }
         }
       }
-      return res.status(200).json({ status, imageUrl, imageUrls, videoUrl, isFail: FAIL.includes(status) });
+      return res.status(200).json({ status, imageUrl, imageUrls, videoUrl, audioUrl, isFail: FAIL.includes(status) });
     }
 
     // ── MOTIVATION ───────────────────────────────────────────
