@@ -764,7 +764,7 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 32px 24px;
+  padding: 20px 24px;
 }
 .dashboard-inner {
   width: 100%;
@@ -775,12 +775,12 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .dash-greeting-card {
   background: linear-gradient(135deg, #ffffff 0%, #f4f5fb 100%);
   border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 32px 36px;
+  border-radius: 20px;
+  padding: 20px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 14px;
   box-shadow: 0 4px 24px rgba(91,91,214,0.08);
   overflow: hidden;
   position: relative;
@@ -795,81 +795,102 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 }
 .dash-greeting-left { flex: 1; }
 .dash-hi {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--accent);
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 .dash-name {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-1);
   letter-spacing: -0.5px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   text-transform: capitalize;
 }
 .dash-sub {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--text-4);
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .dash-motivation {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(91,91,214,0.08);
   border: 1px solid rgba(91,91,214,0.15);
   border-radius: 100px;
-  padding: 7px 14px;
-  font-size: 12.5px;
+  padding: 5px 12px;
+  font-size: 11.5px;
   color: var(--accent);
   font-style: italic;
   font-weight: 500;
-  max-width: 420px;
+  max-width: 380px;
 }
-.dash-mot-icon { font-style: normal; font-size: 14px; }
+.dash-mot-icon { font-style: normal; font-size: 13px; }
 .dash-greeting-right {
   flex-shrink: 0;
-  margin-left: 24px;
+  margin-left: 20px;
 }
+
 /* Counter Row */
 .dash-counter-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.dash-counter-card {
+  gap: 8px;
+  margin-bottom: 16px;
   background: var(--bg-2);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 10px;
-  text-align: center;
+  border-radius: 16px;
+  padding: 14px 16px;
 }
-.dash-counter-total {
-  background: rgba(91,91,214,0.08);
-  border-color: rgba(91,91,214,0.2);
+.dash-counter-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
 }
+.dash-counter-card + .dash-counter-card {
+  border-left: 1px solid var(--border);
+  padding-left: 14px;
+}
+.dash-counter-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.dash-counter-card:nth-child(1) .dash-counter-icon { background: rgba(91,91,214,0.1); }
+.dash-counter-card:nth-child(2) .dash-counter-icon { background: rgba(16,185,129,0.1); }
+.dash-counter-card:nth-child(3) .dash-counter-icon { background: rgba(245,158,11,0.1); }
+.dash-counter-total .dash-counter-icon { background: rgba(91,91,214,0.15); }
+.dash-counter-body { min-width: 0; }
 .dash-counter-num {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
   font-family: 'Space Grotesk', sans-serif;
   color: var(--text-1);
   line-height: 1;
 }
-.dash-counter-total .dash-counter-num {
-  color: #5b5bd6;
-}
+.dash-counter-total .dash-counter-num { color: #5b5bd6; }
 .dash-counter-label {
   font-size: 10px;
   color: var(--text-4);
-  margin-top: 4px;
+  margin-top: 2px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 /* Resize Panel */
@@ -931,13 +952,13 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
   transition: opacity 0.4s ease;
 }
 .mascot-emoji {
-  font-size: 64px;
+  font-size: 48px;
   line-height: 1;
   animation: mascot-bounce 2.5s ease-in-out infinite;
   display: block;
 }
 .mascot-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-4);
   text-align: center;
   font-weight: 500;
@@ -955,31 +976,31 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
   color: var(--text-4);
   letter-spacing: 1px;
   text-transform: uppercase;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 .dash-tools-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 8px;
 }
 .dash-tool-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 18px;
+  border-radius: 14px;
+  padding: 13px 15px;
   cursor: pointer;
   transition: all 0.2s;
   font-family: inherit;
   text-align: left;
-  box-shadow: 0 2px 8px rgba(91,91,214,0.04);
+  box-shadow: 0 1px 4px rgba(91,91,214,0.04);
 }
 .dash-tool-card:hover {
   border-color: rgba(91,91,214,0.3);
-  box-shadow: 0 6px 24px rgba(91,91,214,0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(91,91,214,0.1);
+  transform: translateY(-1px);
 }
 .dash-tool-icon-wrap {
   width: 44px;
