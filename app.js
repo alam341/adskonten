@@ -1800,11 +1800,10 @@ function switchAnalisisTab(tab) {
 // ── Landing Page ──────────────────────────────────────────
 var lpPhotoBase64 = null;
 var lpPhotoUrl = null;
-var lpHeroGenPollTimer = null;
 
 function setupLandingPage() {
-  var zone = $('lpPhotoZone');
   var input = $('lpPhotoInput');
+  var zone = $('lpPhotoZone');
   if (!zone || zone._lpReady) return;
   zone._lpReady = true;
   input.addEventListener('change', function() {
@@ -1813,6 +1812,7 @@ function setupLandingPage() {
     var reader = new FileReader();
     reader.onload = function(e) {
       lpPhotoBase64 = e.target.result;
+      lpPhotoUrl = null; // reset uploaded url on new photo
       var prev = $('lpPhotoPreview');
       if (prev) { prev.src = lpPhotoBase64; prev.style.display = 'block'; }
       var emp = $('lpPhotoEmpty');
@@ -1823,20 +1823,21 @@ function setupLandingPage() {
   var btn = $('btnGenerateLP');
   if (btn && !btn._lpReady) {
     btn._lpReady = true;
-    btn.addEventListener('click', generateLPText);
+    btn.addEventListener('click', generateLP);
   }
 }
 
-async function generateLPText() {
-  var name = ($('lpProductName')||{}).value||'';
+async function generateLP() {
+  var name    = ($('lpProductName')||{}).value||'';
   var problem = ($('lpProblem')||{}).value||'';
-  var benefits = ($('lpBenefits')||{}).value||'';
-  var priceOri = ($('lpPriceOri')||{}).value||'';
-  var pricePromo = ($('lpPricePromo')||{}).value||'';
-  var brand = ($('lpBrand')||{}).value||'';
-  var tone = ($('lpTone')||{}).value||'emosional dan persuasif';
+  var benefits= ($('lpBenefits')||{}).value||'';
+  var priceOri= ($('lpPriceOri')||{}).value||'';
+  var pricePromo=($('lpPricePromo')||{}).value||'';
+  var brand   = ($('lpBrand')||{}).value||'';
+  var tone    = ($('lpTone')||{}).value||'emosional dan persuasif';
 
   if (!name.trim()) { showToast('Isi nama produk dulu.','error'); return; }
+  if (!lpPhotoBase64) { showToast('Upload foto produk dulu.','error'); return; }
 
   var btn = $('btnGenerateLP');
   var loading = $('lpGenLoading');
@@ -1844,13 +1845,31 @@ async function generateLPText() {
   loading.style.display = 'block';
 
   try {
+    // Step 1: generate text + theme + prompts
     var res = await proxyPost('landingPage', { productName:name, problem, benefits, priceOri, pricePromo, brand, tone }, authToken);
     if (res.error) throw new Error(res.error);
+
+    // Step 2: show preview immediately with text + theme
     renderLPPreview(res);
     $('lpPreviewEmpty').style.display = 'none';
     $('lpPreviewWrap').style.display = 'flex';
     $('lpDownloadRow').style.display = 'block';
-    showToast('Teks LP berhasil di-generate! Klik teks untuk edit.', 'success');
+    showToast('Teks LP siap! Gambar sedang di-generate...','success');
+
+    // Step 3: upload photo once, then fire hero + pain images in parallel
+    var b64 = lpPhotoBase64.replace(/^data:image\/\w+;base64,/,'');
+    var upRes = await proxyPost('upload', { imageBase64: b64 }, authToken);
+    if (!upRes.url) throw new Error('Upload foto gagal');
+    lpPhotoUrl = upRes.url;
+
+    // Fire hero image
+    lpStartHeroImg(res.heroImgPrompt || ('Premium product hero banner for '+name+', professional ad, 9:16 portrait'));
+
+    // Fire pain point images
+    if (res.painPoints && res.painPoints.length) {
+      lpStartPainImages(res.painPoints);
+    }
+
   } catch(e) {
     showToast('Gagal generate: '+e.message,'error');
   } finally {
@@ -1859,23 +1878,63 @@ async function generateLPText() {
   }
 }
 
+function applyLPTheme(t) {
+  if (!t) return;
+  var s1 = $('lps1'), s2 = $('lps2'), s3 = $('lps3'), s4 = $('lps4'), s5 = $('lps5');
+  if (s1) s1.style.background = 'linear-gradient(160deg,'+t.heroStart+' 0%,'+t.heroEnd+' 100%)';
+  if (s3) s3.style.background = 'linear-gradient(160deg,'+t.solusiStart+' 0%,'+t.solusiEnd+' 100%)';
+  if (s5) s5.style.background = 'linear-gradient(160deg,'+t.ctaStart+' 0%,'+t.ctaEnd+' 100%)';
+  // text colors
+  var heroTitle = $('lpHeroTitle'), heroSub = $('lpHeroSub'), heroBadge = $('lpHeroBadge'), heroProof = $('lpHeroProof');
+  if (heroTitle) heroTitle.style.color = t.heroTextMain;
+  if (heroSub)   heroSub.style.color   = t.heroTextSub;
+  if (heroProof) heroProof.style.color = t.heroTextSub;
+  if (heroBadge) heroBadge.style.color = t.accent;
+  // CTA button in hero
+  var heroCta = $('lpHeroCta');
+  if (heroCta) { heroCta.style.background = 'linear-gradient(135deg,'+t.accent+','+t.accentDark+')'; }
+  // CTA section button
+  var ctaBtn = $('lpCtaBtn');
+  if (ctaBtn) ctaBtn.style.color = t.accent;
+  // Pain borders
+  document.querySelectorAll('.lp-pain-item').forEach(function(el){ el.style.borderColor = t.painBorder||'#ffe0ec'; });
+  // Testi accent
+  var s4before = $('lps4');
+  if (s4before) s4before.style.setProperty('--testi-acc', t.testiAccent||'#f59e0b');
+  // eyebrow colors
+  document.querySelectorAll('.lp-eyebrow.red').forEach(function(el){ el.style.color = t.accent; });
+  document.querySelectorAll('.lp-eyebrow.gold').forEach(function(el){ el.style.color = t.testiAccent||'#f59e0b'; });
+}
+
 function renderLPPreview(d) {
-  // Hero
+  // Apply theme first
+  if (d.theme) applyLPTheme(d.theme);
+
+  // Hero text
   setText('lpHeroBadge', d.heroBadge||'');
   setText('lpHeroTitle', d.heroTitle||'');
   setText('lpHeroSub', d.heroSub||'');
   setText('lpHeroCta', d.heroCta||'');
   setText('lpHeroProof', d.heroProof||'');
+
+  // Hero image box — show spinner
+  var heroEmp = $('lpHeroImgEmpty');
+  if (heroEmp) heroEmp.innerHTML = '<div class="lp-img-spinner"></div><p style="font-size:10px;color:rgba(255,255,255,0.7);margin-top:6px">Generating hero...</p>';
+
   // Masalah
   setText('lpMasalahEyebrow', d.masalahEyebrow||'');
   setText('lpMasalahTitle', d.masalahTitle||'');
   setText('lpMasalahSub', d.masalahSub||'');
   var painEl = $('lpPainList');
   if (painEl && d.painPoints) {
-    painEl.innerHTML = (d.painPoints||[]).map(function(p) {
-      return '<div class="lp-pain-item"><span class="lp-pain-emoji">'+escHtml(p.emoji||'😞')+'</span><span class="lp-pain-text" contenteditable="true">'+escHtml(p.text)+'</span></div>';
+    painEl.innerHTML = (d.painPoints||[]).map(function(p, i) {
+      return '<div class="lp-pain-item" id="lpPainItem'+i+'">'
+        +'<div class="lp-pain-img-wrap" id="lpPainImg'+i+'"><div class="lp-img-spinner"></div></div>'
+        +'<span class="lp-pain-text" contenteditable="true">'+escHtml(p.text)+'</span>'
+        +'</div>';
     }).join('');
   }
+
   // Solusi
   setText('lpSolusiTag', d.solusiTag||'');
   setText('lpSolusiTitle', d.solusiTitle||'');
@@ -1886,15 +1945,25 @@ function renderLPPreview(d) {
       return '<div class="lp-benefit-card"><div class="lp-benefit-icon">'+escHtml(b.icon||'✨')+'</div><div class="lp-benefit-text" contenteditable="true">'+escHtml(b.text)+'</div></div>';
     }).join('');
   }
+
   // Testimoni
   setText('lpTestiEyebrow', d.testiEyebrow||'');
   setText('lpTestiTitle', d.testiTitle||'');
   var testiEl = $('lpTestiList');
   if (testiEl && d.testimonials) {
     testiEl.innerHTML = (d.testimonials||[]).map(function(t) {
-      return '<div class="lp-testi-card"><div class="lp-testi-header"><div class="lp-testi-avatar">'+escHtml((t.name||'?')[0])+'</div><div><div class="lp-testi-name" contenteditable="true">'+escHtml(t.name)+'</div><div class="lp-testi-loc" contenteditable="true">'+escHtml(t.location)+'</div></div></div><div class="lp-testi-stars">★★★★★</div><div class="lp-testi-text" contenteditable="true">'+escHtml(t.quote)+'</div></div>';
+      var acc = (d.theme && d.theme.accent) ? d.theme.accent : '#e91e63';
+      return '<div class="lp-testi-card">'
+        +'<div class="lp-testi-header">'
+        +'<div class="lp-testi-avatar" style="background:linear-gradient(135deg,'+acc+','+acc+'99)">'+escHtml((t.name||'?')[0])+'</div>'
+        +'<div><div class="lp-testi-name" contenteditable="true">'+escHtml(t.name)+'</div>'
+        +'<div class="lp-testi-loc" contenteditable="true">'+escHtml(t.location)+'</div></div>'
+        +'</div><div class="lp-testi-stars">★★★★★</div>'
+        +'<div class="lp-testi-text" contenteditable="true">'+escHtml(t.quote)+'</div>'
+        +'</div>';
     }).join('');
   }
+
   // CTA
   setText('lpCtaTitle', d.ctaTitle||'');
   setText('lpCtaSub', d.ctaSub||'');
@@ -1902,14 +1971,6 @@ function renderLPPreview(d) {
   setText('lpCtaPriceOri', d.ctaPriceOri||'');
   setText('lpCtaBtn', d.ctaBtn||'');
   setText('lpCtaGuarantee', d.ctaGuarantee||'');
-
-  // If product photo uploaded, set in hero
-  if (lpPhotoBase64) {
-    var heroImg = $('lpHeroImg');
-    if (heroImg) { heroImg.src = lpPhotoBase64; heroImg.style.display = 'block'; }
-    var heroEmp = $('lpHeroImgEmpty');
-    if (heroEmp) heroEmp.style.display = 'none';
-  }
 }
 
 function setText(id, val) {
@@ -1917,57 +1978,57 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
-async function lpTriggerHeroGen() {
-  if (!lpPhotoBase64) {
-    showToast('Upload foto produk dulu di form kiri.','error');
-    return;
-  }
-  var heroBox = $('lpHeroImgBox');
-  var heroEmp = $('lpHeroImgEmpty');
-  if (heroEmp) heroEmp.innerHTML = '<div class="spinner-wrap" style="margin:0 auto"><div class="spinner-ring" style="width:28px;height:28px;border-width:3px"></div></div><p style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:8px">Generating...</p>';
-
-  var productName = ($('lpProductName')||{}).value||'produk';
-  var benefits = ($('lpBenefits')||{}).value||'';
-  var tone = ($('lpTone')||{}).value||'';
-
+async function lpStartHeroImg(prompt) {
   try {
-    // Upload foto produk ke kie.ai CDN
-    var b64 = lpPhotoBase64.replace(/^data:image\/\w+;base64,/,'');
-    var upRes = await proxyPost('upload', { imageBase64: b64 }, authToken);
-    if (!upRes.url) throw new Error('Upload gagal');
-    lpPhotoUrl = upRes.url;
-
-    var prompt = 'Hero banner visual for product "'+productName+'". '+benefits+'. Style: '+tone+', mobile landing page, premium product advertisement, clean minimal background, vibrant colors, professional ad banner, 9:16 portrait.';
     var genRes = await proxyPost('generate', { type:'image', model:'gpt-image/1.5-image-to-image', imageUrl: lpPhotoUrl, prompt: prompt, ratio:'9:16', quantity:1 }, authToken);
-    if (!genRes.taskIds || !genRes.taskIds.length) throw new Error('Generate gagal');
-
-    lpPollHeroImg(genRes.taskIds[0]);
-  } catch(e) {
-    if (heroEmp) heroEmp.innerHTML = '<p style="font-size:11px;color:rgba(255,100,100,0.9)">Gagal: '+escHtml(e.message)+'</p>';
-    showToast('Hero image gagal: '+e.message,'error');
-  }
+    if (!genRes.taskIds || !genRes.taskIds.length) return;
+    lpPollImg(genRes.taskIds[0], function(url) {
+      var heroImg = $('lpHeroImg');
+      if (heroImg) { heroImg.src = url; heroImg.style.display = 'block'; }
+      var heroEmp = $('lpHeroImgEmpty');
+      if (heroEmp) heroEmp.style.display = 'none';
+      showToast('Hero image siap!','success');
+    }, function() {
+      var heroEmp = $('lpHeroImgEmpty');
+      if (heroEmp) heroEmp.innerHTML = '<p style="font-size:10px;color:rgba(255,150,150,0.9)">Gagal, coba lagi</p>';
+    });
+  } catch(e) { console.warn('Hero gen error:', e.message); }
 }
 
-async function lpPollHeroImg(taskId) {
-  var attempts = 0;
-  var heroImg = $('lpHeroImg');
-  var heroEmp = $('lpHeroImgEmpty');
+async function lpStartPainImages(painPoints) {
+  painPoints.forEach(function(p, i) {
+    var prompt = p.imgPrompt || ('lifestyle photo of person experiencing: '+p.text+', natural lighting, relatable');
+    proxyPost('generate', { type:'image', model:'gpt-image/1.5-image-to-image', imageUrl: lpPhotoUrl, prompt: prompt, ratio:'1:1', quantity:1 }, authToken)
+      .then(function(genRes) {
+        if (!genRes.taskIds || !genRes.taskIds.length) return;
+        lpPollImg(genRes.taskIds[0], function(url) {
+          var wrap = $('lpPainImg'+i);
+          if (wrap) wrap.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />';
+        }, function() {
+          var wrap = $('lpPainImg'+i);
+          if (wrap) wrap.innerHTML = '<span style="font-size:20px">😞</span>';
+        });
+      })
+      .catch(function() {
+        var wrap = $('lpPainImg'+i);
+        if (wrap) wrap.innerHTML = '<span style="font-size:20px">😞</span>';
+      });
+  });
+}
 
-  async function poll() {
-    try {
-      var res = await fetch('/api/proxy?action=status&taskId='+encodeURIComponent(taskId)+'&type=image', { headers: authToken ? {'Authorization':'Bearer '+authToken} : {} });
-      var d = await res.json();
-      if (d.done && d.urls && d.urls.length) {
-        if (heroImg) { heroImg.src = d.urls[0]; heroImg.style.display = 'block'; }
-        if (heroEmp) heroEmp.style.display = 'none';
-        showToast('Hero image berhasil di-generate!','success');
-        return;
-      }
-      if (d.failed) { if (heroEmp) heroEmp.innerHTML = '<p style="font-size:11px;color:rgba(255,100,100,0.9)">Generate gagal</p>'; return; }
-      attempts++;
-      if (attempts < 40) setTimeout(poll, 3000);
-      else { if (heroEmp) heroEmp.innerHTML = '<p style="font-size:11px;color:rgba(255,200,100,0.9)">Timeout, coba lagi</p>'; }
-    } catch(e) { attempts++; if (attempts < 40) setTimeout(poll, 3000); }
+function lpPollImg(taskId, onDone, onFail) {
+  var attempts = 0;
+  function poll() {
+    fetch('/api/proxy?action=status&taskId='+encodeURIComponent(taskId)+'&type=image', { headers: authToken ? {'Authorization':'Bearer '+authToken} : {} })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.done && d.urls && d.urls.length) { onDone(d.urls[0]); return; }
+        if (d.failed) { onFail && onFail(); return; }
+        attempts++;
+        if (attempts < 40) setTimeout(poll, 3000);
+        else onFail && onFail();
+      })
+      .catch(function(){ attempts++; if (attempts < 40) setTimeout(poll, 3000); });
   }
   poll();
 }
