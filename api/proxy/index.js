@@ -748,14 +748,62 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
         } catch(e) { /* suggestion gagal, lanjut */ }
       }
 
-      // ── 3. Kirim ke Claude untuk dikategorikan ────────────────
+      // ── 3. Claude generate kata kunci behavior-connected untuk dicek ke Meta ─
+      const step3 = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Produk: "${product}". Pikirkan secara konkret: orang yang menggunakan/membeli "${product}", dalam keseharian mereka juga menggunakan apa, memakai apa, pergi ke mana, melakukan apa?
+Contoh untuk "sepeda": kaos kaki, sendal, sarung tangan, botol minum, earphone, topi, tas ransel, bengkel, sunscreen, celana olahraga.
+Berikan 20 kata kunci behavior-connected yang SPESIFIK dan KONKRET. HANYA array JSON: ["kata1","kata2",...]`
+          }]
+        })
+      });
+      const step3Data = await step3.json();
+      let behaviorTerms = [];
+      try {
+        const step3Text = step3Data.content?.[0]?.text || '[]';
+        const match3 = step3Text.match(/\[[\s\S]*\]/);
+        if (match3) behaviorTerms = JSON.parse(match3[0]);
+      } catch(e) {}
+
+      // ── 4. Search Meta untuk behavior terms (paralel) ────────
+      if (behaviorTerms.length > 0) {
+        const behaviorFetches = behaviorTerms.map(term =>
+          fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=10&locale=id_ID&access_token=${fbToken}`)
+            .then(r => r.json()).catch(() => ({ data: [] }))
+        );
+        const behaviorResults = await Promise.all(behaviorFetches);
+        behaviorResults.forEach(function(res) {
+          if (!res.data) return;
+          res.data.forEach(function(item) {
+            const key = item.name.toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              metaInterests.push({
+                id: item.id,
+                nama: item.name,
+                audienceSize: item.audience_size || null,
+                path: item.path ? item.path.join(' > ') : '',
+                behavior: true
+              });
+            }
+          });
+        });
+      }
+
+      // ── 5. Kirim semua ke Claude untuk dikategorikan ──────────
       const metaList = metaInterests.length > 0
         ? metaInterests.map(function(i) {
             const size = i.audienceSize ? ` (${(i.audienceSize/1000000).toFixed(1)}M)` : '';
-            const tag = i.suggested ? ' [hidden]' : '';
+            const tag = i.suggested ? ' [hidden]' : i.behavior ? ' [behavior]' : '';
             return `- ${i.nama}${size} [${i.path}]${tag}`;
           }).join('\n')
-        : '(tidak ada data dari Meta, gunakan pengetahuanmu)';
+        : '(tidak ada data dari Meta)';
 
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -769,20 +817,18 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
 
 ${metaList}
 
-Keterangan: interest bertanda [hidden] adalah interest tersembunyi hasil Meta suggestion.
+Keterangan:
+- [hidden] = interest tersembunyi dari Meta suggestion
+- [behavior] = interest behavior-connected yang sudah diverifikasi ada di Meta
 
-Tugasmu: kelompokkan ke dalam 3 grup. Untuk grup 1 dan 2, gunakan data Meta di atas. Untuk grup 3, WAJIB berpikir sendiri secara mendalam.
+Tugasmu: kelompokkan SEMUA interest ke dalam 3 grup:
 
-1. "Sesuai Kata Kunci" — dari data Meta: interest yang namanya langsung mengandung atau identik dengan "${product}".
+1. "Sesuai Kata Kunci" — interest yang namanya langsung mengandung atau identik dengan "${product}"
+2. "Relevan & Mirip" — interest sejenis atau satu kategori produk dengan "${product}"
+3. "Berhubungan" — interest bertanda [behavior] dan interest lain dari data Meta yang terkait perilaku/kebiasaan pengguna "${product}" (bukan produk sejenis)
 
-2. "Relevan & Mirip" — dari data Meta: interest yang sejenis atau satu kategori produk dengan "${product}".
-
-3. "Berhubungan" — GUNAKAN PIKIRANMU SENDIRI. Tanyakan: "Orang yang menggunakan/membeli ${product}, dalam keseharian mereka juga menggunakan apa, melakukan apa, memakai apa, pergi ke mana?"
-Pikirkan secara KONKRET dan SPESIFIK — bukan kategori umum.
-Contoh untuk "sepeda": kaos kaki (dipakai saat bersepeda), sendal (alas kaki saat bersepeda santai), sarung tangan (pelindung tangan), botol minum (selalu dibawa), earphone (dengerin musik saat gowes), topi (pelindung matahari), tas ransel (bawa barang), bengkel (servis rutin), teman nongkrong (aktivitas sosial pesepeda).
-Minimal 10 interest untuk grup ini. Jika ada yang cocok dengan data Meta, tambahkan audienceSize-nya. Jika tidak ada di data Meta, tetap masukkan dengan audienceSize: null.
-
-Interest yang benar-benar tidak nyambung → negativeKeywords.
+SEMUA interest yang ditampilkan HARUS dari data Meta di atas. Jangan tambah yang tidak ada di list.
+Interest tidak relevan → negativeKeywords.
 Pilih 5 terbaik untuk topPicks (utamakan [hidden] dan audience size besar).
 
 Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
@@ -798,10 +844,9 @@ Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
 }
 
 Penting:
-- "audienceSize": angka asli dari data Meta (bukan dalam juta). Null jika tidak ada di data Meta.
-- "hidden": true jika interest bertanda [hidden], false jika tidak.
-- Logika harus KONKRET, jelaskan kenapa hubungannya, maksimal 6 kata.
-- HANYA JSON.`
+- "audienceSize": angka asli dari data Meta. Null jika tidak ada.
+- "hidden": true jika bertanda [hidden], false jika tidak.
+- Logika konkret maksimal 6 kata. HANYA JSON.`
           }]
         })
       });
