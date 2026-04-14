@@ -911,10 +911,26 @@
         <button class="admin-tab active" id="adminTabPending" onclick="loadAdminUsers('pending')">Pending</button>
         <button class="admin-tab" id="adminTabApproved" onclick="loadAdminUsers('approved')">Approved</button>
         <button class="admin-tab" id="adminTabRejected" onclick="loadAdminUsers('rejected')">Rejected</button>
+        <button class="admin-tab" id="adminTabStats" onclick="loadAdminStats()">📊 Statistik</button>
       </div>
     </div>
     <div class="admin-user-list" id="adminUserList">
       <div style="text-align:center;padding:40px;color:#555">Memuat...</div>
+    </div>
+
+    <!-- Stats View -->
+    <div id="adminStatsView" style="display:none; padding: 20px 24px;">
+      <div class="admin-stats-header">
+        <div class="admin-stats-title">📊 Statistik Generate Per User</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="date" id="adminStatsDate" class="apikey-field" style="width:150px;padding:6px 10px" />
+          <button class="btn-solid" onclick="loadAdminStats()" style="padding:6px 14px;font-size:12px">Lihat</button>
+        </div>
+      </div>
+      <div class="admin-stats-date-label" id="adminStatsDateLabel"></div>
+      <div class="admin-stats-grid" id="adminStatsGrid">
+        <div style="text-align:center;padding:40px;color:var(--text-5)">Memuat...</div>
+      </div>
     </div>
   </div>
 

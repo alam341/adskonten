@@ -871,6 +871,105 @@ async function loadAdminUsers(status) {
 }
 
 
+async function loadAdminStats() {
+  // Switch tabs
+  ['Pending','Approved','Rejected','Stats'].forEach(function(s) {
+    var t = $('adminTab'+s); if (t) t.classList.remove('active');
+  });
+  var st = $('adminTabStats'); if (st) st.classList.add('active');
+  $('adminUserList') && ($('adminUserList').style.display = 'none');
+  var statsView = $('adminStatsView'); if (!statsView) return;
+  statsView.style.display = 'block';
+
+  var dateInput = $('adminStatsDate');
+  var today = new Date().toISOString().split('T')[0];
+  if (!dateInput.value) dateInput.value = today;
+  var date = dateInput.value || today;
+
+  var grid = $('adminStatsGrid');
+  var label = $('adminStatsDateLabel');
+  grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-5)">Memuat...</div>';
+
+  // Format tanggal Indonesia
+  var d = new Date(date + 'T12:00:00');
+  var dayNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  if (label) label.textContent = dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] + ' ' + d.getFullYear();
+
+  try {
+    var data = await proxyGet('adminStats', { date }, authToken);
+    var users = data.users || [];
+    grid.innerHTML = '';
+
+    if (!users.length) {
+      grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-5)">Belum ada user approved.</div>';
+      return;
+    }
+
+    users.forEach(function(u) {
+      var s = u.stats || { image:0, speech:0, clone:0 };
+      var total = (s.image||0) + (s.speech||0) + (s.clone||0);
+      var initials = (u.username||'?').substring(0,2).toUpperCase();
+      var hue = Math.abs(u.username.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0)) % 360;
+      var isActive = total > 0;
+
+      var card = document.createElement('div');
+      card.className = 'admin-stat-card' + (isActive ? ' admin-stat-active' : '');
+      card.innerHTML =
+        '<div class="admin-stat-card-top">' +
+          '<div class="admin-stat-avatar" style="background:hsl('+hue+',55%,48%)">' + initials + '</div>' +
+          '<div class="admin-stat-info">' +
+            '<div class="admin-stat-name">' + (u.username||'-') + '</div>' +
+            '<div class="admin-stat-sub">' + (u.status==='approved'?'<span class="badge-aktif">Aktif</span>':'<span class="badge-nonaktif">Nonaktif</span>') + '</div>' +
+          '</div>' +
+          '<div class="admin-stat-total-wrap">' +
+            '<div class="admin-stat-total-num">' + total + '</div>' +
+            '<div class="admin-stat-total-label">Total</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="admin-stat-bars">' +
+          statBar('🎨', 'Gambar', s.image||0, '#5b5bd6') +
+          statBar('🔊', 'Suara', s.speech||0, '#10b981') +
+          statBar('🎭', 'Clone', s.clone||0, '#f59e0b') +
+        '</div>';
+      grid.appendChild(card);
+    });
+
+    // Sort: user dengan total terbanyak di depan
+    var cards = Array.from(grid.querySelectorAll('.admin-stat-card'));
+    cards.sort(function(a, b) {
+      var na = parseInt(a.querySelector('.admin-stat-total-num').textContent)||0;
+      var nb = parseInt(b.querySelector('.admin-stat-total-num').textContent)||0;
+      return nb - na;
+    });
+    cards.forEach(function(c){ grid.appendChild(c); });
+
+  } catch(e) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:#f08080">Error: '+e.message+'</div>';
+  }
+}
+
+function statBar(icon, label, count, color) {
+  var maxBar = 100; // lebar max bar
+  return '<div class="admin-stat-bar-item">' +
+    '<div class="admin-stat-bar-label">' + icon + ' ' + label + '</div>' +
+    '<div class="admin-stat-bar-track">' +
+      '<div class="admin-stat-bar-fill" style="width:' + Math.min(count*10,100) + '%;background:'+color+'"></div>' +
+    '</div>' +
+    '<div class="admin-stat-bar-num" style="color:'+color+'">' + count + '</div>' +
+  '</div>';
+}
+
+// Override loadAdminUsers agar sembunyikan statsView
+var _origLoadAdminUsers = loadAdminUsers;
+loadAdminUsers = async function(status) {
+  var statsView = $('adminStatsView');
+  var userList = $('adminUserList');
+  if (statsView) statsView.style.display = 'none';
+  if (userList) userList.style.display = '';
+  return _origLoadAdminUsers(status);
+};
+
 async function adminAction(userId, act) {
   try {
     await proxyPost('adminAction', { userId, act });
