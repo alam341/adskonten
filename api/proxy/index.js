@@ -723,6 +723,14 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
         });
       });
 
+      // junkPatterns & addToMetaInterests didefinisikan di step 3, tapi suggestion pertama jalan dulu
+      // pakai inline filter dulu sebelum helper tersedia
+      const _junk = [
+        /akses facebook/i, /perangkat seluler/i, /perangkat android/i,
+        /perangkat ios/i, /pengguna perangkat/i, /teman penggemar/i,
+        /teman dari teman/i, /ulang tahun/i, /administrator halaman/i
+      ];
+
       // ── 2. adinterestsuggestion — temukan interest tersembunyi ──
       if (metaInterests.length > 0) {
         const topNames = metaInterests.slice(0, 10).map(i => i.nama);
@@ -733,33 +741,37 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
           if (suggData.data && Array.isArray(suggData.data)) {
             suggData.data.forEach(function(item) {
               const key = item.name.toLowerCase();
-              if (!seen.has(key)) {
+              if (!seen.has(key) && !_junk.some(p => p.test(item.name))) {
                 seen.add(key);
-                metaInterests.push({
-                  id: item.id,
-                  nama: item.name,
-                  audienceSize: item.audience_size || null,
-                  path: item.path ? item.path.join(' > ') : '',
-                  suggested: true
-                });
+                metaInterests.push({ id: item.id, nama: item.name, audienceSize: item.audience_size || null, path: item.path ? item.path.join(' > ') : '', suggested: true });
               }
             });
           }
-        } catch(e) { /* suggestion gagal, lanjut */ }
+        } catch(e) {}
       }
 
-      // ── 3. Claude generate kata kunci behavior-connected untuk dicek ke Meta ─
+      // ── 3. Claude generate behavior terms (Indonesian + English) ─
       const step3 = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1000,
+          max_tokens: 1500,
           messages: [{
             role: 'user',
-            content: `Produk: "${product}". Pikirkan secara konkret: orang yang menggunakan/membeli "${product}", dalam keseharian mereka juga menggunakan apa, memakai apa, pergi ke mana, melakukan apa?
-Contoh untuk "sepeda": kaos kaki, sendal, sarung tangan, botol minum, earphone, topi, tas ransel, bengkel, sunscreen, celana olahraga.
-Berikan 20 kata kunci behavior-connected yang SPESIFIK dan KONKRET. HANYA array JSON: ["kata1","kata2",...]`
+            content: `Produk: "${product}".
+
+Pikirkan KONKRET dan MENDALAM: orang yang pakai/beli "${product}" itu dalam kesehariannya:
+- Pakai/bawa apa? (pakaian, aksesoris, alat)
+- Pergi ke mana? (tempat, komunitas, toko)
+- Melakukan apa? (olahraga, hobi, aktivitas)
+- Beli apa lagi? (produk pelengkap)
+- Konsumsi apa? (makanan, minuman, media)
+
+Contoh untuk "sepeda": kaos kaki, sendal, sarung tangan, botol minum, earphone, topi, tas ransel, bengkel, sunscreen, celana olahraga, helm, pompa ban, komunitas gowes, toko olahraga, cycling, outdoor, fitness.
+
+Berikan 40 kata kunci — campuran bahasa Indonesia DAN Inggris karena Meta punya kedua bahasa.
+HANYA array JSON: ["kata1","kata2",...]`
           }]
         })
       });
@@ -771,29 +783,46 @@ Berikan 20 kata kunci behavior-connected yang SPESIFIK dan KONKRET. HANYA array 
         if (match3) behaviorTerms = JSON.parse(match3[0]);
       } catch(e) {}
 
-      // ── 4. Search Meta untuk behavior terms (paralel) ────────
+      // ── 4. Search Meta untuk semua behavior terms (paralel) ───
+      const junkPatterns = [
+        /akses facebook/i, /perangkat seluler/i, /perangkat android/i,
+        /perangkat ios/i, /pengguna perangkat/i, /teman penggemar/i,
+        /teman dari teman/i, /ulang tahun/i, /administrator halaman/i
+      ];
+
+      function addToMetaInterests(item, tag) {
+        const key = item.name.toLowerCase();
+        const isJunk = junkPatterns.some(p => p.test(item.name));
+        if (!seen.has(key) && !isJunk) {
+          seen.add(key);
+          metaInterests.push({
+            id: item.id,
+            nama: item.name,
+            audienceSize: item.audience_size || null,
+            path: item.path ? item.path.join(' > ') : '',
+            [tag]: true
+          });
+        }
+      }
+
       if (behaviorTerms.length > 0) {
         const behaviorFetches = behaviorTerms.map(term =>
-          fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=10&locale=id_ID&access_token=${fbToken}`)
+          fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=15&locale=id_ID&access_token=${fbToken}`)
             .then(r => r.json()).catch(() => ({ data: [] }))
         );
         const behaviorResults = await Promise.all(behaviorFetches);
-        behaviorResults.forEach(function(res) {
-          if (!res.data) return;
-          res.data.forEach(function(item) {
-            const key = item.name.toLowerCase();
-            if (!seen.has(key)) {
-              seen.add(key);
-              metaInterests.push({
-                id: item.id,
-                nama: item.name,
-                audienceSize: item.audience_size || null,
-                path: item.path ? item.path.join(' > ') : '',
-                behavior: true
-              });
-            }
-          });
-        });
+        behaviorResults.forEach(res => (res.data||[]).forEach(item => addToMetaInterests(item, 'behavior')));
+      }
+
+      // ── 5. Suggestion kedua dari behavior results yang ditemukan ─
+      const behaviorFound = metaInterests.filter(i => i.behavior).slice(0, 8);
+      if (behaviorFound.length > 0) {
+        try {
+          const suggUrl2 = `https://graph.facebook.com/v19.0/search?type=adinterestsuggestion&interest_list=${encodeURIComponent(JSON.stringify(behaviorFound.map(i => i.nama)))}&locale=id_ID&access_token=${fbToken}`;
+          const suggRes2 = await fetch(suggUrl2);
+          const suggData2 = await suggRes2.json();
+          (suggData2.data||[]).forEach(item => addToMetaInterests(item, 'suggested'));
+        } catch(e) {}
       }
 
       // ── 5. Kirim semua ke Claude untuk dikategorikan ──────────
