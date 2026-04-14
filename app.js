@@ -658,6 +658,11 @@ function showState(s) {
   $('stateResultClone')  && ($('stateResultClone').style.display  = s==='clone'   ?'flex':'none');
   $('stateResultAnalyze') && ($('stateResultAnalyze').style.display = s==='analyze' ?'flex':'none');
   $('btnGenerate')       && ($('btnGenerate').disabled            = s==='loading');
+  // On mobile: scroll canvas area into view when loading/result appears
+  if (window.innerWidth <= 768 && (s==='loading'||s==='img'||s==='clone'||s==='music'||s==='vid')) {
+    var canvas = document.querySelector('.canvas-area');
+    if (canvas) setTimeout(function(){ canvas.scrollIntoView({behavior:'smooth', block:'start'}); }, 100);
+  }
 }
 function resetProgress() { var pb=$('progressBar'); if(!pb)return; pb.style.animation='none';pb.offsetHeight;pb.style.animation=''; }
 function updateSub(t) { $('loadingSub')&&($('loadingSub').textContent=t); }
