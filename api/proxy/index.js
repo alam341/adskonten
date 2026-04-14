@@ -644,7 +644,7 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2500,
+          max_tokens: 4000,
           messages: [{
             role: 'user',
             content: `Kamu adalah pakar keyword research untuk Meta Ads dan Google Ads Indonesia. Tugasmu adalah mencari kata kunci yang SECARA LOGIS berhubungan dengan produk/topik, bukan hanya yang obvious.
@@ -657,58 +657,18 @@ Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
 {
   "mainKeyword": "${product}",
   "categories": [
-    {
-      "nama": "Alat & Perlengkapan",
-      "icon": "🔧",
-      "desc": "benda fisik yang digunakan bersamaan",
-      "keywords": [
-        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
-      ]
-    },
-    {
-      "nama": "Bahan & Kandungan",
-      "icon": "🧪",
-      "desc": "bahan atau kandungan yang dicari",
-      "keywords": [
-        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
-      ]
-    },
-    {
-      "nama": "Aktivitas & Kebiasaan",
-      "icon": "🏃",
-      "desc": "aktivitas yang berkaitan dengan produk",
-      "keywords": [
-        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
-      ]
-    },
-    {
-      "nama": "Masalah & Keluhan",
-      "icon": "😤",
-      "desc": "masalah yang membuat orang butuh produk ini",
-      "keywords": [
-        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
-      ]
-    },
-    {
-      "nama": "Tempat & Situasi",
-      "icon": "📍",
-      "desc": "tempat atau situasi penggunaan produk",
-      "keywords": [
-        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
-      ]
-    },
-    {
-      "nama": "Gaya Hidup & Identitas",
-      "icon": "✨",
-      "desc": "identitas atau gaya hidup pengguna produk",
-      "keywords": [
-        { "kata": "kata kunci", "logika": "kenapa berhubungan", "intent": "beli/info/masalah" }
-      ]
-    }
+    { "nama": "Alat & Perlengkapan", "icon": "🔧", "desc": "benda fisik yang digunakan bersamaan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli" }] },
+    { "nama": "Bahan & Kandungan", "icon": "🧪", "desc": "bahan atau kandungan yang dicari", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info" }] },
+    { "nama": "Aktivitas & Kebiasaan", "icon": "🏃", "desc": "aktivitas yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info" }] },
+    { "nama": "Masalah & Keluhan", "icon": "😤", "desc": "masalah yang mendorong pembelian", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "masalah" }] },
+    { "nama": "Tempat & Situasi", "icon": "📍", "desc": "tempat atau situasi penggunaan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info" }] },
+    { "nama": "Gaya Hidup & Identitas", "icon": "✨", "desc": "identitas pengguna produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli" }] }
   ],
-  "topPicks": ["5 kata kunci terbaik untuk dipakai di Meta/Google Ads"],
-  "negativeKeywords": ["kata kunci yang TIDAK relevan dan harus dieksklusi dari ads"]
-}`
+  "topPicks": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+  "negativeKeywords": ["kw tidak relevan 1", "kw tidak relevan 2", "kw tidak relevan 3"]
+}
+
+Isi setiap kategori dengan 4-5 keyword saja. Logika harus singkat maksimal 6 kata. HANYA JSON.`
           }]
         })
       });
