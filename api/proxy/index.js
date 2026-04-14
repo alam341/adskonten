@@ -697,9 +697,9 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       const words = product.split(/\s+/).filter(w => w.length > 2);
       const searchTerms = [product, ...words].slice(0, 4); // max 4 search terms
 
-      // Fetch semua search terms sekaligus (parallel)
+      // Fetch semua search terms sekaligus (parallel) — locale=id_ID supaya nama interest sesuai Ads Manager Indonesia
       const searchFetches = searchTerms.map(term =>
-        fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=25&access_token=${fbToken}`)
+        fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=25&locale=id_ID&access_token=${fbToken}`)
           .then(r => r.json()).catch(() => ({ data: [] }))
       );
       const searchResults = await Promise.all(searchFetches);
@@ -726,7 +726,7 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       // ── 2. adinterestsuggestion — temukan interest tersembunyi ──
       if (metaInterests.length > 0) {
         const topNames = metaInterests.slice(0, 5).map(i => i.nama);
-        const suggUrl = `https://graph.facebook.com/v19.0/search?type=adinterestsuggestion&interest_list=${encodeURIComponent(JSON.stringify(topNames))}&access_token=${fbToken}`;
+        const suggUrl = `https://graph.facebook.com/v19.0/search?type=adinterestsuggestion&interest_list=${encodeURIComponent(JSON.stringify(topNames))}&locale=id_ID&access_token=${fbToken}`;
         try {
           const suggRes = await fetch(suggUrl);
           const suggData = await suggRes.json();
