@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setupStrengthSlider('ttsStability','ttsStabilityVal', function(v){ ttsStability=v; });
   setupVoiceDropdown();
   setupModal();
+  setupAudience();
   setupCharCounter();
   setupAuth();
   showState('empty');
@@ -994,6 +995,105 @@ async function adminAction(userId, act) {
     showToast(act==='approve' ? 'User disetujui!' : 'User ditolak.', 'success');
     loadAdminUsers(currentAdminStatus);
   } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Audience Recommender ─────────────────────────────────
+function setupAudience() {
+  var btn = $('btnAudience');
+  var backBtn = $('btnBackFromAudience');
+  var view = $('audienceView');
+  var searchBtn = $('btnAudienceSearch');
+  var input = $('audienceInput');
+
+  if (btn) btn.addEventListener('click', function() {
+    document.querySelectorAll('.history-view').forEach(function(v){ v.style.display='none'; });
+    if (view) view.style.display = 'flex';
+  });
+  if (backBtn) backBtn.addEventListener('click', function() {
+    if (view) view.style.display = 'none';
+  });
+
+  // Chips
+  document.querySelectorAll('.aud-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      if (input) input.value = chip.dataset.val;
+      runAudienceAnalysis();
+    });
+  });
+
+  if (searchBtn) searchBtn.addEventListener('click', runAudienceAnalysis);
+  if (input) input.addEventListener('keydown', function(e){ if(e.key==='Enter') runAudienceAnalysis(); });
+}
+
+async function runAudienceAnalysis() {
+  var input = $('audienceInput');
+  var product = input ? input.value.trim() : '';
+  if (!product) { showToast('Ketik nama produk dulu.', 'error'); return; }
+
+  $('audienceLoading').style.display = 'block';
+  $('audienceResult').style.display = 'none';
+
+  try {
+    var d = await proxyPost('audienceRec', { product });
+
+    // Audience segments
+    var segEl = $('audSegments'); segEl.innerHTML = '';
+    (d.audience||[]).forEach(function(s) {
+      var el = document.createElement('div'); el.className = 'aud-segment-card';
+      el.innerHTML = '<div class="aud-seg-top"><span class="aud-seg-name">'+s.segment+'</span><span class="aud-seg-gender">'+s.gender+'</span><span class="aud-seg-age">'+s.usia+'</span></div><div class="aud-seg-desc">'+s.desc+'</div>';
+      segEl.appendChild(el);
+    });
+
+    // Ekosistem
+    var ekoEl = $('audEkosistem'); ekoEl.innerHTML = '';
+    (d.ekosistem||[]).forEach(function(e) {
+      var el = document.createElement('div'); el.className = 'aud-eko-group';
+      el.innerHTML = '<div class="aud-eko-cat">'+e.kategori+'</div><div class="aud-eko-items">'+
+        (e.items||[]).map(function(it){ return '<span class="aud-eko-item">'+it+'</span>'; }).join('')+'</div>';
+      ekoEl.appendChild(el);
+    });
+
+    // Pain points
+    var ppEl = $('audPainPoints'); ppEl.innerHTML = '';
+    (d.painPoints||[]).forEach(function(p) {
+      var li = document.createElement('li'); li.textContent = p; ppEl.appendChild(li);
+    });
+
+    // Keywords
+    var kwEl = $('audKeywords'); kwEl.innerHTML = '';
+    (d.keywords||[]).forEach(function(k) {
+      var sp = document.createElement('span'); sp.className = 'aud-tag'; sp.textContent = k;
+      sp.addEventListener('click', function(){ navigator.clipboard&&navigator.clipboard.writeText(k); showToast('"'+k+'" disalin!','success'); });
+      kwEl.appendChild(sp);
+    });
+
+    // Platform
+    var platEl = $('audPlatform'); platEl.innerHTML = '';
+    (d.platform||[]).forEach(function(p) {
+      var el = document.createElement('div'); el.className = 'aud-plat-item';
+      el.innerHTML = '<div class="aud-plat-name">'+p.nama+'</div><div class="aud-plat-reason">'+p.alasan+'</div><div class="aud-plat-format">📌 '+p.format+'</div>';
+      platEl.appendChild(el);
+    });
+
+    // Hooks
+    var hookEl = $('audHooks'); hookEl.innerHTML = '';
+    (d.hooks||[]).forEach(function(h) {
+      var el = document.createElement('div'); el.className = 'aud-hook-item';
+      el.innerHTML = '<span class="aud-hook-text">"'+h+'"</span>'+
+        '<button class="aud-hook-copy" title="Salin">📋</button>';
+      el.querySelector('.aud-hook-copy').addEventListener('click', function(){
+        navigator.clipboard&&navigator.clipboard.writeText(h); showToast('Hook disalin!','success');
+      });
+      hookEl.appendChild(el);
+    });
+
+    $('audResultProduct').textContent = product;
+    $('audienceResult').style.display = 'block';
+  } catch(e) {
+    showToast('Gagal: '+e.message, 'error');
+  } finally {
+    $('audienceLoading').style.display = 'none';
+  }
 }
 
 // ── Analyze Video ────────────────────────────────────────

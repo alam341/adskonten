@@ -154,6 +154,10 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 15l5-6 4 4 4-6 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="icon-tab-label">Analisis</span>
         </button>
+        <button class="icon-tool-btn" id="btnAudience" title="Audience AI">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 13c2 0 4 1 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="icon-tab-label">Audience</span>
+        </button>
       </div>
 
       <div class="icon-sidebar-bottom">
@@ -1133,6 +1137,89 @@
         <div id="copywritingLoading" style="display:none;text-align:center;padding:60px 40px">
           <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
           <p style="color:var(--text-4);font-size:13px">Menulis copywriting...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audience Recommender View -->
+  <div class="history-view" id="audienceView" style="display:none">
+    <div class="history-header">
+      <button class="btn-ghost" id="btnBackFromAudience">← Kembali</button>
+      <h2 class="history-title">🎯 Audience Recommender</h2>
+      <div></div>
+    </div>
+    <div class="audience-body">
+      <!-- Input -->
+      <div class="audience-input-wrap">
+        <div class="audience-input-row">
+          <input type="text" id="audienceInput" class="audience-input" placeholder="Ketik nama produk atau topik... contoh: perawatan rambut, kopi susu, skincare pria" maxlength="100" />
+          <button class="btn-solid" id="btnAudienceSearch" style="padding:10px 22px;font-size:13px">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="white" stroke-width="1.4"/><path d="M9.5 9.5l3 3" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Analisis
+          </button>
+        </div>
+        <div class="audience-chips" id="audienceChips">
+          <span class="aud-chip" data-val="perawatan rambut">perawatan rambut</span>
+          <span class="aud-chip" data-val="skincare wajah">skincare wajah</span>
+          <span class="aud-chip" data-val="kopi susu kekinian">kopi susu kekinian</span>
+          <span class="aud-chip" data-val="sepatu olahraga">sepatu olahraga</span>
+          <span class="aud-chip" data-val="suplemen fitness">suplemen fitness</span>
+          <span class="aud-chip" data-val="baju muslim wanita">baju muslim wanita</span>
+          <span class="aud-chip" data-val="makanan bayi">makanan bayi</span>
+          <span class="aud-chip" data-val="parfum pria">parfum pria</span>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="audienceLoading" style="display:none;text-align:center;padding:60px 0">
+        <div class="spinner-ring" style="margin:0 auto 16px"></div>
+        <p style="color:var(--text-4);font-size:14px">AI sedang menganalisis...</p>
+      </div>
+
+      <!-- Result -->
+      <div id="audienceResult" style="display:none">
+        <div class="aud-result-header">
+          <div class="aud-result-title">Hasil analisis untuk: <span id="audResultProduct" style="color:#5b5bd6;font-weight:700"></span></div>
+        </div>
+        <div class="aud-grid">
+
+          <!-- Audience Segments -->
+          <div class="aud-card aud-card-wide">
+            <div class="aud-card-title">👥 Target Audience</div>
+            <div id="audSegments" class="aud-segments"></div>
+          </div>
+
+          <!-- Ekosistem Produk -->
+          <div class="aud-card aud-card-wide">
+            <div class="aud-card-title">🛒 Ekosistem Produk Terkait</div>
+            <div id="audEkosistem" class="aud-ekosistem"></div>
+          </div>
+
+          <!-- Pain Points -->
+          <div class="aud-card">
+            <div class="aud-card-title">😤 Pain Points</div>
+            <ul id="audPainPoints" class="aud-list"></ul>
+          </div>
+
+          <!-- Keywords -->
+          <div class="aud-card">
+            <div class="aud-card-title">🔑 Kata Kunci Iklan</div>
+            <div id="audKeywords" class="aud-tags"></div>
+          </div>
+
+          <!-- Platform -->
+          <div class="aud-card aud-card-wide">
+            <div class="aud-card-title">📱 Rekomendasi Platform</div>
+            <div id="audPlatform" class="aud-platform-list"></div>
+          </div>
+
+          <!-- Hooks -->
+          <div class="aud-card aud-card-wide">
+            <div class="aud-card-title">🎣 Hook Iklan Siap Pakai</div>
+            <div id="audHooks" class="aud-hooks"></div>
+          </div>
+
         </div>
       </div>
     </div>
