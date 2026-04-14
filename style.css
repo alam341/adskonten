@@ -1282,6 +1282,7 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .aud-kw-item:hover { border-color:#5b5bd6; background:rgba(91,91,214,0.05); }
 .aud-kw-text { font-size:12px; color:var(--text-1); font-weight:500; flex:1; }
 .aud-kw-intent { font-size:10px; font-weight:600; flex-shrink:0; }
+.aud-kw-size { font-size:10px; color:var(--text-3); background:var(--bg-2); border-radius:4px; padding:1px 5px; flex-shrink:0; font-weight:500; }
 
 /* Resize Panel */
 .resize-panel {

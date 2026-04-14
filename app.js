@@ -1096,8 +1096,15 @@ async function runAudienceAnalysis() {
       var kwHtml = (cat.keywords||[]).map(function(kw) {
         allKeywords.push(kw.kata);
         var intentColor = kw.intent==='beli'?'#10b981':kw.intent==='masalah'?'#ef4444':'#f59e0b';
+        var sizeStr = '';
+        if (kw.audienceSize) {
+          var s = kw.audienceSize;
+          sizeStr = s >= 1000000 ? (s/1000000).toFixed(1)+'M' : s >= 1000 ? (s/1000).toFixed(0)+'K' : s;
+          sizeStr = '<span class="aud-kw-size" title="Ukuran audience Meta">'+sizeStr+'</span>';
+        }
         return '<div class="aud-kw-item" data-kw="'+kw.kata+'" title="'+kw.logika+'">' +
           '<span class="aud-kw-text">'+kw.kata+'</span>' +
+          sizeStr +
           '<span class="aud-kw-intent" style="color:'+intentColor+'">'+kw.intent+'</span>' +
           '</div>';
       }).join('');
