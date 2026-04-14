@@ -8,9 +8,10 @@
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -146,13 +147,13 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="icon-tab-label">Edit</span>
         </button>
-        <button class="icon-tool-btn" id="btnCekIklan" style="display:none" title="Cek Iklan">
+        <button class="icon-tool-btn" id="btnAnalisis" style="display:none" title="Cek & Analisis">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="icon-tab-label">Cek</span>
-        </button>
-        <button class="icon-tool-btn" id="btnAnalyze" style="display:none" title="Analisis Video">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 15l5-6 4 4 4-6 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="icon-tab-label">Analisis</span>
+        </button>
+        <button class="icon-tool-btn" id="btnLandingPage" style="display:none" title="Landing Page">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6h8M6 9.5h8M6 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="icon-tab-label">LP</span>
         </button>
         <button class="icon-tool-btn" id="btnAudience" title="Audience AI">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 13c2 0 4 1 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -942,13 +943,67 @@
 
 
   <!-- Analyze View -->
-  <div class="history-view" id="analyzeView" style="display:none">
+  <!-- Analisis View (Cek Iklan + Analisis Video digabung) -->
+  <div class="history-view" id="analisisView" style="display:none">
     <div class="history-header">
-      <button class="btn-ghost" id="btnBackFromAnalyze">← Kembali</button>
-      <h2 class="history-title">Analisis Video Kompetitor</h2>
-      <div></div>
+      <button class="btn-ghost" id="btnBackFromAnalisis">← Kembali</button>
+      <h2 class="history-title">Cek & Analisis Iklan</h2>
+      <div class="analisis-tabs">
+        <button class="analisis-tab active" id="analisisTabCek" onclick="switchAnalisisTab('cek')">Cek Kualitas</button>
+        <button class="analisis-tab" id="analisisTabVideo" onclick="switchAnalisisTab('video')">Analisis Video</button>
+      </div>
     </div>
-    <div class="analyze-body">
+
+    <!-- SUB: CEK IKLAN -->
+    <div id="analisisSubCek" class="analyze-body">
+      <div class="analyze-left">
+        <div class="panel-group">
+          <div class="panel-label">Upload Gambar Iklan</div>
+          <div class="analyze-upload-zone" id="cekIklanUploadZone">
+            <input type="file" id="cekIklanInput" accept="image/*" hidden />
+            <div id="cekIklanUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload gambar iklan</p>
+              <p style="font-size:10px;color:var(--text-6)">PNG, JPG, WEBP · maks 10MB</p>
+            </div>
+            <img id="cekIklanPreview" style="display:none;width:100%;border-radius:8px;max-height:220px;object-fit:contain" />
+          </div>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Platform Target <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <select id="cekIklanPlatform" class="voice-select" style="width:100%">
+            <option value="">Semua Platform</option>
+            <option value="Instagram Feed">Instagram Feed</option>
+            <option value="Instagram Stories/Reels">Instagram Stories/Reels</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Marketplace (Tokopedia/Shopee)">Marketplace (Tokopedia/Shopee)</option>
+            <option value="WhatsApp">WhatsApp</option>
+          </select>
+        </div>
+        <div class="panel-group">
+          <div class="panel-label">Info Produk <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
+          <textarea id="cekIklanInfo" class="textarea-field" rows="3" placeholder="Nama produk, target audience, tujuan iklan..."></textarea>
+        </div>
+        <button class="btn-generate" id="btnStartCekIklan" disabled>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="white" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Cek Kualitas
+        </button>
+      </div>
+      <div class="analyze-right" id="cekIklanRight">
+        <div id="cekIklanEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M16 24l6 6 10-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+          <p>Upload gambar iklan lalu klik Cek Kualitas</p>
+        </div>
+        <div id="cekIklanLoading" style="display:none;text-align:center;padding:60px 40px">
+          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
+          <p style="color:var(--text-4);font-size:13px">Menganalisis kualitas iklan...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB: ANALISIS VIDEO -->
+    <div id="analisisSubVideo" class="analyze-body" style="display:none">
       <div class="analyze-left">
         <div class="panel-group">
           <div class="panel-label">Upload Video Kompetitor</div>
@@ -994,61 +1049,6 @@
             <button class="btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('analyzeResultText').innerText);showToast('Disalin!','success')">📋 Copy Hasil</button>
           </div>
           <div id="analyzeResultText" style="font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cek Iklan View -->
-  <div class="history-view" id="cekIklanView" style="display:none">
-    <div class="history-header">
-      <button class="btn-ghost" id="btnBackFromCekIklan">← Kembali</button>
-      <h2 class="history-title">Cek Kualitas Iklan</h2>
-      <div></div>
-    </div>
-    <div class="analyze-body">
-      <div class="analyze-left">
-        <div class="panel-group">
-          <div class="panel-label">Upload Gambar Iklan</div>
-          <div class="analyze-upload-zone" id="cekIklanUploadZone">
-            <input type="file" id="cekIklanInput" accept="image/*" hidden />
-            <div id="cekIklanUploadEmpty" style="padding:20px;text-align:center;cursor:pointer">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M11 18l5-6 5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              <p style="font-size:12px;color:var(--text-4);margin-top:8px">Upload gambar iklan</p>
-              <p style="font-size:10px;color:var(--text-6)">PNG, JPG, WEBP · maks 10MB</p>
-            </div>
-            <img id="cekIklanPreview" style="display:none;width:100%;border-radius:8px;max-height:220px;object-fit:contain" />
-          </div>
-        </div>
-        <div class="panel-group">
-          <div class="panel-label">Platform Target <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
-          <select id="cekIklanPlatform" class="voice-select" style="width:100%">
-            <option value="">Semua Platform</option>
-            <option value="Instagram Feed">Instagram Feed</option>
-            <option value="Instagram Stories/Reels">Instagram Stories/Reels</option>
-            <option value="TikTok">TikTok</option>
-            <option value="Facebook">Facebook</option>
-            <option value="Marketplace (Tokopedia/Shopee)">Marketplace (Tokopedia/Shopee)</option>
-            <option value="WhatsApp">WhatsApp</option>
-          </select>
-        </div>
-        <div class="panel-group">
-          <div class="panel-label">Info Produk <span style="font-size:10px;color:var(--text-5);text-transform:none;font-weight:400">(opsional)</span></div>
-          <textarea id="cekIklanInfo" class="textarea-field" rows="3" placeholder="Nama produk, target audience, tujuan iklan..."></textarea>
-        </div>
-        <button class="btn-generate" id="btnStartCekIklan" disabled>
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="white" stroke-width="1.3"/><path d="M5 7.5l2 2 3-3" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Cek Kualitas
-        </button>
-      </div>
-      <div class="analyze-right" id="cekIklanRight">
-        <div id="cekIklanEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M16 24l6 6 10-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
-          <p>Upload gambar iklan lalu klik Cek Kualitas</p>
-        </div>
-        <div id="cekIklanLoading" style="display:none;text-align:center;padding:60px 40px">
-          <div class="spinner-wrap" style="margin:0 auto 16px"><div class="spinner-ring"></div></div>
-          <p style="color:var(--text-4);font-size:13px">Menganalisis kualitas iklan...</p>
         </div>
       </div>
     </div>
@@ -1204,6 +1204,161 @@
         <div class="aud-card aud-card-wide" style="margin-top:12px;background:rgba(239,68,68,0.03);border-color:rgba(239,68,68,0.15)">
           <div class="aud-card-title">🚫 Negative Keywords — Eksklusi dari Ads</div>
           <div id="audNegative" class="aud-tags"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Landing Page View -->
+  <div class="history-view" id="landingPageView" style="display:none;flex-direction:row">
+    <div class="lp-left">
+      <div class="lp-left-header">
+        <button class="btn-ghost" id="btnBackFromLP">← Kembali</button>
+        <h2 class="history-title" style="font-size:15px">Landing Page Generator</h2>
+      </div>
+      <div class="lp-form-scroll">
+
+        <div class="panel-group">
+          <div class="panel-label">Foto Produk</div>
+          <div class="lp-photo-zone" id="lpPhotoZone" onclick="document.getElementById('lpPhotoInput').click()">
+            <input type="file" id="lpPhotoInput" accept="image/*" hidden />
+            <img id="lpPhotoPreview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;position:absolute;top:0;left:0" />
+            <div id="lpPhotoEmpty">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M11 13l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <p style="font-size:12px;color:var(--text-4);margin-top:6px">Upload foto produk</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Nama Produk</div>
+          <input type="text" id="lpProductName" class="apikey-field" style="width:100%" placeholder="Contoh: Misohwa Collagen Drink" />
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Masalah yang Diselesaikan</div>
+          <textarea id="lpProblem" class="textarea-field" rows="2" placeholder="Contoh: Kulit kusam, kerutan, tidak percaya diri..."></textarea>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Benefit / Keunggulan Utama</div>
+          <textarea id="lpBenefits" class="textarea-field" rows="3" placeholder="Contoh: Glowing dalam 7 hari, kolagen nano Jepang, BPOM, garansi uang kembali..."></textarea>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Harga & Promo</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:10px;color:var(--text-5);margin-bottom:4px">Harga Coret</div>
+              <input type="text" id="lpPriceOri" class="apikey-field" style="width:100%" placeholder="Rp 290.000" />
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text-5);margin-bottom:4px">Harga Promo</div>
+              <input type="text" id="lpPricePromo" class="apikey-field" style="width:100%" placeholder="Rp 175.000" />
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Nama Brand / Toko</div>
+          <input type="text" id="lpBrand" class="apikey-field" style="width:100%" placeholder="Contoh: Misohwa Official" />
+        </div>
+
+        <div class="panel-group">
+          <div class="panel-label">Tone / Gaya</div>
+          <select id="lpTone" class="voice-select" style="width:100%">
+            <option value="emosional dan persuasif">Emosional & Persuasif</option>
+            <option value="profesional dan terpercaya">Profesional & Terpercaya</option>
+            <option value="santai dan akrab">Santai & Akrab</option>
+            <option value="urgent dan FOMO">Urgent & FOMO</option>
+          </select>
+        </div>
+
+        <button class="btn-generate" id="btnGenerateLP">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1L9.5 5.5L14 6.5L10.5 10L11.5 14.5L7.5 12.5L3.5 14.5L4.5 10L1 6.5L5.5 5.5L7.5 1Z" stroke="white" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          Generate Teks LP
+        </button>
+
+        <div id="lpGenLoading" style="display:none;text-align:center;padding:20px 0">
+          <div class="spinner-wrap" style="margin:0 auto 10px"><div class="spinner-ring"></div></div>
+          <p style="font-size:12px;color:var(--text-4)">AI sedang menulis teks landing page...</p>
+        </div>
+
+        <!-- Download buttons — muncul setelah preview generate -->
+        <div id="lpDownloadRow" style="display:none;margin-top:8px">
+          <div style="font-size:11px;color:var(--text-5);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Download Section</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn-ghost" style="justify-content:flex-start;font-size:12px" onclick="lpDownloadSection('lps1','1-hero.png')">⬇ Hero</button>
+            <button class="btn-ghost" style="justify-content:flex-start;font-size:12px" onclick="lpDownloadSection('lps2','2-masalah.png')">⬇ Masalah</button>
+            <button class="btn-ghost" style="justify-content:flex-start;font-size:12px" onclick="lpDownloadSection('lps3','3-solusi.png')">⬇ Solusi</button>
+            <button class="btn-ghost" style="justify-content:flex-start;font-size:12px" onclick="lpDownloadSection('lps4','4-testimoni.png')">⬇ Testimoni</button>
+            <button class="btn-ghost" style="justify-content:flex-start;font-size:12px" onclick="lpDownloadSection('lps5','5-cta.png')">⬇ CTA</button>
+            <button class="btn-solid" style="font-size:12px;margin-top:4px" onclick="lpDownloadAll()">📦 Download Semua (ZIP)</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: Mobile Preview -->
+    <div class="lp-right">
+      <div id="lpPreviewEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="10" y="4" width="28" height="40" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M18 10h12M22 38h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/></svg>
+        <p>Isi form & klik Generate<br>untuk lihat preview LP</p>
+      </div>
+
+      <div id="lpPreviewWrap" style="display:none;overflow-y:auto;height:100%;padding:20px;display:flex;justify-content:center;align-items:flex-start">
+        <div id="lpPhone" style="width:390px;background:#fff;overflow:hidden;flex-shrink:0;font-family:'Poppins',sans-serif">
+
+          <!-- HERO -->
+          <div id="lps1" class="lp-s-hero">
+            <div class="lp-hero-badge" contenteditable="true" id="lpHeroBadge">✨ Produk Terbaik</div>
+            <div class="lp-hero-img-box" id="lpHeroImgBox" onclick="lpTriggerHeroGen()">
+              <img id="lpHeroImg" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:12px" />
+              <div id="lpHeroImgEmpty">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="opacity:0.5"><rect x="3" y="3" width="22" height="22" rx="5" stroke="white" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M9 18l4-4 3 3 4-5 4 6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:6px;font-weight:600">Tap Generate Hero Image</p>
+              </div>
+            </div>
+            <div class="lp-hero-title" contenteditable="true" id="lpHeroTitle">Judul Hero akan muncul di sini</div>
+            <div class="lp-hero-sub" contenteditable="true" id="lpHeroSub">Deskripsi singkat produk</div>
+            <button class="lp-hero-cta" contenteditable="true" id="lpHeroCta">🛒 Pesan Sekarang</button>
+            <div class="lp-hero-proof" contenteditable="true" id="lpHeroProof">⭐⭐⭐⭐⭐ Dipercaya ribuan pelanggan</div>
+          </div>
+
+          <!-- MASALAH -->
+          <div id="lps2" class="lp-s-masalah">
+            <div class="lp-eyebrow red" contenteditable="true" id="lpMasalahEyebrow">😔 Apakah kamu mengalami ini?</div>
+            <div class="lp-section-title" contenteditable="true" id="lpMasalahTitle">Judul masalah akan muncul di sini</div>
+            <div class="lp-section-sub" contenteditable="true" id="lpMasalahSub">Deskripsi masalah</div>
+            <div id="lpPainList" class="lp-pain-list"></div>
+          </div>
+
+          <!-- SOLUSI -->
+          <div id="lps3" class="lp-s-solusi">
+            <div class="lp-solusi-tag" contenteditable="true" id="lpSolusiTag">✅ Solusi Terbukti</div>
+            <div class="lp-section-title" style="color:#fff" contenteditable="true" id="lpSolusiTitle">Judul solusi akan muncul di sini</div>
+            <div class="lp-section-sub" style="color:rgba(255,255,255,0.65)" contenteditable="true" id="lpSolusiSub">Deskripsi solusi</div>
+            <div id="lpBenefitGrid" class="lp-benefit-grid"></div>
+          </div>
+
+          <!-- TESTIMONI -->
+          <div id="lps4" class="lp-s-testi">
+            <div class="lp-eyebrow gold" contenteditable="true" id="lpTestiEyebrow">⭐ Kata Mereka Yang Sudah Buktikan</div>
+            <div class="lp-section-title" contenteditable="true" id="lpTestiTitle">Testimoni pelanggan</div>
+            <div id="lpTestiList" class="lp-testi-list"></div>
+          </div>
+
+          <!-- CTA -->
+          <div id="lps5" class="lp-s-cta">
+            <div class="lp-cta-title" contenteditable="true" id="lpCtaTitle">Judul CTA akan muncul di sini</div>
+            <div class="lp-cta-sub" contenteditable="true" id="lpCtaSub">Teks ajakan</div>
+            <div class="lp-cta-price" contenteditable="true" id="lpCtaPrice">Rp 0</div>
+            <div class="lp-cta-price-ori" contenteditable="true" id="lpCtaPriceOri">Rp 0</div>
+            <button class="lp-cta-btn" contenteditable="true" id="lpCtaBtn">🛒 Pesan Sekarang</button>
+            <div class="lp-cta-guarantee" contenteditable="true" id="lpCtaGuarantee">🔒 Garansi uang kembali 30 hari</div>
+          </div>
+
         </div>
       </div>
     </div>
