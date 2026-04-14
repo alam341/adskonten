@@ -1176,6 +1176,12 @@ async function runAudienceAnalysis() {
   }
 }
 
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 // ── Analyze Video ────────────────────────────────────────
 var analyzeVideoFile = null;
 
@@ -1571,12 +1577,6 @@ async function startCopywriting() {
   var platform = $('copywritingPlatform') ? $('copywritingPlatform').value : 'Instagram';
   var tone = $('copywritingTone') ? $('copywritingTone').value : 'persuasif dan emosional';
 
-  var frameworks = [];
-  if ($('fwAIDA') && $('fwAIDA').checked) frameworks.push('AIDA');
-  if ($('fwPAS') && $('fwPAS').checked) frameworks.push('PAS');
-  if ($('fwBAB') && $('fwBAB').checked) frameworks.push('BAB');
-  if ($('fwFAB') && $('fwFAB').checked) frameworks.push('FAB');
-  if (!frameworks.length) { showToast('Pilih minimal 1 framework.','error'); return; }
 
   if (empty) empty.style.display = 'none';
   if (loading) loading.style.display = 'block';
@@ -1586,23 +1586,79 @@ async function startCopywriting() {
     var res = await fetch('/api/proxy?action=copywriting', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+(authToken||localStorage.getItem('adstudio_token')||'') },
-      body: JSON.stringify({ imageBase64: copywritingBase64, productInfo, platform, tone, frameworks })
+      body: JSON.stringify({ imageBase64: copywritingBase64, productInfo, platform, tone })
     });
     var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Gagal.');
 
     if (loading) loading.style.display = 'none';
     if (right) {
-      var copyBtn = document.createElement('button');
-      copyBtn.className = 'btn-ghost';
-      copyBtn.textContent = '📋 Copy Semua';
-      var textDiv = document.createElement('div');
-      textDiv.style.cssText = 'font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;margin-top:16px';
-      textDiv.textContent = data.copy;
-      copyBtn.onclick = function() { navigator.clipboard.writeText(textDiv.textContent); showToast('Disalin!','success'); };
       right.innerHTML = '';
-      right.appendChild(copyBtn);
-      right.appendChild(textDiv);
+
+      if (data.type === 'meta' && data.variants) {
+        // ── Meta Ads: 3 variasi ──
+        data.variants.forEach(function(v) {
+          var card = document.createElement('div');
+          card.className = 'adcopy-card';
+          card.innerHTML = '<div class="adcopy-card-label">' + escHtml(v.label) + '</div>' +
+            '<div class="adcopy-field"><div class="adcopy-field-title">Primary Text</div>' +
+            '<div class="adcopy-field-body" data-copy="' + escHtml(v.primaryText) + '">' + escHtml(v.primaryText) + '</div></div>' +
+            '<div class="adcopy-row">' +
+            '<div class="adcopy-field adcopy-field-sm"><div class="adcopy-field-title">Headline <span class="adcopy-chars">' + (v.headline||'').length + '/40</span></div><div class="adcopy-field-body" data-copy="' + escHtml(v.headline) + '">' + escHtml(v.headline) + '</div></div>' +
+            '<div class="adcopy-field adcopy-field-sm"><div class="adcopy-field-title">Description <span class="adcopy-chars">' + (v.description||'').length + '/30</span></div><div class="adcopy-field-body" data-copy="' + escHtml(v.description) + '">' + escHtml(v.description) + '</div></div>' +
+            '</div><div class="adcopy-cta-badge">' + escHtml(v.cta) + '</div>';
+          card.querySelectorAll('[data-copy]').forEach(function(el) {
+            el.style.cursor = 'pointer'; el.title = 'Klik untuk salin';
+            el.addEventListener('click', function() { navigator.clipboard && navigator.clipboard.writeText(el.dataset.copy); showToast('Disalin!','success'); });
+          });
+          right.appendChild(card);
+        });
+
+      } else if (data.type === 'google' && data.headlines) {
+        // ── Google Ads: RSA ──
+        var hlCard = document.createElement('div');
+        hlCard.className = 'adcopy-card';
+        var hlHtml = '<div class="adcopy-card-label">📌 Headlines <span style="font-size:11px;font-weight:400;color:var(--text-4)">— maks 30 karakter</span></div><div class="adcopy-rsa-grid">';
+        (data.headlines||[]).forEach(function(h,i) {
+          var over = (h.text||'').length > 30;
+          hlHtml += '<div class="adcopy-rsa-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(h.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(h.text) + '</span><span class="adcopy-rsa-chars' + (over?' over':'') + '">' + (h.text||'').length + '</span></div>';
+        });
+        hlHtml += '</div>';
+        hlCard.innerHTML = hlHtml;
+        hlCard.querySelectorAll('[data-copy]').forEach(function(el) {
+          el.style.cursor='pointer'; el.title='Klik untuk salin';
+          el.addEventListener('click', function(){ navigator.clipboard&&navigator.clipboard.writeText(el.dataset.copy); showToast('Disalin!','success'); });
+        });
+        right.appendChild(hlCard);
+
+        var descCard = document.createElement('div');
+        descCard.className = 'adcopy-card';
+        var descHtml = '<div class="adcopy-card-label">📝 Descriptions <span style="font-size:11px;font-weight:400;color:var(--text-4)">— maks 90 karakter</span></div><div style="display:flex;flex-direction:column;gap:8px">';
+        (data.descriptions||[]).forEach(function(d,i) {
+          var over = (d.text||'').length > 90;
+          descHtml += '<div class="adcopy-desc-item' + (over?' adcopy-rsa-over':'') + '" data-copy="' + escHtml(d.text) + '"><span class="adcopy-rsa-num">' + (i+1) + '</span><span class="adcopy-rsa-text">' + escHtml(d.text) + '</span><span class="adcopy-rsa-chars' + (over?' over':'') + '">' + (d.text||'').length + '</span></div>';
+        });
+        descHtml += '</div>';
+        if (data.tips) descHtml += '<div class="adcopy-tips" style="margin-top:12px">💡 ' + escHtml(data.tips) + '</div>';
+        descCard.innerHTML = descHtml;
+        descCard.querySelectorAll('[data-copy]').forEach(function(el) {
+          el.style.cursor='pointer'; el.title='Klik untuk salin';
+          el.addEventListener('click', function(){ navigator.clipboard&&navigator.clipboard.writeText(el.dataset.copy); showToast('Disalin!','success'); });
+        });
+        right.appendChild(descCard);
+
+      } else {
+        // ── Platform biasa: teks markdown ──
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'btn-ghost';
+        copyBtn.textContent = '📋 Copy Semua';
+        var textDiv = document.createElement('div');
+        textDiv.style.cssText = 'font-size:13px;line-height:1.9;color:var(--text-2);white-space:pre-wrap;margin-top:16px';
+        textDiv.textContent = data.copy;
+        copyBtn.onclick = function() { navigator.clipboard.writeText(textDiv.textContent); showToast('Disalin!','success'); };
+        right.appendChild(copyBtn);
+        right.appendChild(textDiv);
+      }
     }
   } catch(e) {
     if (loading) loading.style.display = 'none';
