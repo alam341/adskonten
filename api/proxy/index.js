@@ -693,13 +693,13 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
       // ── 1. Ambil interest dari Meta — multi-keyword + suggestion ─
       const fbToken = `${FB_APP_ID}|${FB_APP_SECRET}`;
 
-      // Buat variasi search: full phrase + tiap kata
+      // Buat variasi search: full phrase + tiap kata (tanpa batas)
       const words = product.split(/\s+/).filter(w => w.length > 2);
-      const searchTerms = [product, ...words].slice(0, 4); // max 4 search terms
+      const searchTerms = [product, ...words];
 
       // Fetch semua search terms sekaligus (parallel) — locale=id_ID supaya nama interest sesuai Ads Manager Indonesia
       const searchFetches = searchTerms.map(term =>
-        fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=25&locale=id_ID&access_token=${fbToken}`)
+        fetch(`https://graph.facebook.com/v19.0/search?type=adinterest&q=${encodeURIComponent(term)}&limit=500&locale=id_ID&access_token=${fbToken}`)
           .then(r => r.json()).catch(() => ({ data: [] }))
       );
       const searchResults = await Promise.all(searchFetches);
@@ -725,7 +725,7 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
 
       // ── 2. adinterestsuggestion — temukan interest tersembunyi ──
       if (metaInterests.length > 0) {
-        const topNames = metaInterests.slice(0, 5).map(i => i.nama);
+        const topNames = metaInterests.slice(0, 10).map(i => i.nama);
         const suggUrl = `https://graph.facebook.com/v19.0/search?type=adinterestsuggestion&interest_list=${encodeURIComponent(JSON.stringify(topNames))}&locale=id_ID&access_token=${fbToken}`;
         try {
           const suggRes = await fetch(suggUrl);
@@ -762,7 +762,7 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 4000,
+          max_tokens: 8000,
           messages: [{
             role: 'user',
             content: `Kamu adalah pakar Meta Ads Indonesia. Berikut adalah ${metaInterests.length} interest NYATA dari Meta Ads untuk produk/topik "${product}":
@@ -771,23 +771,22 @@ ${metaList}
 
 Keterangan: interest bertanda [hidden] adalah interest tersembunyi hasil Meta suggestion (tidak muncul di Ads Manager biasa).
 
-Tugasmu:
-- Kategorikan SEMUA interest di atas ke dalam 6 kategori (jangan ada yang dibuang kecuali benar-benar tidak relevan)
-- Tambahkan logika singkat untuk tiap interest
-- Tentukan intent-nya (beli / info / masalah)
-- Interest tidak relevan → negativeKeywords
-- Pilih 5 interest terbaik untuk topPicks (utamakan yang [hidden] dan audience size besar)
+Tugasmu: kelompokkan SEMUA interest di atas ke dalam 3 grup berikut:
+
+1. "Sesuai Kata Kunci" — interest yang namanya langsung mengandung atau identik dengan kata kunci "${product}"
+2. "Relevan" — interest yang jelas berhubungan dengan "${product}" meskipun namanya berbeda
+3. "Perkiraan Bisa Digunakan" — interest yang tidak langsung berhubungan tapi kemungkinan besar dipakai oleh target audiens produk ini
+
+Interest yang benar-benar tidak relevan → negativeKeywords.
+Pilih 5 terbaik untuk topPicks (utamakan audience size besar dan interest [hidden]).
 
 Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
 {
   "mainKeyword": "${product}",
   "categories": [
-    { "nama": "Minat Langsung", "icon": "🎯", "desc": "interest yang langsung relevan dengan produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] },
-    { "nama": "Gaya Hidup", "icon": "✨", "desc": "interest gaya hidup yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
-    { "nama": "Aktivitas & Hobi", "icon": "🏃", "desc": "aktivitas atau hobi yang berkaitan", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
-    { "nama": "Media & Brand", "icon": "📱", "desc": "media, brand, atau tokoh yang diikuti", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
-    { "nama": "Demografi & Perilaku", "icon": "👥", "desc": "karakteristik demografis atau perilaku", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
-    { "nama": "Niche & Spesifik", "icon": "🔍", "desc": "interest niche yang berpotensi konversi tinggi", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] }
+    { "nama": "Sesuai Kata Kunci", "icon": "🎯", "desc": "interest yang langsung sesuai dengan kata kunci", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] },
+    { "nama": "Relevan", "icon": "🔗", "desc": "interest yang jelas berhubungan dengan produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
+    { "nama": "Perkiraan Bisa Digunakan", "icon": "💡", "desc": "interest yang kemungkinan dipakai target audiens", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] }
   ],
   "topPicks": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "negativeKeywords": ["kw tidak relevan 1", "kw tidak relevan 2"]
