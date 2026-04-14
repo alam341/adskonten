@@ -620,15 +620,52 @@ Berikan penilaian dalam format berikut (Bahasa Indonesia):
 
     // ── VOICE PREVIEW ─────────────────────────────────────
     if (action === 'preview') {
-      const { voiceId } = req.query;
-      if (!voiceId) return res.status(400).json({ error: 'voiceId diperlukan.' });
-      const urls = [`https://static.aiquickdraw.com/elevenlabs/voice/${voiceId}.mp3`, `https://storage.googleapis.com/eleven-public-prod/premade/voices/${voiceId}/preview.mp3`];
-      let audioRes = null;
-      for (const url of urls) { try { const r=await fetch(url); if(r.ok){audioRes=r;break;} } catch(e){} }
-      if (!audioRes) return res.status(404).json({ error: 'Preview tidak tersedia.' });
-      res.setHeader('Content-Type','audio/mpeg');
-      res.setHeader('Cache-Control','public, max-age=604800');
-      return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
+      const { voiceName } = req.query;
+      if (!voiceName) return res.status(400).json({ error: 'voiceName diperlukan.' });
+      const apiKey = getKey('speech');
+
+      // 1. Submit TTS job with short sample text
+      const sampleText = 'Halo! Ini adalah suara saya. Senang berkenalan dengan Anda.';
+      const genRes = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'elevenlabs/text-to-speech-multilingual-v2',
+          input: { text: sampleText, voice: voiceName, stability: 0.5, similarity_boost: 0.75, style: 0, speed: 1.0, timestamps: false, language_code: '' }
+        }),
+      });
+      const genData = await genRes.json();
+      const taskId = genData.data?.taskId || genData.data?.task_id || genData.taskId || genData.task_id || genData.data?.id || genData.id;
+      if (!taskId) return res.status(500).json({ error: 'Gagal membuat preview.' });
+
+      // 2. Poll for result (max 15s)
+      let audioUrl = null;
+      for (let i = 0; i < 15; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        try {
+          const poll = await fetch(`https://api.kie.ai/api/v1/speech/jobs/${taskId}`, {
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+          });
+          const pd = await poll.json();
+          const status = pd.data?.status || pd.status;
+          const outp = pd.data?.output || pd.output || {};
+          audioUrl = outp.audioUrl || outp.audio_url || outp.url || pd.data?.audioUrl;
+          if (audioUrl) break;
+          if (status === 'failed' || status === 'error') break;
+        } catch(e) {}
+      }
+      if (!audioUrl) return res.status(504).json({ error: 'Preview timeout. Coba lagi.' });
+
+      // 3. Proxy the audio back
+      try {
+        const audioRes = await fetch(audioUrl);
+        if (!audioRes.ok) return res.status(502).json({ error: 'Gagal mengambil audio.' });
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.status(200).send(Buffer.from(await audioRes.arrayBuffer()));
+      } catch(e) {
+        return res.status(502).json({ error: 'Gagal mengambil audio.' });
+      }
     }
 
     // ── AUDIENCE RECOMMENDER ─────────────────────────────────
