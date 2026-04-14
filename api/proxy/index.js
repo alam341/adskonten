@@ -974,7 +974,7 @@ Penting:
       const { productName, problem, benefits, priceOri, pricePromo, brand, tone } = req.body;
       if (!productName) return res.status(400).json({ error: 'productName diperlukan.' });
 
-      const prompt = `Kamu adalah copywriter landing page iklan Indonesia terbaik. Buat teks untuk landing page mobile produk berikut.
+      const prompt = `Kamu adalah copywriter landing page iklan Indonesia terbaik. Buat teks dan skema warna untuk landing page mobile produk berikut.
 
 Produk: ${productName}
 Brand: ${brand||productName}
@@ -984,32 +984,32 @@ Harga promo: ${pricePromo||'-'}
 Harga normal (coret): ${priceOri||'-'}
 Tone: ${tone||'emosional dan persuasif'}
 
-Buat teks untuk semua section berikut dan kembalikan sebagai JSON (tanpa markdown):
+Kembalikan JSON ini (tanpa markdown, tanpa penjelasan):
 {
-  "heroBadge": "badge singkat, contoh: ✨ Produk Kecantikan #1",
-  "heroTitle": "headline utama yang kuat, 5-8 kata",
+  "heroBadge": "badge singkat pendek",
+  "heroTitle": "headline utama yang kuat 5-8 kata",
   "heroSub": "sub headline 1-2 kalimat",
   "heroCta": "teks tombol CTA hero",
-  "heroProof": "social proof singkat, contoh: ⭐⭐⭐⭐⭐ Dipercaya 50.000+ pelanggan",
-  "masalahEyebrow": "eyebrow text masalah",
+  "heroProof": "⭐⭐⭐⭐⭐ social proof singkat",
+  "masalahEyebrow": "eyebrow masalah singkat",
   "masalahTitle": "judul section masalah",
   "masalahSub": "sub teks masalah 1-2 kalimat",
   "painPoints": [
-    {"emoji": "😞", "text": "pain point 1"},
-    {"emoji": "😟", "text": "pain point 2"},
-    {"emoji": "😰", "text": "pain point 3"},
-    {"emoji": "😔", "text": "pain point 4"}
+    {"text": "pain point 1", "imgPrompt": "photorealistic lifestyle photo showing [pain 1 scenario], Indonesian person, natural lighting, no product"},
+    {"text": "pain point 2", "imgPrompt": "photorealistic lifestyle photo showing [pain 2 scenario], Indonesian person, natural lighting, no product"},
+    {"text": "pain point 3", "imgPrompt": "photorealistic lifestyle photo showing [pain 3 scenario], Indonesian person, natural lighting, no product"},
+    {"text": "pain point 4", "imgPrompt": "photorealistic lifestyle photo showing [pain 4 scenario], Indonesian person, natural lighting, no product"}
   ],
-  "solusiTag": "tag solusi singkat, contoh: ✅ Solusi Terbukti Klinis",
+  "solusiTag": "tag solusi singkat ✅",
   "solusiTitle": "judul section solusi",
   "solusiSub": "sub teks solusi 1-2 kalimat",
   "benefits": [
-    {"icon": "✨", "text": "benefit singkat 1"},
-    {"icon": "💪", "text": "benefit singkat 2"},
-    {"icon": "🌿", "text": "benefit singkat 3"},
-    {"icon": "🏆", "text": "benefit singkat 4"},
-    {"icon": "⚡", "text": "benefit singkat 5"},
-    {"icon": "💰", "text": "benefit singkat 6"}
+    {"icon": "emoji", "text": "benefit singkat 1"},
+    {"icon": "emoji", "text": "benefit singkat 2"},
+    {"icon": "emoji", "text": "benefit singkat 3"},
+    {"icon": "emoji", "text": "benefit singkat 4"},
+    {"icon": "emoji", "text": "benefit singkat 5"},
+    {"icon": "emoji", "text": "benefit singkat 6"}
   ],
   "testiEyebrow": "eyebrow testimoni",
   "testiTitle": "judul section testimoni",
@@ -1020,18 +1020,38 @@ Buat teks untuk semua section berikut dan kembalikan sebagai JSON (tanpa markdow
   ],
   "ctaTitle": "judul CTA section",
   "ctaSub": "sub teks CTA yang mendorong action",
-  "ctaPrice": "${pricePromo||'Rp 0'}",
+  "ctaPrice": "${pricePromo||''}",
   "ctaPriceOri": "${priceOri||''}",
   "ctaBtn": "teks tombol order",
-  "ctaGuarantee": "teks garansi/kepercayaan"
+  "ctaGuarantee": "teks garansi/kepercayaan",
+  "heroImgPrompt": "english prompt for hero banner: premium product advertisement, [product type] lifestyle, [tone] mood, vibrant colors, professional ad, 9:16 portrait mobile banner, no text overlay",
+  "theme": {
+    "heroStart": "#hex warna terang sesuai produk (misal skincare=pink, health=green, food=orange)",
+    "heroEnd": "#hex sedikit lebih gelap/vivid",
+    "heroTextMain": "#hex warna teks gelap readable di hero bg",
+    "heroTextSub": "#hex sedikit lebih muda dari textMain",
+    "accent": "#hex warna aksen CTA & highlight",
+    "accentDark": "#hex versi gelap dari accent",
+    "solusiStart": "#hex bg gelap section solusi (bisa dark navy, dark green, dll)",
+    "solusiEnd": "#hex sedikit berbeda dari solusiStart",
+    "ctaStart": "#hex sama dengan accent atau warna kuat",
+    "ctaEnd": "#hex versi gelap ctaStart",
+    "testiAccent": "#hex warna accent testimoni (gold, amber, dll)",
+    "painBorder": "#hex border pain card (warna muda dari accent)"
+  }
 }
 
-Pastikan semua teks dalam bahasa Indonesia yang natural. Gunakan bahasa yang sesuai tone ${tone}. Kembalikan JSON saja, tanpa penjelasan.`;
+PENTING:
+- theme harus berdasarkan jenis produk & tone, BUKAN selalu pink. Contoh: suplemen kesehatan=hijau/teal, makanan=orange/warm, tech=biru, kecantikan=rose/pink, fashion=cream/gold.
+- painPoints imgPrompt harus dalam bahasa Inggris, spesifik menggambarkan skenario masalah nyata.
+- heroImgPrompt dalam bahasa Inggris, mendeskripsikan visual hero section yang menarik.
+- Semua teks dalam bahasa Indonesia natural sesuai tone ${tone}.
+- Kembalikan JSON saja.`;
 
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000, messages: [{ role: 'user', content: prompt }] })
       });
       const d = await r.json();
       if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Generate gagal.' });
