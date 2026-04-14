@@ -773,20 +773,22 @@ Keterangan: interest bertanda [hidden] adalah interest tersembunyi hasil Meta su
 
 Tugasmu: kelompokkan SEMUA interest di atas ke dalam 3 grup berikut:
 
-1. "Sesuai Kata Kunci" — interest yang namanya langsung mengandung atau identik dengan kata kunci "${product}"
-2. "Relevan" — interest yang jelas berhubungan dengan "${product}" meskipun namanya berbeda
-3. "Perkiraan Bisa Digunakan" — interest yang tidak langsung berhubungan tapi kemungkinan besar dipakai oleh target audiens produk ini
+1. "Sesuai Kata Kunci" — interest yang namanya langsung mengandung atau identik dengan "${product}". Contoh untuk "sepeda": Sepeda, Bersepeda, Cycling, Mountain Bike.
 
-Interest yang benar-benar tidak relevan → negativeKeywords.
-Pilih 5 terbaik untuk topPicks (utamakan audience size besar dan interest [hidden]).
+2. "Relevan & Mirip" — interest yang sejenis atau satu kategori dengan "${product}", mirip tapi beda nama. Contoh untuk "sepeda": Fixie, BMX, Road Bike, Sepeda Lipat — sama-sama jenis sepeda.
+
+3. "Berhubungan" — interest yang DIGUNAKAN BERSAMA atau terikat perilaku/kebiasaan pengguna "${product}", bukan produk sejenis. Contoh untuk "sepeda": Helm, Jersey Sepeda, Pompa Ban, Komunitas Outdoor, Olahraga Pagi — bukan sepeda, tapi orang yang pakai sepeda pasti bersinggungan dengan ini.
+
+Interest yang sama sekali tidak nyambung → negativeKeywords.
+Pilih 5 terbaik untuk topPicks (utamakan [hidden] dan audience size besar).
 
 Berikan output JSON yang valid (HANYA JSON, tanpa teks lain):
 {
   "mainKeyword": "${product}",
   "categories": [
     { "nama": "Sesuai Kata Kunci", "icon": "🎯", "desc": "interest yang langsung sesuai dengan kata kunci", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] },
-    { "nama": "Relevan", "icon": "🔗", "desc": "interest yang jelas berhubungan dengan produk", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] },
-    { "nama": "Perkiraan Bisa Digunakan", "icon": "💡", "desc": "interest yang kemungkinan dipakai target audiens", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] }
+    { "nama": "Relevan & Mirip", "icon": "🔗", "desc": "interest sejenis atau satu kategori", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "beli", "audienceSize": null, "hidden": false }] },
+    { "nama": "Berhubungan", "icon": "💡", "desc": "interest yang digunakan bersama atau terikat perilaku pengguna", "keywords": [{ "kata": "contoh", "logika": "alasan singkat", "intent": "info", "audienceSize": null, "hidden": false }] }
   ],
   "topPicks": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "negativeKeywords": ["kw tidak relevan 1", "kw tidak relevan 2"]
