@@ -568,7 +568,7 @@ async function generateSpeech() {
     var gen=await proxyPost('generate',{type:'speech',text,model:ttsModel,voice:ttsVoice,speed:ttsSpeed,stability:ttsStability,languageCode:''});
     if (!gen.taskId) throw new Error('taskId tidak ditemukan.');
     updateSub('Generating suara...');
-    var audioUrl=await pollStatus(gen.taskId,'jobs',30);
+    var audioUrl=await pollStatus(gen.taskId,'speech',30);
     showSpeechResult(audioUrl);
     saveToHistory('speech',ttsModel,text,'',Array.isArray(audioUrl)?audioUrl:[audioUrl]);
   } catch(err) { console.error(err); showToast(err.message,'error'); showState('empty'); }
@@ -611,7 +611,7 @@ async function pollStatus(taskId, type, maxAttempts) {
     var data=await proxyGet('status',{taskId,type});
     if (['success','SUCCESS','completed','COMPLETED'].indexOf(data.status)>=0) {
       if (data.imageUrls&&data.imageUrls.length>1) return data.imageUrls;
-      var url=data.imageUrl||data.videoUrl;
+      var url=data.audioUrl||data.imageUrl||data.videoUrl;
       if (!url) throw new Error('Hasil tidak ditemukan.');
       return url;
     }
