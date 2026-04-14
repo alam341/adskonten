@@ -676,10 +676,13 @@ Isi dengan data yang relevan, spesifik, dan actionable untuk tim kreatif iklan I
       if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Gagal.' });
       const text = d.content?.[0]?.text || '{}';
       try {
-        const parsed = JSON.parse(text);
+        // Ekstrak JSON dari response meskipun ada teks tambahan
+        const match = text.match(/\{[\s\S]*\}/);
+        if (!match) return res.status(500).json({ error: 'Format response tidak valid.' });
+        const parsed = JSON.parse(match[0]);
         return res.status(200).json(parsed);
       } catch(e) {
-        return res.status(500).json({ error: 'Format response tidak valid.' });
+        return res.status(500).json({ error: 'Format response tidak valid: ' + e.message });
       }
     }
 
