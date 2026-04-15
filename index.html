@@ -1348,7 +1348,10 @@
       </div>
 
       <!-- Preview wrap -->
-      <div id="lpPreviewWrap">
+      <div id="lpPreviewWrap" style="display:none;overflow-y:auto;flex:1">
+
+        <!-- Inner column — flex:column baked in HTML, cannot be overridden -->
+        <div id="lpSectionsCol" style="display:flex;flex-direction:column;align-items:stretch;width:390px;max-width:100%;margin:0 auto;gap:12px">
 
         <!-- Each section wrapped with toolbar + AI panel -->
 
@@ -1455,9 +1458,11 @@
           </div>
         </div>
 
+        </div><!-- /lpSectionsCol -->
+
         <!-- Download all -->
-        <div id="lpDownloadAllRow" style="display:none;padding:12px 0">
-          <button class="btn-solid" style="width:390px;font-size:13px" onclick="lpDownloadAll()">📦 Download Semua (ZIP)</button>
+        <div id="lpDownloadAllRow" style="display:none;padding:12px 0;width:390px;max-width:100%;margin:0 auto">
+          <button class="btn-solid" style="width:100%;font-size:13px" onclick="lpDownloadAll()">📦 Download Semua (ZIP)</button>
         </div>
 
       </div>

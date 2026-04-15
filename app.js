@@ -1889,20 +1889,9 @@ async function generateLP() {
     console.log('[LP] response:', res);
     if (res.error) throw new Error(res.error);
     renderLPPreview(res);
-    // Show preview with explicit inline styles (overrides any CSS)
-    var emptyEl = $('lpPreviewEmpty');
-    if (emptyEl) emptyEl.style.display = 'none';
-    var wrapEl = $('lpPreviewWrap');
-    if (wrapEl) {
-      wrapEl.style.display        = 'flex';
-      wrapEl.style.flexDirection  = 'column';
-      wrapEl.style.alignItems     = 'center';
-      wrapEl.style.overflowY      = 'auto';
-      wrapEl.style.padding        = '24px 16px';
-      wrapEl.style.flex           = '1';
-      wrapEl.style.gap            = '0';
-    }
-    var barEl = $('lpEditBar'); if (barEl) barEl.style.display = 'flex';
+    var emptyEl = $('lpPreviewEmpty'); if (emptyEl) emptyEl.style.display = 'none';
+    var wrapEl  = $('lpPreviewWrap');  if (wrapEl)  wrapEl.style.display  = 'block';
+    var barEl   = $('lpEditBar');      if (barEl)   barEl.style.display   = 'flex';
     var dlRow   = $('lpDownloadRow');  if (dlRow)   dlRow.style.display   = 'block';
     var dlAll   = $('lpDownloadAllRow'); if (dlAll) dlAll.style.display   = 'block';
     // Upload product photo if provided (for per-section AI generation)
@@ -1937,13 +1926,6 @@ function applyLPTheme(t) {
 }
 
 function renderLPPreview(d) {
-  // Force section widths (in case CSS not loaded)
-  document.querySelectorAll('.lp-sec-wrap').forEach(function(el) {
-    el.style.width = '390px';
-    el.style.maxWidth = '100%';
-    el.style.marginBottom = '12px';
-  });
-
   // Apply theme
   if (d.theme) applyLPTheme(d.theme);
 
