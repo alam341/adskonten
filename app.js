@@ -195,7 +195,7 @@ function setUser(user, profile) {
   var btnAn = $('btnAnalisis');
   if (btnAn) btnAn.style.display = 'flex';
   var btnLP = $('btnLandingPage');
-  if (btnLP) btnLP.style.display = 'flex';
+  if (btnLP) btnLP.style.display = profile && profile.is_admin ? 'flex' : 'none';
   var btnIE = $('btnImageEdit');
   if (btnIE) btnIE.style.display = 'flex';
   var btnCopy = $('btnCopywriting');
@@ -203,6 +203,17 @@ function setUser(user, profile) {
 
   var btnAdmin = $('btnAdmin');
   if (btnAdmin) btnAdmin.style.display = profile && profile.is_admin ? 'flex' : 'none';
+  // LP dashboard card — admin sees it active, others see coming soon (disabled)
+  var dashLP = $('dashBtnLP');
+  if (dashLP) {
+    if (profile && profile.is_admin) {
+      dashLP.style.opacity = '1';
+      dashLP.style.pointerEvents = '';
+      dashLP.removeAttribute('disabled');
+      var badge = dashLP.querySelector('.dash-lp-soon');
+      if (badge) badge.style.display = 'none';
+    }
+  }
   // Show welcome screen jika belum pernah hari ini
   var today = new Date().toDateString();
   var lastWelcome = localStorage.getItem('adstudio_welcome_date');
@@ -1799,7 +1810,8 @@ function switchAnalisisTab(tab) {
 
 // ── Landing Page ──────────────────────────────────────────
 var lpPhotoBase64 = null;
-var lpPhotoUrl = null;
+var lpPhotoUrl    = null;
+var lpFocusedEl   = null; // currently focused contenteditable
 
 function setupLandingPage() {
   var input = $('lpPhotoInput');
@@ -1825,51 +1837,68 @@ function setupLandingPage() {
     btn._lpReady = true;
     btn.addEventListener('click', generateLP);
   }
+  // Track focused contenteditable for text editing toolbar
+  var prevWrap = $('lpPreviewWrap');
+  if (prevWrap && !prevWrap._focusReady) {
+    prevWrap._focusReady = true;
+    prevWrap.addEventListener('focusin', function(e) {
+      if (e.target && e.target.contentEditable === 'true') {
+        lpFocusedEl = e.target;
+        var label = $('lpEditBarLabel');
+        if (label) {
+          var names = { lpHeroBadge:'Badge', lpHeroTitle:'Judul Hero', lpHeroSub:'Sub Hero', lpHeroCta:'CTA Hero', lpHeroProof:'Proof' };
+          label.textContent = 'Edit: ' + (names[e.target.id] || e.target.id || 'teks');
+        }
+        var bar = $('lpEditBar');
+        if (bar) bar.style.display = 'flex';
+        // Sync color pickers to current element styles
+        var cs = window.getComputedStyle(e.target);
+        var tc = $('lpColorText'); if (tc) { try { tc.value = rgbToHex(cs.color)||'#ffffff'; } catch(ex){} }
+      }
+    });
+    prevWrap.addEventListener('focusout', function(e) {
+      // keep reference for a tick (blur fires before click on toolbar buttons)
+      setTimeout(function() {
+        if (document.activeElement && document.activeElement.contentEditable === 'true') return;
+        if (document.activeElement && ($('lpEditBar') && $('lpEditBar').contains(document.activeElement))) return;
+        // if focus left entirely, just clear label
+        var label = $('lpEditBarLabel');
+        if (label) label.textContent = 'Pilih teks untuk edit';
+      }, 150);
+    });
+  }
 }
 
 async function generateLP() {
-  var name    = ($('lpProductName')||{}).value||'';
-  var problem = ($('lpProblem')||{}).value||'';
-  var benefits= ($('lpBenefits')||{}).value||'';
-  var priceOri= ($('lpPriceOri')||{}).value||'';
-  var pricePromo=($('lpPricePromo')||{}).value||'';
-  var brand   = ($('lpBrand')||{}).value||'';
-  var tone    = ($('lpTone')||{}).value||'emosional dan persuasif';
+  var name      = ($('lpProductName')||{}).value||'';
+  var problem   = ($('lpProblem')||{}).value||'';
+  var benefits  = ($('lpBenefits')||{}).value||'';
+  var priceOri  = ($('lpPriceOri')||{}).value||'';
+  var pricePromo= ($('lpPricePromo')||{}).value||'';
+  var brand     = ($('lpBrand')||{}).value||'';
+  var tone      = ($('lpTone')||{}).value||'emosional dan persuasif';
 
   if (!name.trim()) { showToast('Isi nama produk dulu.','error'); return; }
-  if (!lpPhotoBase64) { showToast('Upload foto produk dulu.','error'); return; }
 
-  var btn = $('btnGenerateLP');
-  var loading = $('lpGenLoading');
+  var btn = $('btnGenerateLP'), loading = $('lpGenLoading');
   btn.style.display = 'none';
   loading.style.display = 'block';
 
   try {
-    // Step 1: generate text + theme + prompts
     var res = await proxyPost('landingPage', { productName:name, problem, benefits, priceOri, pricePromo, brand, tone }, authToken);
     if (res.error) throw new Error(res.error);
-
-    // Step 2: show preview immediately with text + theme
     renderLPPreview(res);
     $('lpPreviewEmpty').style.display = 'none';
-    $('lpPreviewWrap').style.display = 'flex';
+    $('lpPreviewWrap').style.display = 'block';
+    $('lpEditBar').style.display = 'flex';
     $('lpDownloadRow').style.display = 'block';
-    showToast('Teks LP siap! Gambar sedang di-generate...','success');
-
-    // Step 3: upload photo once, then fire hero + pain images in parallel
-    var b64 = lpPhotoBase64.replace(/^data:image\/\w+;base64,/,'');
-    var upRes = await proxyPost('upload', { imageBase64: b64 }, authToken);
-    if (!upRes.url) throw new Error('Upload foto gagal');
-    lpPhotoUrl = upRes.url;
-
-    // Fire hero image
-    lpStartHeroImg(res.heroImgPrompt || ('Premium product hero banner for '+name+', professional ad, 9:16 portrait'));
-
-    // Fire pain point images
-    if (res.painPoints && res.painPoints.length) {
-      lpStartPainImages(res.painPoints);
+    if ($('lpDownloadAllRow')) $('lpDownloadAllRow').style.display = 'block';
+    // Upload product photo if provided (for per-section AI generation)
+    if (lpPhotoBase64 && !lpPhotoUrl) {
+      var b64 = lpPhotoBase64.replace(/^data:image\/\w+;base64,/,'');
+      proxyPost('upload', { imageBase64: b64 }, authToken).then(function(r){ if(r.url) lpPhotoUrl = r.url; }).catch(function(){});
     }
-
+    showToast('LP siap! Edit teks atau klik ✨ Generate AI per section.','success');
   } catch(e) {
     showToast('Gagal generate: '+e.message,'error');
   } finally {
@@ -1880,10 +1909,10 @@ async function generateLP() {
 
 function applyLPTheme(t) {
   if (!t) return;
-  var s1 = $('lps1'), s2 = $('lps2'), s3 = $('lps3'), s4 = $('lps4'), s5 = $('lps5');
-  // Solusi & CTA sections: colored from theme
-  if (s3) s3.style.background = 'linear-gradient(160deg,'+t.solusiStart+' 0%,'+t.solusiEnd+' 100%)';
-  if (s5) s5.style.background = 'linear-gradient(160deg,'+t.ctaStart+' 0%,'+t.ctaEnd+' 100%)';
+  var s3 = $('lps3'), s5 = $('lps5');
+  // Solusi & CTA sections: colored from theme (use backgroundImage to avoid resetting background-size)
+  if (s3 && t.solusiStart) s3.style.backgroundImage = 'linear-gradient(160deg,'+t.solusiStart+' 0%,'+(t.solusiEnd||t.solusiStart)+' 100%)';
+  if (s5 && t.ctaStart) s5.style.backgroundImage = 'linear-gradient(160deg,'+t.ctaStart+' 0%,'+(t.ctaEnd||t.ctaStart)+' 100%)';
   // CTA button
   var ctaBtn = $('lpCtaBtn');
   if (ctaBtn) ctaBtn.style.color = t.accent;
@@ -1895,17 +1924,23 @@ function applyLPTheme(t) {
 }
 
 function renderLPPreview(d) {
-  // Apply theme (sections other than hero)
+  // Apply theme
   if (d.theme) applyLPTheme(d.theme);
 
-  // Fill hero text fields in the left form (editable before image gen)
-  var titleInput = $('lpHeroTitleInput'), subInput = $('lpHeroSubInput'), ctaInput = $('lpHeroCtaInput');
-  if (titleInput) titleInput.value = d.heroTitle||'';
-  if (subInput)   subInput.value   = d.heroSub||'';
-  if (ctaInput)   ctaInput.value   = d.heroCta||'';
-  // Show the hero text group
-  var heroGroup = $('lpHeroTextGroup');
-  if (heroGroup) heroGroup.style.display = 'block';
+  // Hero section contenteditable
+  setText('lpHeroBadge',  d.heroBadge  || '✨ Produk Terbaik');
+  setText('lpHeroTitle',  d.heroTitle  || '');
+  setText('lpHeroSub',    d.heroSub    || '');
+  setText('lpHeroCta',    d.heroCta    || '🛒 Pesan Sekarang');
+  setText('lpHeroProof',  d.heroProof  || '⭐⭐⭐⭐⭐ Dipercaya ribuan pelanggan');
+
+  // Apply hero gradient from theme
+  if (d.theme) {
+    var s1 = $('lps1');
+    if (s1) {
+      s1.style.backgroundImage = 'linear-gradient(160deg,'+(d.theme.heroStart||'#1a1a2e')+' 0%,'+(d.theme.heroEnd||'#16213e')+' 100%)';
+    }
+  }
 
   // Masalah
   setText('lpMasalahEyebrow', d.masalahEyebrow||'');
@@ -1919,6 +1954,10 @@ function renderLPPreview(d) {
         +'<span class="lp-pain-text" contenteditable="true">'+escHtml(p.text)+'</span>'
         +'</div>';
     }).join('');
+    // Apply pain border color after rendering items
+    if (d.theme && d.theme.painBorder) {
+      document.querySelectorAll('.lp-pain-item').forEach(function(el){ el.style.borderColor = d.theme.painBorder; });
+    }
   }
 
   // Solusi
@@ -1964,73 +2003,124 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
-async function lpStartHeroImg(basePrompt) {
-  // Build prompt dengan teks dari form (user bisa edit sebelum generate)
-  var titleInput = $('lpHeroTitleInput'), subInput = $('lpHeroSubInput'), ctaInput = $('lpHeroCtaInput');
-  var heroTitle = (titleInput && titleInput.value.trim()) || '';
-  var heroSub   = (subInput && subInput.value.trim()) || '';
-  var heroCta   = (ctaInput && ctaInput.value.trim()) || '';
-  var productName = ($('lpProductName')||{}).value||'produk';
-  var tone = ($('lpTone')||{}).value||'';
+function rgbToHex(rgb) {
+  var m = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!m) return null;
+  return '#' + [m[1],m[2],m[3]].map(function(n){ return ('0'+parseInt(n).toString(16)).slice(-2); }).join('');
+}
 
-  var prompt = 'Professional product advertisement banner, 9:16 portrait mobile format. '
-    + 'Product: '+productName+'. '
-    + 'Large bold headline text at top: "'+heroTitle+'". '
-    + (heroSub ? 'Subtitle text: "'+heroSub+'". ' : '')
-    + (heroCta ? 'CTA button text: "'+heroCta+'". ' : '')
-    + 'Show product prominently. Indonesian market advertisement. '
-    + 'Style: '+tone+', dark professional background, cinematic lighting, high quality ad. '
-    + 'Clean layout, bold typography, no blurry text. '
-    + (basePrompt || '');
+// ── LP Text Editing ────────────────────────────────────────
+function lpAdjSize(dir) {
+  if (!lpFocusedEl) return;
+  var curr = parseFloat(window.getComputedStyle(lpFocusedEl).fontSize) || 14;
+  lpFocusedEl.style.fontSize = Math.max(8, Math.min(72, curr + dir * 2)) + 'px';
+}
+
+function lpSetTextColor(color) {
+  if (!lpFocusedEl) return;
+  lpFocusedEl.style.color = color;
+}
+
+function lpSetBgColor(color) {
+  if (!lpFocusedEl) return;
+  // Apply to the closest section element, not the text span itself
+  var section = lpFocusedEl.closest('.lp-s-hero,.lp-s-masalah,.lp-s-solusi,.lp-s-testi,.lp-s-cta');
+  if (section) {
+    section.style.backgroundImage = 'none';
+    section.style.backgroundColor = color;
+  } else {
+    lpFocusedEl.style.backgroundColor = color;
+  }
+}
+
+function lpClearEdit() {
+  if (lpFocusedEl) lpFocusedEl.blur();
+  lpFocusedEl = null;
+  var bar = $('lpEditBar');
+  if (bar) bar.style.display = 'none';
+}
+
+// ── LP Per-Section AI Generation ───────────────────────────
+async function lpGenSection(sectionId, type) {
+  var panel = $('lpAiPanel-'+sectionId);
+  var content = $('lpAiContent-'+sectionId);
+  if (!panel || !content) return;
+
+  // Show panel with spinner
+  panel.style.display = 'block';
+  content.innerHTML = '<div class="lp-img-spinner" style="width:28px;height:28px;border-width:3px;margin:40px auto"></div>';
 
   try {
-    var genRes = await proxyPost('generate', { type:'image', model:'grok-imagine/image-to-image', imageUrl: lpPhotoUrl, prompt: prompt, ratio:'9:16', quantity:1 }, authToken);
-    if (!genRes.taskIds || !genRes.taskIds.length) return;
+    // Capture section to PNG
+    var secEl = $(sectionId);
+    if (!secEl) throw new Error('Section not found');
+    var canvas = await html2canvas(secEl, { scale:2, useCORS:true, logging:false, allowTaint:true });
+    var base64 = canvas.toDataURL('image/png').replace('data:image/png;base64,','');
+
+    // Upload screenshot to kie.ai CDN
+    var uploadRes = await proxyPost('upload', { imageBase64: base64 }, authToken);
+    if (!uploadRes.url) throw new Error('Upload gagal');
+    var screenshotUrl = uploadRes.url;
+
+    // Build prompt based on section type
+    var productName = ($('lpProductName')||{}).value||'produk';
+    var tone = ($('lpTone')||{}).value||'profesional';
+    var promptMap = {
+      hero:      'Professional mobile ad banner 9:16 portrait. Product: '+productName+'. Style: '+tone+', cinematic lighting, bold typography, vibrant. Make it look like a premium Indonesian advertisement.',
+      masalah:   'Mobile ad section showing pain points / problems. Product: '+productName+'. Style: empathetic, real people, emotional. Indonesian advertisement. Clean bold text layout.',
+      solusi:    'Mobile ad benefits/solution section. Product: '+productName+'. Style: '+tone+', uplifting, clear benefit icons, professional. Indonesian advertisement.',
+      testimoni: 'Mobile ad testimonials section. Product: '+productName+'. Style: trustworthy, warm, social proof design. Indonesian advertisement.',
+      cta:       'Mobile ad call-to-action section. Product: '+productName+'. Style: urgent, '+tone+', bold price display, strong CTA button. Indonesian advertisement.'
+    };
+    var prompt = (promptMap[type] || promptMap.hero) + ' Use the screenshot as layout reference. Enhance visuals, keep text readable, make it look premium.';
+
+    // Use product photo if available, else use screenshot
+    var refUrl = lpPhotoUrl || screenshotUrl;
+    var genRes = await proxyPost('generate', {
+      type: 'image',
+      model: 'grok-imagine/image-to-image',
+      imageUrl: refUrl,
+      prompt: prompt,
+      ratio: '9:16',
+      quantity: 1
+    }, authToken);
+
+    if (!genRes.taskIds || !genRes.taskIds.length) throw new Error('Tidak ada task dari API');
+
     lpPollImg(genRes.taskIds[0], function(url) {
-      var heroImg = $('lpHeroImg');
-      var heroLoading = $('lpHeroLoading');
-      if (heroImg) { heroImg.src = url; heroImg.style.display = 'block'; }
-      if (heroLoading) heroLoading.style.display = 'none';
-      var regenBtn = $('lpRegenHeroBtn');
-      if (regenBtn) regenBtn.style.display = 'block';
-      showToast('Hero image siap!','success');
+      content.innerHTML = '<img src="'+url+'" style="width:100%;border-radius:8px;display:block" />';
+      showToast('AI image siap!','success');
     }, function() {
-      var heroLoading = $('lpHeroLoading');
-      if (heroLoading) heroLoading.innerHTML = '<p style="font-size:12px;color:#f87171;padding:20px">Hero gagal generate. <button onclick="lpRegenHero()" class="btn-ghost" style="font-size:11px">Coba lagi</button></p>';
+      content.innerHTML = '<p style="text-align:center;color:#f87171;font-size:12px;padding:20px">Gagal generate. <button onclick="lpGenSection(\''+sectionId+'\',\''+type+'\')" class="btn-ghost" style="font-size:11px">Coba lagi</button></p>';
     });
-  } catch(e) { console.warn('Hero gen error:', e.message); }
-}
-
-function lpRegenHero() {
-  var heroImg = $('lpHeroImg');
-  var heroLoading = $('lpHeroLoading');
-  if (heroImg) { heroImg.src = ''; heroImg.style.display = 'none'; }
-  if (heroLoading) {
-    heroLoading.style.display = 'flex';
-    heroLoading.innerHTML = '<div class="lp-img-spinner" style="width:28px;height:28px;border-width:3px"></div><p style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:10px">Re-generating...</p>';
+  } catch(e) {
+    content.innerHTML = '<p style="text-align:center;color:#f87171;font-size:12px;padding:20px">Error: '+escHtml(e.message)+'</p>';
   }
-  lpStartHeroImg('');
 }
 
-async function lpStartPainImages(painPoints) {
-  painPoints.forEach(function(p, i) {
-    var prompt = p.imgPrompt || ('lifestyle photo of person experiencing: '+p.text+', natural lighting, relatable');
-    proxyPost('generate', { type:'image', model:'gpt-image/1.5-image-to-image', imageUrl: lpPhotoUrl, prompt: prompt, ratio:'1:1', quantity:1 }, authToken)
-      .then(function(genRes) {
-        if (!genRes.taskIds || !genRes.taskIds.length) return;
-        lpPollImg(genRes.taskIds[0], function(url) {
-          var wrap = $('lpPainImg'+i);
-          if (wrap) wrap.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />';
-        }, function() {
-          var wrap = $('lpPainImg'+i);
-          if (wrap) wrap.innerHTML = '<span style="font-size:20px">😞</span>';
-        });
-      })
-      .catch(function() {
-        var wrap = $('lpPainImg'+i);
-        if (wrap) wrap.innerHTML = '<span style="font-size:20px">😞</span>';
-      });
-  });
+function lpCloseAiPanel(sectionId) {
+  var panel = $('lpAiPanel-'+sectionId);
+  if (panel) panel.style.display = 'none';
+}
+
+async function lpDownloadAiPanel(sectionId, filename) {
+  var content = $('lpAiContent-'+sectionId);
+  if (!content) return;
+  var img = content.querySelector('img');
+  if (img && img.src) {
+    var a = document.createElement('a');
+    a.download = filename;
+    a.href = img.src;
+    a.click();
+    return;
+  }
+  // Fallback: render panel as PNG
+  showToast('Generating image...','success');
+  var canvas = await html2canvas(content, { scale:3, useCORS:true, logging:false, allowTaint:true });
+  var a = document.createElement('a');
+  a.download = filename;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
 }
 
 function lpPollImg(taskId, onDone, onFail) {

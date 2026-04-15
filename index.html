@@ -723,6 +723,26 @@
             <svg class="dash-tool-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8h8M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
 
+          <!-- LP Generator — Coming Soon (admin only) -->
+          <button class="dash-tool-card dash-tool-card-soon" id="dashBtnLP"
+            data-goto="landingpage"
+            style="opacity:0.5;pointer-events:none;cursor:not-allowed;position:relative" disabled>
+            <div class="dash-tool-icon-wrap" style="background:rgba(124,58,237,0.12)">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="18" height="18" rx="4" stroke="#7c3aed" stroke-width="1.8"/>
+                <path d="M7 8h10M7 12h7M7 16h5" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="dash-tool-info">
+              <div class="dash-tool-name" style="display:flex;align-items:center;gap:6px">
+                LP Generator
+                <span class="dash-lp-soon" style="font-size:9px;font-weight:700;background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff;padding:2px 7px;border-radius:50px;letter-spacing:0.03em;text-transform:uppercase">Coming Soon</span>
+              </div>
+              <div class="dash-tool-desc">Buat landing page produk lengkap dengan AI</div>
+            </div>
+            <svg class="dash-tool-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8h8M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+
         </div>
       </div>
     </div>
@@ -1274,21 +1294,10 @@
           </select>
         </div>
 
-        <div class="panel-group" id="lpHeroTextGroup" style="display:none">
-          <div class="panel-label">Teks Hero (edit sebelum generate gambar)</div>
-          <input type="text" id="lpHeroTitleInput" class="apikey-field" style="width:100%;margin-bottom:6px" placeholder="Judul besar hero" />
-          <input type="text" id="lpHeroSubInput" class="apikey-field" style="width:100%;margin-bottom:6px" placeholder="Subtitle / tagline" />
-          <input type="text" id="lpHeroCtaInput" class="apikey-field" style="width:100%" placeholder="Teks tombol CTA" />
-        </div>
-
         <button class="btn-generate" id="btnGenerateLP">
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1L9.5 5.5L14 6.5L10.5 10L11.5 14.5L7.5 12.5L3.5 14.5L4.5 10L1 6.5L5.5 5.5L7.5 1Z" stroke="white" stroke-width="1.3" stroke-linejoin="round"/></svg>
           Generate LP
         </button>
-
-        <div id="lpRegenHeroBtn" style="display:none;margin-top:6px">
-          <button class="btn-ghost" style="width:100%;font-size:12px" onclick="lpRegenHero()">🔄 Re-generate Hero Image</button>
-        </div>
 
         <div id="lpGenLoading" style="display:none;text-align:center;padding:20px 0">
           <div class="spinner-wrap" style="margin:0 auto 10px"><div class="spinner-ring"></div></div>
@@ -1313,57 +1322,144 @@
 
     <!-- RIGHT: Mobile Preview -->
     <div class="lp-right">
+
+      <!-- Empty state -->
       <div id="lpPreviewEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-5);font-size:13px;opacity:0.5;text-align:center">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="10" y="4" width="28" height="40" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.3"/><path d="M18 10h12M22 38h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/></svg>
         <p>Isi form & klik Generate<br>untuk lihat preview LP</p>
       </div>
 
-      <div id="lpPreviewWrap" style="display:none;overflow-y:auto;height:100%;padding:20px;display:flex;justify-content:center;align-items:flex-start">
-        <div id="lpPhone" style="width:390px;background:#fff;overflow:hidden;flex-shrink:0;font-family:'Poppins',sans-serif">
+      <!-- Edit toolbar — muncul saat klik teks -->
+      <div id="lpEditBar" class="lp-edit-bar" style="display:none">
+        <span id="lpEditBarLabel" class="lp-edit-label">Pilih teks untuk edit</span>
+        <button class="lp-edit-btn" onclick="lpAdjSize(-1)" title="Kecilkan">A-</button>
+        <button class="lp-edit-btn" onclick="lpAdjSize(1)" title="Besarkan">A+</button>
+        <label class="lp-edit-btn lp-color-btn" title="Warna Teks">
+          <input type="color" id="lpColorText" value="#ffffff" oninput="lpSetTextColor(this.value)">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 10h9M6.5 2l3 6H3.5l3-6z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Teks
+        </label>
+        <label class="lp-edit-btn lp-color-btn" title="Warna Background">
+          <input type="color" id="lpColorBg" value="#ffffff" oninput="lpSetBgColor(this.value)">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="1.5" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/></svg>
+          BG
+        </label>
+        <button class="lp-edit-btn" onclick="lpClearEdit()" title="Tutup">✕</button>
+      </div>
 
-          <!-- HERO — full AI-generated image -->
-          <div id="lps1" class="lp-s-hero-img">
-            <div id="lpHeroLoading" class="lp-hero-loading">
-              <div class="lp-img-spinner" style="width:28px;height:28px;border-width:3px"></div>
-              <p style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:10px">Generating hero image...</p>
-            </div>
-            <img id="lpHeroImg" style="display:none;width:100%;height:auto;display:block" />
+      <!-- Preview wrap -->
+      <div id="lpPreviewWrap" style="display:none;overflow-y:auto;flex:1;padding:16px 20px">
+
+        <!-- Each section wrapped with toolbar + AI panel -->
+
+        <!-- HERO -->
+        <div class="lp-sec-wrap">
+          <div class="lp-sec-toolbar">
+            <span class="lp-sec-label">Hero</span>
+            <button class="lp-sec-ai-btn" onclick="lpGenSection('lps1','hero')">✨ Generate AI</button>
+            <button class="lp-sec-dl-btn" onclick="lpDownloadSection('lps1','1-hero.png')">⬇</button>
           </div>
+          <div id="lps1" class="lp-s-hero">
+            <div class="lp-hero-badge" contenteditable="true" id="lpHeroBadge">✨ Produk Terbaik</div>
+            <div class="lp-hero-title" contenteditable="true" id="lpHeroTitle">Judul Hero</div>
+            <div class="lp-hero-sub" contenteditable="true" id="lpHeroSub">Deskripsi singkat produk</div>
+            <button class="lp-hero-cta" contenteditable="true" id="lpHeroCta">🛒 Pesan Sekarang</button>
+            <div class="lp-hero-proof" contenteditable="true" id="lpHeroProof">⭐⭐⭐⭐⭐ Dipercaya ribuan pelanggan</div>
+          </div>
+          <div id="lpAiPanel-lps1" class="lp-ai-panel" style="display:none">
+            <div class="lp-ai-panel-head">
+              <span>Hasil AI</span>
+              <div style="display:flex;gap:6px">
+                <button class="lp-sec-dl-btn" onclick="lpDownloadAiPanel('lps1','1-hero-ai.png')">⬇ Download</button>
+                <button class="lp-sec-dl-btn" onclick="lpCloseAiPanel('lps1')">✕</button>
+              </div>
+            </div>
+            <div id="lpAiContent-lps1" class="lp-ai-content"><div class="lp-img-spinner" style="width:24px;height:24px;border-width:3px;margin:40px auto"></div></div>
+          </div>
+        </div>
 
-          <!-- MASALAH -->
+        <!-- MASALAH -->
+        <div class="lp-sec-wrap">
+          <div class="lp-sec-toolbar">
+            <span class="lp-sec-label">Masalah</span>
+            <button class="lp-sec-ai-btn" onclick="lpGenSection('lps2','masalah')">✨ Generate AI</button>
+            <button class="lp-sec-dl-btn" onclick="lpDownloadSection('lps2','2-masalah.png')">⬇</button>
+          </div>
           <div id="lps2" class="lp-s-masalah">
             <div class="lp-eyebrow red" contenteditable="true" id="lpMasalahEyebrow">😔 Apakah kamu mengalami ini?</div>
-            <div class="lp-section-title" contenteditable="true" id="lpMasalahTitle">Judul masalah akan muncul di sini</div>
+            <div class="lp-section-title" contenteditable="true" id="lpMasalahTitle">Judul masalah</div>
             <div class="lp-section-sub" contenteditable="true" id="lpMasalahSub">Deskripsi masalah</div>
             <div id="lpPainList" class="lp-pain-list"></div>
           </div>
+          <div id="lpAiPanel-lps2" class="lp-ai-panel" style="display:none">
+            <div class="lp-ai-panel-head"><span>Hasil AI</span><div style="display:flex;gap:6px"><button class="lp-sec-dl-btn" onclick="lpDownloadAiPanel('lps2','2-masalah-ai.png')">⬇ Download</button><button class="lp-sec-dl-btn" onclick="lpCloseAiPanel('lps2')">✕</button></div></div>
+            <div id="lpAiContent-lps2" class="lp-ai-content"></div>
+          </div>
+        </div>
 
-          <!-- SOLUSI -->
+        <!-- SOLUSI -->
+        <div class="lp-sec-wrap">
+          <div class="lp-sec-toolbar">
+            <span class="lp-sec-label">Solusi</span>
+            <button class="lp-sec-ai-btn" onclick="lpGenSection('lps3','solusi')">✨ Generate AI</button>
+            <button class="lp-sec-dl-btn" onclick="lpDownloadSection('lps3','3-solusi.png')">⬇</button>
+          </div>
           <div id="lps3" class="lp-s-solusi">
             <div class="lp-solusi-tag" contenteditable="true" id="lpSolusiTag">✅ Solusi Terbukti</div>
-            <div class="lp-section-title" style="color:#fff" contenteditable="true" id="lpSolusiTitle">Judul solusi akan muncul di sini</div>
+            <div class="lp-section-title" style="color:#fff" contenteditable="true" id="lpSolusiTitle">Judul solusi</div>
             <div class="lp-section-sub" style="color:rgba(255,255,255,0.65)" contenteditable="true" id="lpSolusiSub">Deskripsi solusi</div>
             <div id="lpBenefitGrid" class="lp-benefit-grid"></div>
           </div>
+          <div id="lpAiPanel-lps3" class="lp-ai-panel" style="display:none">
+            <div class="lp-ai-panel-head"><span>Hasil AI</span><div style="display:flex;gap:6px"><button class="lp-sec-dl-btn" onclick="lpDownloadAiPanel('lps3','3-solusi-ai.png')">⬇ Download</button><button class="lp-sec-dl-btn" onclick="lpCloseAiPanel('lps3')">✕</button></div></div>
+            <div id="lpAiContent-lps3" class="lp-ai-content"></div>
+          </div>
+        </div>
 
-          <!-- TESTIMONI -->
+        <!-- TESTIMONI -->
+        <div class="lp-sec-wrap">
+          <div class="lp-sec-toolbar">
+            <span class="lp-sec-label">Testimoni</span>
+            <button class="lp-sec-ai-btn" onclick="lpGenSection('lps4','testimoni')">✨ Generate AI</button>
+            <button class="lp-sec-dl-btn" onclick="lpDownloadSection('lps4','4-testimoni.png')">⬇</button>
+          </div>
           <div id="lps4" class="lp-s-testi">
-            <div class="lp-eyebrow gold" contenteditable="true" id="lpTestiEyebrow">⭐ Kata Mereka Yang Sudah Buktikan</div>
+            <div class="lp-eyebrow gold" contenteditable="true" id="lpTestiEyebrow">⭐ Kata Mereka</div>
             <div class="lp-section-title" contenteditable="true" id="lpTestiTitle">Testimoni pelanggan</div>
             <div id="lpTestiList" class="lp-testi-list"></div>
           </div>
+          <div id="lpAiPanel-lps4" class="lp-ai-panel" style="display:none">
+            <div class="lp-ai-panel-head"><span>Hasil AI</span><div style="display:flex;gap:6px"><button class="lp-sec-dl-btn" onclick="lpDownloadAiPanel('lps4','4-testimoni-ai.png')">⬇ Download</button><button class="lp-sec-dl-btn" onclick="lpCloseAiPanel('lps4')">✕</button></div></div>
+            <div id="lpAiContent-lps4" class="lp-ai-content"></div>
+          </div>
+        </div>
 
-          <!-- CTA -->
+        <!-- CTA -->
+        <div class="lp-sec-wrap">
+          <div class="lp-sec-toolbar">
+            <span class="lp-sec-label">CTA</span>
+            <button class="lp-sec-ai-btn" onclick="lpGenSection('lps5','cta')">✨ Generate AI</button>
+            <button class="lp-sec-dl-btn" onclick="lpDownloadSection('lps5','5-cta.png')">⬇</button>
+          </div>
           <div id="lps5" class="lp-s-cta">
-            <div class="lp-cta-title" contenteditable="true" id="lpCtaTitle">Judul CTA akan muncul di sini</div>
+            <div class="lp-cta-title" contenteditable="true" id="lpCtaTitle">Judul CTA</div>
             <div class="lp-cta-sub" contenteditable="true" id="lpCtaSub">Teks ajakan</div>
             <div class="lp-cta-price" contenteditable="true" id="lpCtaPrice">Rp 0</div>
             <div class="lp-cta-price-ori" contenteditable="true" id="lpCtaPriceOri">Rp 0</div>
             <button class="lp-cta-btn" contenteditable="true" id="lpCtaBtn">🛒 Pesan Sekarang</button>
             <div class="lp-cta-guarantee" contenteditable="true" id="lpCtaGuarantee">🔒 Garansi uang kembali 30 hari</div>
           </div>
-
+          <div id="lpAiPanel-lps5" class="lp-ai-panel" style="display:none">
+            <div class="lp-ai-panel-head"><span>Hasil AI</span><div style="display:flex;gap:6px"><button class="lp-sec-dl-btn" onclick="lpDownloadAiPanel('lps5','5-cta-ai.png')">⬇ Download</button><button class="lp-sec-dl-btn" onclick="lpCloseAiPanel('lps5')">✕</button></div></div>
+            <div id="lpAiContent-lps5" class="lp-ai-content"></div>
+          </div>
         </div>
+
+        <!-- Download all -->
+        <div id="lpDownloadAllRow" style="display:none;padding:12px 0">
+          <button class="btn-solid" style="width:390px;font-size:13px" onclick="lpDownloadAll()">📦 Download Semua (ZIP)</button>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1644,6 +1740,8 @@
           var btn = document.getElementById('btnCekIklan'); if (btn) btn.click();
         } else if (target === 'analyze') {
           var btn = document.getElementById('btnAnalyze'); if (btn) btn.click();
+        } else if (target === 'landingpage') {
+          var btn = document.getElementById('btnLandingPage'); if (btn) btn.click();
         } else {
           var tabBtn = document.querySelector('.icon-tab[data-tab="' + target + '"]');
           if (tabBtn) tabBtn.click();
