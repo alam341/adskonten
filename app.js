@@ -1881,45 +1881,31 @@ async function generateLP() {
 function applyLPTheme(t) {
   if (!t) return;
   var s1 = $('lps1'), s2 = $('lps2'), s3 = $('lps3'), s4 = $('lps4'), s5 = $('lps5');
-  if (s1) s1.style.background = 'linear-gradient(160deg,'+t.heroStart+' 0%,'+t.heroEnd+' 100%)';
+  // Solusi & CTA sections: colored from theme
   if (s3) s3.style.background = 'linear-gradient(160deg,'+t.solusiStart+' 0%,'+t.solusiEnd+' 100%)';
   if (s5) s5.style.background = 'linear-gradient(160deg,'+t.ctaStart+' 0%,'+t.ctaEnd+' 100%)';
-  // text colors
-  var heroTitle = $('lpHeroTitle'), heroSub = $('lpHeroSub'), heroBadge = $('lpHeroBadge'), heroProof = $('lpHeroProof');
-  if (heroTitle) heroTitle.style.color = t.heroTextMain;
-  if (heroSub)   heroSub.style.color   = t.heroTextSub;
-  if (heroProof) heroProof.style.color = t.heroTextSub;
-  if (heroBadge) heroBadge.style.color = t.accent;
-  // CTA button in hero
-  var heroCta = $('lpHeroCta');
-  if (heroCta) { heroCta.style.background = 'linear-gradient(135deg,'+t.accent+','+t.accentDark+')'; }
-  // CTA section button
+  // CTA button
   var ctaBtn = $('lpCtaBtn');
   if (ctaBtn) ctaBtn.style.color = t.accent;
   // Pain borders
   document.querySelectorAll('.lp-pain-item').forEach(function(el){ el.style.borderColor = t.painBorder||'#ffe0ec'; });
-  // Testi accent
-  var s4before = $('lps4');
-  if (s4before) s4before.style.setProperty('--testi-acc', t.testiAccent||'#f59e0b');
   // eyebrow colors
   document.querySelectorAll('.lp-eyebrow.red').forEach(function(el){ el.style.color = t.accent; });
   document.querySelectorAll('.lp-eyebrow.gold').forEach(function(el){ el.style.color = t.testiAccent||'#f59e0b'; });
 }
 
 function renderLPPreview(d) {
-  // Apply theme first
+  // Apply theme (sections other than hero)
   if (d.theme) applyLPTheme(d.theme);
 
-  // Hero text
-  setText('lpHeroBadge', d.heroBadge||'');
-  setText('lpHeroTitle', d.heroTitle||'');
-  setText('lpHeroSub', d.heroSub||'');
-  setText('lpHeroCta', d.heroCta||'');
-  setText('lpHeroProof', d.heroProof||'');
-
-  // Hero image box — show spinner
-  var heroEmp = $('lpHeroImgEmpty');
-  if (heroEmp) heroEmp.innerHTML = '<div class="lp-img-spinner"></div><p style="font-size:10px;color:rgba(255,255,255,0.7);margin-top:6px">Generating hero...</p>';
+  // Fill hero text fields in the left form (editable before image gen)
+  var titleInput = $('lpHeroTitleInput'), subInput = $('lpHeroSubInput'), ctaInput = $('lpHeroCtaInput');
+  if (titleInput) titleInput.value = d.heroTitle||'';
+  if (subInput)   subInput.value   = d.heroSub||'';
+  if (ctaInput)   ctaInput.value   = d.heroCta||'';
+  // Show the hero text group
+  var heroGroup = $('lpHeroTextGroup');
+  if (heroGroup) heroGroup.style.display = 'block';
 
   // Masalah
   setText('lpMasalahEyebrow', d.masalahEyebrow||'');
@@ -1978,21 +1964,52 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
-async function lpStartHeroImg(prompt) {
+async function lpStartHeroImg(basePrompt) {
+  // Build prompt dengan teks dari form (user bisa edit sebelum generate)
+  var titleInput = $('lpHeroTitleInput'), subInput = $('lpHeroSubInput'), ctaInput = $('lpHeroCtaInput');
+  var heroTitle = (titleInput && titleInput.value.trim()) || '';
+  var heroSub   = (subInput && subInput.value.trim()) || '';
+  var heroCta   = (ctaInput && ctaInput.value.trim()) || '';
+  var productName = ($('lpProductName')||{}).value||'produk';
+  var tone = ($('lpTone')||{}).value||'';
+
+  var prompt = 'Professional product advertisement banner, 9:16 portrait mobile format. '
+    + 'Product: '+productName+'. '
+    + 'Large bold headline text at top: "'+heroTitle+'". '
+    + (heroSub ? 'Subtitle text: "'+heroSub+'". ' : '')
+    + (heroCta ? 'CTA button text: "'+heroCta+'". ' : '')
+    + 'Show product prominently. Indonesian market advertisement. '
+    + 'Style: '+tone+', dark professional background, cinematic lighting, high quality ad. '
+    + 'Clean layout, bold typography, no blurry text. '
+    + (basePrompt || '');
+
   try {
     var genRes = await proxyPost('generate', { type:'image', model:'gpt-image/1.5-image-to-image', imageUrl: lpPhotoUrl, prompt: prompt, ratio:'9:16', quantity:1 }, authToken);
     if (!genRes.taskIds || !genRes.taskIds.length) return;
     lpPollImg(genRes.taskIds[0], function(url) {
       var heroImg = $('lpHeroImg');
+      var heroLoading = $('lpHeroLoading');
       if (heroImg) { heroImg.src = url; heroImg.style.display = 'block'; }
-      var heroEmp = $('lpHeroImgEmpty');
-      if (heroEmp) heroEmp.style.display = 'none';
+      if (heroLoading) heroLoading.style.display = 'none';
+      var regenBtn = $('lpRegenHeroBtn');
+      if (regenBtn) regenBtn.style.display = 'block';
       showToast('Hero image siap!','success');
     }, function() {
-      var heroEmp = $('lpHeroImgEmpty');
-      if (heroEmp) heroEmp.innerHTML = '<p style="font-size:10px;color:rgba(255,150,150,0.9)">Gagal, coba lagi</p>';
+      var heroLoading = $('lpHeroLoading');
+      if (heroLoading) heroLoading.innerHTML = '<p style="font-size:12px;color:#f87171;padding:20px">Hero gagal generate. <button onclick="lpRegenHero()" class="btn-ghost" style="font-size:11px">Coba lagi</button></p>';
     });
   } catch(e) { console.warn('Hero gen error:', e.message); }
+}
+
+function lpRegenHero() {
+  var heroImg = $('lpHeroImg');
+  var heroLoading = $('lpHeroLoading');
+  if (heroImg) { heroImg.src = ''; heroImg.style.display = 'none'; }
+  if (heroLoading) {
+    heroLoading.style.display = 'flex';
+    heroLoading.innerHTML = '<div class="lp-img-spinner" style="width:28px;height:28px;border-width:3px"></div><p style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:10px">Re-generating...</p>';
+  }
+  lpStartHeroImg('');
 }
 
 async function lpStartPainImages(painPoints) {

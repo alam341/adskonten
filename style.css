@@ -1568,59 +1568,17 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 /* ─── LP Section styles (inside preview) ─── */
 #lpPhone { font-family: 'Poppins', sans-serif; }
 
-.lp-s-hero {
+.lp-s-hero-img {
   position: relative; overflow: hidden;
-  background: linear-gradient(160deg, #ffe0ec 0%, #ffc2d4 40%, #ffaac7 100%);
-  padding: 44px 24px 36px;
-  text-align: center; min-height: 480px;
+  background: #111; min-height: 480px;
+  display: flex; align-items: center; justify-content: center;
+}
+.lp-s-hero-img img { display: block; width: 100%; height: auto; }
+.lp-hero-loading {
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 12px;
+  justify-content: center; padding: 60px 20px; width: 100%;
 }
-.lp-s-hero::before {
-  content: ''; position: absolute;
-  width: 280px; height: 280px; border-radius: 50%;
-  background: rgba(255,255,255,0.22); top: -70px; right: -70px;
-}
-.lp-s-hero::after {
-  content: ''; position: absolute;
-  width: 180px; height: 180px; border-radius: 50%;
-  background: rgba(255,255,255,0.13); bottom: -50px; left: -50px;
-}
-.lp-hero-badge {
-  background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
-  color: #c0395a; font-size: 11px; font-weight: 700;
-  padding: 5px 14px; border-radius: 20px; letter-spacing: 0.5px;
-  position: relative; z-index: 1;
-}
-.lp-hero-img-box {
-  width: 200px; height: 200px; border-radius: 14px;
-  border: 2.5px dashed rgba(255,255,255,0.7);
-  background: rgba(255,255,255,0.25);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  cursor: pointer; position: relative; z-index: 1;
-  overflow: hidden; transition: border-color 0.2s, background 0.2s;
-}
-.lp-hero-img-box:hover { border-color: rgba(255,255,255,1); background: rgba(255,255,255,0.4); }
-.lp-hero-title {
-  font-size: 26px; font-weight: 900; color: #7b1234;
-  line-height: 1.2; position: relative; z-index: 1;
-}
-.lp-hero-sub {
-  font-size: 12px; color: #9b3050; line-height: 1.7;
-  position: relative; z-index: 1; max-width: 300px;
-}
-.lp-hero-cta {
-  background: linear-gradient(135deg,#e91e63,#c2185b);
-  color: #fff; font-size: 14px; font-weight: 800;
-  padding: 13px 28px; border-radius: 50px; border: none; cursor: pointer;
-  font-family: 'Poppins', sans-serif;
-  box-shadow: 0 4px 18px rgba(233,30,99,0.4);
-  position: relative; z-index: 1;
-}
-.lp-hero-proof {
-  font-size: 11px; color: #a0324f; position: relative; z-index: 1;
-}
+/* hero text styles removed — hero is now a full AI-generated image */
 .lp-s-masalah {
   background: #fff7f9; padding: 36px 24px; text-align: center;
   position: relative; overflow: hidden;
