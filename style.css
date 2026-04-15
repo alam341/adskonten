@@ -1561,8 +1561,12 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
   background: var(--bg-canvas); overflow: hidden;
 }
 #lpPreviewWrap {
-  display: flex; justify-content: center; align-items: flex-start;
+  display: none;
+  justify-content: center; align-items: flex-start;
   overflow-y: auto; padding: 24px; flex: 1;
+}
+#lpPreviewWrap.lp-visible {
+  display: flex;
 }
 
 /* ─── LP Section styles (inside preview) ─── */

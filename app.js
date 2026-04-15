@@ -1886,13 +1886,15 @@ async function generateLP() {
 
   try {
     var res = await proxyPost('landingPage', { productName:name, problem, benefits, priceOri, pricePromo, brand, tone }, authToken);
+    console.log('[LP] response:', res);
     if (res.error) throw new Error(res.error);
     renderLPPreview(res);
-    $('lpPreviewEmpty').style.display = 'none';
-    $('lpPreviewWrap').style.display = 'block';
-    $('lpEditBar').style.display = 'flex';
-    $('lpDownloadRow').style.display = 'block';
-    if ($('lpDownloadAllRow')) $('lpDownloadAllRow').style.display = 'block';
+    // Show preview: use class toggle so CSS display:flex takes effect properly
+    var emptyEl = $('lpPreviewEmpty'); if (emptyEl) emptyEl.style.display = 'none';
+    var wrapEl  = $('lpPreviewWrap');  if (wrapEl)  wrapEl.classList.add('lp-visible');
+    var barEl   = $('lpEditBar');      if (barEl)   barEl.style.display   = 'flex';
+    var dlRow   = $('lpDownloadRow');  if (dlRow)   dlRow.style.display   = 'block';
+    var dlAll   = $('lpDownloadAllRow'); if (dlAll) dlAll.style.display   = 'block';
     // Upload product photo if provided (for per-section AI generation)
     if (lpPhotoBase64 && !lpPhotoUrl) {
       var b64 = lpPhotoBase64.replace(/^data:image\/\w+;base64,/,'');
@@ -1900,6 +1902,7 @@ async function generateLP() {
     }
     showToast('LP siap! Edit teks atau klik ✨ Generate AI per section.','success');
   } catch(e) {
+    console.error('[LP] error:', e);
     showToast('Gagal generate: '+e.message,'error');
   } finally {
     btn.style.display = '';
