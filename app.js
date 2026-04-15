@@ -2080,7 +2080,7 @@ async function lpGenSection(sectionId, type) {
     var refUrl = lpPhotoUrl || screenshotUrl;
     var genRes = await proxyPost('generate', {
       type: 'image',
-      model: 'grok-imagine/image-to-image',
+      model: 'gpt-image/1.5-image-to-image',
       imageUrl: refUrl,
       prompt: prompt,
       ratio: '9:16',
