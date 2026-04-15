@@ -302,7 +302,7 @@ module.exports = async function handler(req, res) {
       }
       else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
       else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
-      else if (model === 'grok-imagine/image-to-image') { input.image_urls=[imageUrl]; input.quality_mode=true; }
+      else if (model === 'grok-imagine/image-to-image') { input.image_urls=[imageUrl]; input.quality_mode=true; input.aspect_ratio=ratioVal; }
       else { input.image_url=imageUrl; input.aspect_ratio=ratioVal; input.output_format='png'; }
 
       const tasks = await Promise.all(Array.from({length:qty},()=>
