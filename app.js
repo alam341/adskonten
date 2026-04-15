@@ -1984,7 +1984,7 @@ async function lpStartHeroImg(basePrompt) {
     + (basePrompt || '');
 
   try {
-    var genRes = await proxyPost('generate', { type:'image', model:'gpt-image/1.5-image-to-image', imageUrl: lpPhotoUrl, prompt: prompt, ratio:'9:16', quantity:1 }, authToken);
+    var genRes = await proxyPost('generate', { type:'image', model:'grok-imagine/image-to-image', imageUrl: lpPhotoUrl, prompt: prompt, ratio:'9:16', quantity:1 }, authToken);
     if (!genRes.taskIds || !genRes.taskIds.length) return;
     lpPollImg(genRes.taskIds[0], function(url) {
       var heroImg = $('lpHeroImg');
