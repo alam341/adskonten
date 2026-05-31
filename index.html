@@ -276,100 +276,48 @@
         <!-- ===== TAB: VIDEO ===== -->
         <div class="tab-panel" data-panel="video" style="display:none">
 
-          <!-- Mode Toggle -->
-          <div class="auth-tabs" style="margin-bottom:16px">
-            <button class="auth-tab active" id="vidModeImgBtn">Image to Video</button>
-            <button class="auth-tab" id="vidModeDupBtn">Duplikasi</button>
+          <!-- Step Navigator -->
+          <div class="dup-stepper">
+            <button class="dup-step active" id="dupStepBtn1" data-step="1">
+              <div class="dup-step-num">1</div>
+              <div class="dup-step-label">Transkripsi</div>
+            </button>
+            <div class="dup-step-line"></div>
+            <button class="dup-step" id="dupStepBtn2" data-step="2">
+              <div class="dup-step-num">2</div>
+              <div class="dup-step-label">Script</div>
+            </button>
+            <div class="dup-step-line"></div>
+            <button class="dup-step" id="dupStepBtn3" data-step="3">
+              <div class="dup-step-num">3</div>
+              <div class="dup-step-label">Scene</div>
+            </button>
+            <div class="dup-step-line"></div>
+            <button class="dup-step" id="dupStepBtn4" data-step="4">
+              <div class="dup-step-num">4</div>
+              <div class="dup-step-label">Export</div>
+            </button>
           </div>
 
-          <!-- MODE: Image to Video -->
-          <div id="vidModeImageToVideo">
+          <!-- STEP 1: Transkripsi -->
+          <div id="dupStepPanel1">
 
             <div class="panel-group">
-              <div class="panel-label">Gambar Referensi</div>
-              <div class="upload-zone" id="vidUploadZone">
-                <input type="file" id="vidInput" accept="image/*" hidden />
-                <div class="upload-empty" id="vidUploadEmpty">
+              <div class="panel-label">Upload Video / Audio</div>
+              <div class="upload-zone" id="dupUploadZone" style="cursor:pointer">
+                <input type="file" id="dupFileInput" accept="video/*,audio/*,.mp4,.mp3,.wav,.m4a,.ogg,.webm" hidden />
+                <div class="upload-empty" id="dupUploadEmpty">
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <p class="upload-empty-label">Upload gambar untuk dijadikan video</p>
-                  <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+                  <p class="upload-empty-label">Upload video atau audio kompetitor</p>
+                  <p class="upload-empty-sub">MP4 · MP3 · WAV · M4A · maks 20MB</p>
                 </div>
-                <div class="upload-filled" id="vidUploadFilled" style="display:none">
-                  <img id="vidPreview" src="" alt="preview" />
-                  <button class="remove-btn" id="vidRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+                <div class="upload-filled" id="dupUploadFilled" style="display:none;padding:12px;text-align:center">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin:0 auto 6px;display:block"><path d="M9 12l2 2 4-4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="var(--accent)" stroke-width="1.5"/></svg>
+                  <p class="upload-empty-label" id="dupFileName" style="font-size:12px;word-break:break-all"></p>
+                  <button class="remove-btn" id="dupFileRemove" style="position:relative;inset:auto;margin-top:6px"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
                 </div>
               </div>
-            </div>
-
-            <div class="panel-group">
-              <div class="panel-label">Prompt Gerakan</div>
-              <textarea id="vidPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan gerakan yang diinginkan...&#10;&#10;Contoh: kamera perlahan zoom in ke produk, cahaya berkilau dari kiri, efek partikel mengambang..."></textarea>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="panel-group">
-              <div class="panel-label">Model Video</div>
-              <div class="model-list" id="vidModelList">
-                <label class="model-row active" data-model="kling-2.6/image-to-video">
-                  <input type="radio" name="vidModel" value="kling-2.6/image-to-video" checked hidden />
-                  <div class="model-row-dot"></div>
-                  <div class="model-row-body">
-                    <div class="model-row-top"><span class="model-row-name">Kling 2.6</span><span class="badge badge-purple">Realistis</span></div>
-                  </div>
-                </label>
-                <label class="model-row" data-model="grok-imagine/image-to-video">
-                  <input type="radio" name="vidModel" value="grok-imagine/image-to-video" hidden />
-                  <div class="model-row-dot"></div>
-                  <div class="model-row-body">
-                    <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
-                  </div>
-                </label>
-                <label class="model-row" data-model="wan-2.6/image-to-video">
-                  <input type="radio" name="vidModel" value="wan-2.6/image-to-video" hidden />
-                  <div class="model-row-dot"></div>
-                  <div class="model-row-body">
-                    <div class="model-row-top"><span class="model-row-name">Wan 2.6</span><span class="badge badge-teal">Cepat</span></div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="panel-group">
-              <div class="panel-label">Durasi</div>
-              <div class="ratio-grid" id="vidDurationGrid" style="grid-template-columns: repeat(3, 1fr)">
-                <button class="ratio-cell active" data-dur="5"><span>5s</span></button>
-                <button class="ratio-cell" data-dur="10"><span>10s</span></button>
-                <button class="ratio-cell" data-dur="15"><span>15s</span></button>
-              </div>
-            </div>
-
-            <div class="panel-group">
-              <div class="panel-label">Resolusi</div>
-              <div class="ratio-grid" style="grid-template-columns: repeat(3, 1fr)">
-                <button class="ratio-cell" data-res="480p"><span>480p</span></button>
-                <button class="ratio-cell active" data-res="720p"><span>720p</span></button>
-                <button class="ratio-cell" data-res="1080p"><span>1080p</span></button>
-              </div>
-            </div>
-
-          </div><!-- /vidModeImageToVideo -->
-
-          <!-- MODE: Duplikasi Kompetitor -->
-          <div id="vidModeDuplikasi" style="display:none">
-
-            <!-- Step indicator -->
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
-              <div id="dupStep1Badge" style="background:var(--accent);color:white;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:600">Step 1</div>
-              <div style="font-size:12px;color:var(--text-muted);font-weight:500">Transkripsi Video Kompetitor</div>
-            </div>
-
-            <div class="panel-group">
-              <div class="panel-label">Link Google Drive Video</div>
-              <input type="text" id="dupDriveUrl" class="apikey-field" style="width:100%" placeholder="https://drive.google.com/file/d/..." />
-              <div class="qty-hint" style="margin-top:5px">Share video sebagai "Anyone with link" di Google Drive</div>
+              <div class="qty-hint" style="margin-top:5px">Download video dari Ads Library lalu upload di sini</div>
             </div>
 
             <div class="panel-group">
@@ -406,7 +354,34 @@
               <button class="btn-generate" id="btnDupNext">Lanjut Step 2 →</button>
             </div>
 
-          </div><!-- /vidModeDuplikasi -->
+          </div><!-- /dupStepPanel1 -->
+
+          <!-- STEP 2: Script -->
+          <div id="dupStepPanel2" style="display:none">
+            <div style="text-align:center;padding:32px 16px">
+              <div style="font-size:28px;margin-bottom:10px">✍️</div>
+              <div style="font-weight:600;margin-bottom:6px;font-size:14px">Buat Script Baru</div>
+              <div class="qty-hint">Selesaikan Step 1 (transkripsi) dulu,<br>lalu Step 2 akan aktif di sini.</div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Generate Scene -->
+          <div id="dupStepPanel3" style="display:none">
+            <div style="text-align:center;padding:32px 16px">
+              <div style="font-size:28px;margin-bottom:10px">🎨</div>
+              <div style="font-weight:600;margin-bottom:6px;font-size:14px">Generate Gambar Scene</div>
+              <div class="qty-hint">Selesaikan Step 2 (script) dulu,<br>lalu Step 3 akan aktif di sini.</div>
+            </div>
+          </div>
+
+          <!-- STEP 4: Export -->
+          <div id="dupStepPanel4" style="display:none">
+            <div style="text-align:center;padding:32px 16px">
+              <div style="font-size:28px;margin-bottom:10px">📦</div>
+              <div style="font-weight:600;margin-bottom:6px;font-size:14px">Export untuk Veo 3</div>
+              <div class="qty-hint">Selesaikan Step 3 (scene) dulu,<br>lalu Step 4 akan aktif di sini.</div>
+            </div>
+          </div>
 
         </div>
 

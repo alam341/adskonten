@@ -2188,27 +2188,63 @@ async function lpDownloadAll() {
   function setTheme(t){ html.dataset.theme=t; localStorage.setItem('adstudio_theme',t); if(sunIcon) sunIcon.style.display=t==='dark'?'block':'none'; if(moonIcon) moonIcon.style.display=t==='light'?'block':'none'; }
 })();
 
-// ── Video Mode Toggle + Duplikasi ────────────────────────────
-var videoMode = 'img2vid';
+// ── Video Stepper + Duplikasi ────────────────────────────────
+var dupActiveStep = 1;
+var dupFileBase64 = null, dupFileMime = null;
+
+function switchDupStep(step) {
+  dupActiveStep = step;
+  for (var i = 1; i <= 4; i++) {
+    var btn = $('dupStepBtn' + i);
+    var panel = $('dupStepPanel' + i);
+    if (btn) {
+      btn.classList.remove('active', 'done');
+      if (i === step) btn.classList.add('active');
+      else if (i < step) btn.classList.add('done');
+    }
+    if (panel) panel.style.display = i === step ? '' : 'none';
+  }
+}
 
 function setupVideoMode() {
-  var btnImg = $('vidModeImgBtn');
-  var btnDup = $('vidModeDupBtn');
-  var divImg = $('vidModeImageToVideo');
-  var divDup = $('vidModeDuplikasi');
-  if (!btnImg || !btnDup) return;
+  // Step navigator buttons
+  for (var s = 1; s <= 4; s++) {
+    (function(step) {
+      var btn = $('dupStepBtn' + step);
+      if (btn) btn.addEventListener('click', function() { switchDupStep(step); });
+    })(s);
+  }
 
-  btnImg.addEventListener('click', function() {
-    videoMode = 'img2vid';
-    btnImg.classList.add('active'); btnDup.classList.remove('active');
-    if (divImg) divImg.style.display = '';
-    if (divDup) divDup.style.display = 'none';
+  // File upload handler
+  var zone = $('dupUploadZone');
+  var fileInput = $('dupFileInput');
+  if (zone) zone.addEventListener('click', function(e) {
+    if (e.target.id === 'dupFileRemove' || e.target.closest('#dupFileRemove')) return;
+    if (fileInput) fileInput.click();
   });
-  btnDup.addEventListener('click', function() {
-    videoMode = 'duplikasi';
-    btnDup.classList.add('active'); btnImg.classList.remove('active');
-    if (divImg) divImg.style.display = 'none';
-    if (divDup) divDup.style.display = '';
+  if (fileInput) fileInput.addEventListener('change', function() {
+    var file = fileInput.files[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { showToast('File terlalu besar. Maks 20MB.', 'error'); return; }
+    dupFileMime = file.type || 'video/mp4';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      dupFileBase64 = e.target.result.replace(/^data:[^;]+;base64,/, '');
+      var empty = $('dupUploadEmpty'), filled = $('dupUploadFilled'), nameEl = $('dupFileName');
+      if (empty) empty.style.display = 'none';
+      if (filled) filled.style.display = 'block';
+      if (nameEl) nameEl.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  });
+  var removeBtn = $('dupFileRemove');
+  if (removeBtn) removeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    dupFileBase64 = null; dupFileMime = null;
+    if (fileInput) fileInput.value = '';
+    var empty = $('dupUploadEmpty'), filled = $('dupUploadFilled');
+    if (empty) empty.style.display = '';
+    if (filled) filled.style.display = 'none';
   });
 
   var btnTranscribe = $('btnTranscribe');
@@ -2216,16 +2252,12 @@ function setupVideoMode() {
 
   var btnDupNext = $('btnDupNext');
   if (btnDupNext) btnDupNext.addEventListener('click', function() {
-    showToast('Step 2 (breakdown scene) akan segera hadir!', 'info');
+    switchDupStep(2);
   });
 }
 
 async function startTranscribe() {
-  var urlInput = $('dupDriveUrl');
-  var driveUrl = urlInput ? urlInput.value.trim() : '';
-  if (!driveUrl) { showToast('Paste link Google Drive dulu.', 'error'); return; }
-  if (!driveUrl.includes('drive.google.com')) { showToast('URL harus dari Google Drive.', 'error'); return; }
-
+  if (!dupFileBase64) { showToast('Upload file video atau audio dulu.', 'error'); return; }
   var lang = $('dupLang') ? $('dupLang').value : 'id';
   var btnTranscribe = $('btnTranscribe');
   var loading = $('dupLoading');
@@ -2237,12 +2269,12 @@ async function startTranscribe() {
   if (result) result.style.display = 'none';
 
   try {
-    if (loadingText) loadingText.textContent = 'Mengirim ke server...';
-    var d = await proxyPost('transcribe', { driveUrl: driveUrl, language: lang });
+    if (loadingText) loadingText.textContent = 'Mengupload file...';
+    var d = await proxyPost('transcribe', { fileBase64: dupFileBase64, mimeType: dupFileMime, language: lang });
     var taskId = d.taskId;
     if (!taskId) throw new Error('taskId tidak ada dari server.');
 
-    if (loadingText) loadingText.textContent = 'Mentranskripsi audio... (1/60)';
+    if (loadingText) loadingText.textContent = 'Mentranskripsi audio...';
     var transcript = await pollTranscript(taskId, loadingText);
 
     if (loading) loading.style.display = 'none';
