@@ -347,6 +347,36 @@ Output JSON only:
       } catch(e) { return res.status(500).json({ error: 'Format tidak valid.' }); }
     }
 
+    // ── SUGGEST MODEL PROMPT FROM PRODUCT IMAGE ─────────────
+    if (action === 'suggestModelPrompt') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+      const { productBase64, productMime } = req.body;
+      if (!productBase64) return res.status(400).json({ error: 'productBase64 diperlukan.' });
+
+      const mediaType = (productMime || 'image/jpeg').replace('image/', '') === 'jpg' ? 'image/jpeg' : (productMime || 'image/jpeg');
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: productBase64 } },
+              { type: 'text', text: `Look at this product image. Write a short English image generation prompt (max 30 words) for a professional advertisement photo where an Indonesian person holds or uses this product. Include: person description (gender/appearance appropriate to the product), their action with the product, clean background, ad style lighting. Output ONLY the prompt text, nothing else.` }
+            ]
+          }]
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Gagal.' });
+      const suggested = (d.content?.[0]?.text || '').trim();
+      return res.status(200).json({ prompt: suggested });
+    }
+
     // ── GENERATE SCRIPT VARIATIONS ──────────────────────────
     if (action === 'rewriteScript') {
       if (req.method !== 'POST') return res.status(405).end();
