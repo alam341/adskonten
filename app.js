@@ -14,7 +14,7 @@ var previewUrls = [], previewIdx = 0;
 var currentUser = null, authToken = null, currentProfile = null;
 var cloneRefBase64 = null, cloneRefMime = null;
 var cloneProdBase64 = null, cloneProdMime = null;
-var cloneModel = 'gpt-image/1.5-image-to-image';
+var cloneModel = 'seedream/4.5-edit';
 var cloneRatio = '1:1';
 
 function $(id) { return document.getElementById(id); }
@@ -2644,14 +2644,16 @@ async function generateDup3BaseModel() {
   if (result) result.style.display = 'none';
 
   try {
-    // Kirim base64 langsung ke proxy (gpt-image butuh base64, bukan URL)
+    // Upload produk ke kie.ai CDN dulu
+    var productUpload = await proxyPost('upload', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg' });
+    if (!productUpload.url) throw new Error('Upload produk gagal.');
+
     var d = await proxyPost('generate', {
       type: 'image',
-      model: 'gpt-image/1.5-image-to-image',
-      imageBase64: dupProductBase64,
-      imageMime: dupProductMime || 'image/jpeg',
+      model: 'seedream/4.5-edit',
+      imageUrl: productUpload.url,
       prompt: prompt,
-      ratio: '9:16',
+      ratio: '1:1',
       quantity: 2
     });
     if (!d.taskIds || !d.taskIds.length) throw new Error('Generate gagal — coba lagi.');
@@ -2769,7 +2771,7 @@ async function generateDup3Image(idx, prompt, card) {
     // Pakai locked model URL sebagai referensi utama
     var d = await proxyPost('generate', {
       type: 'image',
-      model: 'gpt-image/1.5-image-to-image',
+      model: 'seedream/4.5-edit',
       imageUrl: dup3LockedModelUrl,
       prompt: prompt,
       ratio: '1:1',
