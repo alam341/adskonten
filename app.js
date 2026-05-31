@@ -3259,6 +3259,7 @@ function switchMotStep(step) {
   if (canvas) canvas.scrollTo(0, 0);
   // Render dynamic content saat masuk step tertentu
   if (step === 2) renderMotStep2();
+  if (step === 3) { renderMot3FrameThumbnails(); checkMot3Ready(); }
   if (step === 5) renderMotVoiceScenes();
   if (step === 6) renderMotMergeList();
 }
@@ -3283,6 +3284,10 @@ function setupMotionStep1() {
     var vidEl = $('motVideoPreview');
     if (file.type.startsWith('video/') && vidEl) {
       vidEl.src = motObjectUrl; vidEl.style.display = 'block';
+      vidEl.addEventListener('loadedmetadata', function onMeta() {
+        vidEl.removeEventListener('loadedmetadata', onMeta);
+        autoCaptureFrames(vidEl); // capture frames untuk Step 3
+      });
     }
     var empty = $('motUploadEmpty'), filled = $('motUploadFilled'), nameEl = $('motFileName');
     if (empty) empty.style.display = 'none';
@@ -3497,8 +3502,12 @@ function renderMotVariationCards(variations) {
 
 // ─── STEP 3: Generate Model Image ────────────────────────────
 function setupMotionStep3() {
-  var zone = $('motProductZone'), input = $('motProductInput');
-  if (zone) zone.addEventListener('click', function() { if (input) input.click(); });
+  // Product upload
+  var zone = $('mot3ProductZone'), input = $('mot3ProductInput');
+  if (zone) zone.addEventListener('click', function(e) {
+    if (e.target.id === 'mot3ProductRemove' || (e.target.closest && e.target.closest('#mot3ProductRemove'))) return;
+    if (input) input.click();
+  });
   if (input) input.addEventListener('change', function() {
     var file = input.files[0];
     if (!file) return;
@@ -3506,40 +3515,55 @@ function setupMotionStep3() {
     var reader = new FileReader();
     reader.onload = function(e) {
       motProductBase64 = e.target.result.replace(/^data:[^;]+;base64,/, '');
-      var preview = $('motProductPreview'), name = $('motProductName');
-      if (preview) { preview.src = e.target.result; preview.style.display='block'; }
+      var thumb = $('mot3ProductThumb'), name = $('mot3ProductName');
+      if (thumb) { thumb.src = e.target.result; }
       if (name) name.textContent = file.name;
-      var empty = $('motProductEmpty'), filled = $('motProductFilled');
-      if (empty) empty.style.display='none';
-      if (filled) filled.style.display='block';
+      var empty = $('mot3ProductEmpty'), filled = $('mot3ProductFilled');
+      if (empty) empty.style.display = 'none';
+      if (filled) filled.style.display = 'flex';
+      checkMot3Ready();
       // Auto-suggest prompt
-      var ta = $('motModelPrompt');
+      var ta = $('mot3ModelPrompt');
       if (ta && !ta.value.trim()) {
-        ta.placeholder = 'Menganalisis produk...';
-        ta.disabled = true;
+        ta.placeholder = 'Menganalisis produk...'; ta.disabled = true;
         proxyPost('suggestModelPrompt', { productBase64: motProductBase64, productMime: motProductMime })
-          .then(function(r) { ta.value = r.prompt || ''; ta.placeholder = 'Deskripsi model...'; ta.disabled = false; })
-          .catch(function() { ta.placeholder = 'Deskripsi model...'; ta.disabled = false; });
+          .then(function(r) { ta.value = r.prompt || ''; ta.placeholder = 'Deskripsi pose / aksi model'; ta.disabled = false; })
+          .catch(function() { ta.placeholder = 'Deskripsi pose / aksi model'; ta.disabled = false; });
       }
     };
     reader.readAsDataURL(file);
   });
-
-  var btnGen = $('btnMotGenModel');
-  if (btnGen) btnGen.addEventListener('click', generateMotModel);
-
-  var btnAgain = $('btnMotGenModelAgain');
-  if (btnAgain) btnAgain.addEventListener('click', function() {
-    motLockedModelUrl = null;
-    var result = $('motModelResult'), locked = $('motModelLocked'), next = $('btnMotNext3');
-    if (result) result.style.display='none';
-    if (locked) locked.style.display='none';
-    if (next) next.disabled = true;
+  var removeBtn = $('mot3ProductRemove');
+  if (removeBtn) removeBtn.addEventListener('click', function() {
+    motProductBase64 = null; motProductMime = null;
+    if (input) input.value = '';
+    var empty = $('mot3ProductEmpty'), filled = $('mot3ProductFilled');
+    if (empty) empty.style.display = ''; if (filled) filled.style.display = 'none';
+    var sec = $('mot3ModelSection'); if (sec) sec.style.display = 'none';
   });
 
-  var btnNext = $('btnMotNext3');
-  if (btnNext) btnNext.addEventListener('click', function() {
-    // Set preview di Step 4
+  // Generate + lock buttons
+  $('btnMot3GenModel') && $('btnMot3GenModel').addEventListener('click', generateMotModel);
+  $('btnMot3RegenModel') && $('btnMot3RegenModel').addEventListener('click', function() {
+    motLockedModelUrl = null;
+    var r = $('mot3ModelResult'), lk = $('mot3ModelLocked');
+    if (r) r.style.display = 'none'; if (lk) lk.style.display = 'none';
+    var next = $('btnMotNext3'); if (next) next.style.display = 'none';
+  });
+  $('btnMot3LockModel') && $('btnMot3LockModel').addEventListener('click', function() {
+    // Lock gambar yang sedang di-highlight
+    if (!motLockedModelUrl) { showToast('Klik gambar dulu untuk memilih.', 'error'); return; }
+    var lk = $('mot3ModelLocked'), thumb = $('mot3LockedThumb');
+    if (lk) lk.style.display = 'flex'; if (thumb) thumb.src = motLockedModelUrl;
+    var next = $('btnMotNext3'); if (next) next.style.display = '';
+    showToast('Model dikunci!', 'success');
+  });
+  $('btnMot3UnlockModel') && $('btnMot3UnlockModel').addEventListener('click', function() {
+    motLockedModelUrl = null;
+    var lk = $('mot3ModelLocked'); if (lk) lk.style.display = 'none';
+    var next = $('btnMotNext3'); if (next) next.style.display = 'none';
+  });
+  $('btnMotNext3') && $('btnMotNext3').addEventListener('click', function() {
     var imgPrev = $('motKlingImgPreview');
     if (imgPrev && motLockedModelUrl) imgPrev.src = motLockedModelUrl;
     var vidPrev = $('motKlingVidPreview');
@@ -3548,12 +3572,51 @@ function setupMotionStep3() {
   });
 }
 
+function checkMot3Ready() {
+  // Sama seperti checkDup3Ready tapi untuk mot3
+  if (!dupModelFrameBase64 && !motProductBase64) return;
+  var sec = $('mot3ModelSection');
+  if (sec) sec.style.display = '';
+}
+
+function renderMot3FrameThumbnails() {
+  var grid = $('mot3FrameGrid'), empty = $('mot3FrameEmpty');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (!dupModelFrames || !dupModelFrames.length) {
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  dupModelFrames.forEach(function(f, i) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid var(--border);transition:border-color 0.2s';
+    if (i === 0) { wrap.style.borderColor = 'var(--accent)'; dupModelFrameBase64 = f.base64; checkMot3Ready(); }
+    var img = document.createElement('img');
+    img.src = 'data:image/jpeg;base64,' + f.base64;
+    img.style.cssText = 'width:90px;height:90px;object-fit:cover;display:block';
+    var label = document.createElement('div');
+    label.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.5);color:white;font-size:10px;text-align:center;padding:3px';
+    label.textContent = f.ts + 's';
+    wrap.appendChild(img); wrap.appendChild(label);
+    wrap.addEventListener('click', function() {
+      grid.querySelectorAll('div').forEach(function(w){ w.style.borderColor='var(--border)'; });
+      wrap.style.borderColor = 'var(--accent)';
+      dupModelFrameBase64 = f.base64;
+      checkMot3Ready();
+    });
+    grid.appendChild(wrap);
+  });
+}
+
 async function generateMotModel() {
   if (!motProductBase64) { showToast('Upload foto produk dulu.', 'error'); return; }
-  var prompt = ($('motModelPrompt') || {}).value || 'person holding product, looking at camera, clean white background, advertisement style';
-  var btn = $('btnMotGenModel'), result = $('motModelResult');
-  if (btn) btn.disabled = true;
-  if (result) result.style.display='none';
+  var prompt = ($('mot3ModelPrompt') || {}).value || 'person holding product, looking at camera, clean white background, advertisement style';
+  var btn = $('btnMot3GenModel'), loading = $('mot3ModelLoading'), result = $('mot3ModelResult');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+  if (loading) loading.style.display = 'block';
+  if (result) result.style.display = 'none';
+  motLockedModelUrl = null;
   try {
     var mime = motProductMime || 'image/jpeg';
     var fullBase64 = 'data:' + mime + ';base64,' + motProductBase64;
@@ -3562,35 +3625,34 @@ async function generateMotModel() {
     var d = await proxyPost('generate', { type: 'image', model: 'seedream/4.5-edit', imageUrl: upload.url, prompt: prompt, ratio: '1:1', quantity: 2 });
     var taskId = d.data?.taskId || d.taskId;
     if (!taskId) throw new Error('taskId tidak ada.');
-    // Poll
     var images = await pollKieImages(taskId);
     if (!images.length) throw new Error('Tidak ada gambar dihasilkan.');
 
-    var container = $('motModelImgs');
+    if (loading) loading.style.display = 'none';
+    var container = $('mot3ModelImgs');
     if (container) {
       container.innerHTML = '';
-      images.forEach(function(url, i) {
+      images.forEach(function(url) {
         var wrap = document.createElement('div');
-        wrap.style.cssText = 'position:relative;cursor:pointer';
+        wrap.style.cssText = 'cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid var(--border);transition:border-color 0.2s';
         var img = document.createElement('img');
-        img.src = url; img.style.cssText = 'width:120px;height:120px;object-fit:cover;border-radius:8px;border:2px solid var(--border)';
+        img.src = url;
+        img.style.cssText = 'width:140px;height:140px;object-fit:cover;display:block';
         img.addEventListener('click', function() {
+          container.querySelectorAll('div').forEach(function(w){ w.style.borderColor='var(--border)'; });
+          wrap.style.borderColor = 'var(--accent)';
           motLockedModelUrl = url;
-          container.querySelectorAll('img').forEach(function(el){ el.style.borderColor='var(--border)'; });
-          img.style.borderColor='var(--accent)';
-          var locked = $('motModelLocked'), next = $('btnMotNext3');
-          if (locked) locked.style.display='';
-          if (next) next.disabled = false;
         });
         wrap.appendChild(img);
         container.appendChild(wrap);
       });
     }
-    if (result) result.style.display='';
+    if (result) result.style.display = 'block';
   } catch(err) {
+    if (loading) loading.style.display = 'none';
     showToast('Gagal: ' + err.message, 'error');
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate Model'; }
   }
 }
 

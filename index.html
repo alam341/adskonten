@@ -1246,41 +1246,79 @@
           <div style="margin-bottom:20px">
             <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 3</div>
             <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Generate Model</h2>
-            <p style="color:var(--text-muted);font-size:13px;margin:0">Generate 1 gambar model pegang produk — akan dipakai sebagai referensi Kling Motion.</p>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Pilih frame model dari video + upload foto produk, lalu generate gambar model.</p>
           </div>
 
-          <!-- Upload produk -->
-          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
-            <div class="panel-label" style="margin-bottom:8px">Foto Produk</div>
-            <div id="motProductZone" style="border:2px dashed var(--border);border-radius:10px;padding:16px;cursor:pointer;text-align:center">
-              <input type="file" id="motProductInput" accept="image/*" hidden />
-              <div id="motProductEmpty"><p style="margin:0;font-size:13px;color:var(--text-muted)">Upload foto produk</p></div>
-              <div id="motProductFilled" style="display:none;text-align:left">
-                <img id="motProductPreview" style="max-height:80px;border-radius:6px;margin-bottom:6px" />
-                <div style="font-size:12px;color:var(--text-muted)" id="motProductName"></div>
+          <!-- 1. Frame model -->
+          <div style="margin-bottom:24px">
+            <div class="panel-label">1. Frame Model</div>
+            <div class="qty-hint" style="margin-bottom:12px">Diambil otomatis dari video Step 1 — klik frame lain untuk ganti.</div>
+            <div id="mot3FrameGrid" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+            <div id="mot3FrameEmpty" style="display:none;font-size:13px;color:var(--text-muted);padding:16px;background:var(--bg-surface);border-radius:8px;text-align:center">
+              Belum ada video di Step 1.
+            </div>
+          </div>
+
+          <!-- 2. Foto produk -->
+          <div style="margin-bottom:24px">
+            <div class="panel-label">2. Foto Produk</div>
+            <div id="mot3ProductZone" class="upload-zone" style="padding:20px;cursor:pointer">
+              <div id="mot3ProductEmpty" style="text-align:center">
+                <div style="font-size:28px;margin-bottom:8px">📦</div>
+                <div style="font-size:13px;font-weight:500;margin-bottom:4px">Klik untuk upload foto produk</div>
+                <div class="qty-hint">PNG, JPG — foto botol, kemasan, dll</div>
+              </div>
+              <div id="mot3ProductFilled" style="display:none;align-items:center;gap:12px">
+                <img id="mot3ProductThumb" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)" />
+                <div>
+                  <div id="mot3ProductName" style="font-size:13px;font-weight:500;color:var(--text)"></div>
+                  <button id="mot3ProductRemove" style="font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;margin-top:4px">Ganti foto</button>
+                </div>
               </div>
             </div>
+            <input type="file" id="mot3ProductInput" accept="image/*" style="display:none" />
           </div>
 
-          <!-- Prompt -->
-          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
-            <div class="panel-label" style="margin-bottom:6px">Deskripsi Model</div>
-            <textarea id="motModelPrompt" class="textarea-field" rows="2" style="width:100%;box-sizing:border-box;font-size:13px" placeholder="Contoh: man holding shampoo bottle, smiling, clean white background, ad style"></textarea>
-            <button id="btnMotGenModel" class="btn-generate" style="width:100%;margin-top:10px">Generate Model</button>
-          </div>
-
-          <!-- Result -->
-          <div id="motModelResult" style="display:none;background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
-            <div class="panel-label" style="margin-bottom:8px">Pilih Gambar Model</div>
-            <div id="motModelImgs" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-            <div id="motModelLocked" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--accent);font-weight:600">✓ Model terkunci — siap untuk Kling</div>
-            <div style="display:flex;gap:10px;margin-top:12px">
-              <button id="btnMotGenModelAgain" class="btn-secondary" style="padding:8px 16px;font-size:12px">Generate Ulang</button>
-              <button id="btnMotNext3" class="btn-generate" style="flex:1;padding:8px" disabled>Lanjut Step 4 →</button>
+          <!-- 3. Generate Model -->
+          <div id="mot3ModelSection" style="display:none;margin-bottom:24px">
+            <div class="panel-label">3. Generate Model</div>
+            <div class="qty-hint" style="margin-bottom:12px">Generate 1 gambar model — setelah dikunci, dipakai sebagai referensi Kling Motion.</div>
+            <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px">
+              <div style="flex:1">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Deskripsi Pose / Aksi Model</div>
+                <textarea id="mot3ModelPrompt" class="textarea-field" rows="2" style="width:100%;box-sizing:border-box;font-size:13px" placeholder="Contoh: man holding shampoo bottle, smiling, clean white background, ad style"></textarea>
+              </div>
+              <button class="btn-generate" id="btnMot3GenModel" style="width:auto;padding:10px 22px;flex-shrink:0">Generate Model</button>
+            </div>
+            <div id="mot3ModelLoading" style="display:none;text-align:center;padding:20px 0">
+              <div style="display:flex;gap:5px;justify-content:center;margin-bottom:8px">
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0s"></div>
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.2s"></div>
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.4s"></div>
+              </div>
+              <div class="qty-hint">Generating model...</div>
+            </div>
+            <div id="mot3ModelResult" style="display:none">
+              <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap" id="mot3ModelImgs"></div>
+              <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+                <button id="btnMot3LockModel" class="btn-generate" style="width:auto;padding:10px 24px;background:#16a34a">Pakai gambar ini →</button>
+                <button id="btnMot3RegenModel" style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer">Generate ulang</button>
+              </div>
+            </div>
+            <div id="mot3ModelLocked" style="display:none;background:#f0fdf4;border:1.5px solid #16a34a;border-radius:10px;padding:12px 16px;align-items:center;gap:12px">
+              <img id="mot3LockedThumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px" />
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;color:#16a34a">Model dikunci ✓</div>
+                <div class="qty-hint">Gambar ini dipakai sebagai referensi di Kling Motion.</div>
+              </div>
+              <button id="btnMot3UnlockModel" style="font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer">Ganti</button>
             </div>
           </div>
 
-          <button class="btn-secondary" onclick="switchMotStep(2)" style="padding:10px 20px">← Kembali</button>
+          <div style="display:flex;justify-content:space-between;margin-top:24px">
+            <button class="btn-generate" onclick="switchMotStep(2)" style="width:auto;padding:10px 24px;background:var(--bg-surface);color:var(--text)">← Kembali</button>
+            <button class="btn-generate" id="btnMotNext3" style="width:auto;padding:10px 28px;display:none">Lanjut Step 4 →</button>
+          </div>
         </div>
 
         <!-- STEP 4: Kling Motion -->
