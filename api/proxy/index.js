@@ -485,22 +485,15 @@ Output JSON saja (tanpa penjelasan):
       const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
 
       let input = { prompt };
-      if (model === 'gpt-image/1.5-image-to-image') {
-        // Gpt-image bisa terima base64 langsung atau URL
-        if (imageBase64) {
-          const mime = imageMime || 'image/jpeg';
-          input.image = `data:${mime};base64,${imageBase64}`;
-        } else {
-          input.image = imageUrl;
-          if (secondImageUrl) input.mask = secondImageUrl;
-        }
-        input.aspect_ratio = '1:1';
-        input.quality = 'medium';
-        input.n = 1;
-      }
-      else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
+      if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
       else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
       else if (model === 'grok-imagine/image-to-image') { input.image_urls=[imageUrl]; input.quality_mode=true; input.aspect_ratio=ratioVal; }
+      else if (model === 'gpt-image/1.5-image-to-image' || model === 'seedream/4.5-edit') {
+        input.image_urls = secondImageUrl ? [imageUrl, secondImageUrl] : [imageUrl];
+        input.aspect_ratio = ratioVal || '1:1';
+        input.quality = 'basic';
+        input.max_images = 1;
+      }
       else { input.image_url=imageUrl; input.aspect_ratio=ratioVal; input.output_format='png'; }
 
       const tasks = await Promise.all(Array.from({length:qty},()=>
