@@ -11,6 +11,19 @@ module.exports = async function handler(req, res) {
   const SUPA_ANON  = process.env.SUPABASE_ANON_KEY;
   const SUPA_SVC   = process.env.SUPABASE_SERVICE_KEY;
 
+  // Google API keys — fetch dari Supabase, rotate random
+  async function getGoogleKey() {
+    if (!SUPA_URL || !SUPA_SVC) return null;
+    try {
+      const r = await fetch(`${SUPA_URL}/rest/v1/google_api_keys?is_active=eq.true&select=api_key`, {
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+      });
+      const d = await r.json();
+      if (!Array.isArray(d) || !d.length) return null;
+      return d[Math.floor(Math.random() * d.length)].api_key;
+    } catch(e) { return null; }
+  }
+
   function getKey(type) {
     if (type === 'video')  return KEY_VIDEO  || KEY_IMAGE || KEY_SPEECH;
     if (type === 'speech') return KEY_SPEECH || KEY_IMAGE || KEY_VIDEO;
@@ -1297,6 +1310,110 @@ PENTING:
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=3600');
       return res.status(200).send(Buffer.from(await r.arrayBuffer()));
+    }
+
+    // ── ADMIN: GOOGLE API KEYS ────────────────────────────────
+    if (action === 'adminGoogleKeys') {
+      const token = (req.headers.authorization || '').replace('Bearer ', '');
+      const { profile } = await getUserAndProfile(token);
+      if (!profile || !profile.is_admin) return res.status(403).json({ error: 'Bukan admin.' });
+
+      if (req.method === 'GET') {
+        const r = await fetch(`${SUPA_URL}/rest/v1/google_api_keys?order=created_at.desc&select=*`, {
+          headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+        });
+        const d = await r.json();
+        // Mask API key — tampilkan sebagian saja
+        const masked = (Array.isArray(d) ? d : []).map(k => ({
+          ...k, api_key: k.api_key.slice(0,8) + '••••••••' + k.api_key.slice(-4)
+        }));
+        return res.status(200).json({ keys: masked });
+      }
+
+      if (req.method === 'POST') {
+        const { label, api_key } = req.body;
+        if (!label || !api_key) return res.status(400).json({ error: 'label dan api_key diperlukan.' });
+        const r = await fetch(`${SUPA_URL}/rest/v1/google_api_keys`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+          body: JSON.stringify({ label, api_key, is_active: true })
+        });
+        if (!r.ok) return res.status(500).json({ error: 'Gagal simpan.' });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (req.method === 'DELETE') {
+        const { id } = req.query;
+        if (!id) return res.status(400).json({ error: 'id diperlukan.' });
+        await fetch(`${SUPA_URL}/rest/v1/google_api_keys?id=eq.${id}`, {
+          method: 'DELETE', headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC }
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (req.method === 'PATCH') {
+        const { id, is_active } = req.body;
+        if (!id) return res.status(400).json({ error: 'id diperlukan.' });
+        await fetch(`${SUPA_URL}/rest/v1/google_api_keys?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC },
+          body: JSON.stringify({ is_active })
+        });
+        return res.status(200).json({ ok: true });
+      }
+    }
+
+    // ── GOOGLE VEO VIDEO GENERATE ─────────────────────────────
+    if (action === 'googleVideo') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const googleKey = await getGoogleKey();
+      if (!googleKey) return res.status(500).json({ error: 'Belum ada Google API key. Tambahkan di Admin → Google API Keys.' });
+
+      const { prompt, duration, resolution, personGeneration } = req.body;
+      if (!prompt) return res.status(400).json({ error: 'prompt diperlukan.' });
+
+      const body = {
+        prompt: prompt,
+        generationConfig: {
+          personGeneration: personGeneration || 'allow_adult',
+          aspectRatio: '16:9',
+          numberOfVideos: 1,
+          durationSeconds: Math.min(Math.max(parseInt(duration) || 8, 5), 8),
+          resolution: resolution || '720p',
+        }
+      };
+
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:generateVideos?key=${googleKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Google Veo error: ' + (d.error?.message || JSON.stringify(d).slice(0,200)) });
+      const operationName = d.name;
+      if (!operationName) return res.status(500).json({ error: 'operationName tidak ada. Response: ' + JSON.stringify(d).slice(0,200) });
+      return res.status(200).json({ operationName, googleKey });
+    }
+
+    // ── GOOGLE VEO STATUS ─────────────────────────────────────
+    if (action === 'googleVideoStatus') {
+      if (req.method !== 'GET') return res.status(405).end();
+      const { operationName, googleKey } = req.query;
+      if (!operationName || !googleKey) return res.status(400).json({ error: 'operationName dan googleKey diperlukan.' });
+
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${googleKey}`,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Status error: ' + JSON.stringify(d).slice(0,200) });
+
+      if (!d.done) return res.status(200).json({ status: 'processing' });
+      if (d.error) return res.status(200).json({ status: 'failed', error: d.error.message });
+
+      const videos = d.response?.generatedVideos || [];
+      const videoUrls = videos.map(v => v.video?.uri).filter(Boolean);
+      if (!videoUrls.length) return res.status(200).json({ status: 'failed', error: 'Tidak ada video.' });
+      return res.status(200).json({ status: 'success', videoUrls });
     }
 
     return res.status(400).json({ error: 'Action tidak dikenal: '+action });
