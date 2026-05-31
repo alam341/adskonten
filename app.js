@@ -2644,14 +2644,12 @@ async function generateDup3BaseModel() {
   if (result) result.style.display = 'none';
 
   try {
-    // Upload foto produk ke kie.ai CDN (harus kie.ai CDN agar bisa diakses saat generate)
-    var productUpload = await proxyPost('upload', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg' });
-    if (!productUpload.url) throw new Error('Upload produk gagal.');
-
+    // Kirim base64 langsung ke proxy (gpt-image butuh base64, bukan URL)
     var d = await proxyPost('generate', {
       type: 'image',
       model: 'gpt-image/1.5-image-to-image',
-      imageUrl: productUpload.url,
+      imageBase64: dupProductBase64,
+      imageMime: dupProductMime || 'image/jpeg',
       prompt: prompt,
       ratio: '9:16',
       quantity: 2
