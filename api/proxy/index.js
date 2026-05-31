@@ -277,6 +277,63 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Transkripsi gagal: ' + lastErr });
     }
 
+    // ── UPLOAD BASE64 IMAGE TO STORAGE ──────────────────────
+    if (action === 'uploadImage') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const { imageBase64, mimeType, filename } = req.body;
+      if (!imageBase64) return res.status(400).json({ error: 'imageBase64 diperlukan.' });
+      if (!SUPA_URL || !SUPA_SVC) return res.status(500).json({ error: 'Storage belum dikonfigurasi.' });
+      const buf = Buffer.from(imageBase64, 'base64');
+      const ext = (mimeType || '').includes('png') ? '.png' : '.jpg';
+      const fname = (filename || ('img_' + Date.now())) + ext;
+      const r = await fetch(`${SUPA_URL}/storage/v1/object/adgen-results/temp/${fname}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${SUPA_SVC}`, 'apikey': SUPA_SVC, 'Content-Type': mimeType || 'image/jpeg', 'x-upsert': 'true' },
+        body: buf,
+      });
+      if (!r.ok) { const e = await r.text(); return res.status(500).json({ error: 'Upload gagal: ' + e.slice(0,100) }); }
+      const url = `${SUPA_URL}/storage/v1/object/public/adgen-results/temp/${fname}`;
+      return res.status(200).json({ url });
+    }
+
+    // ── GENERATE SCENE IMAGE PROMPTS ────────────────────────
+    if (action === 'generateScenePrompts') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+      const { scenes, modelDesc } = req.body;
+      if (!scenes || !scenes.length) return res.status(400).json({ error: 'scenes diperlukan.' });
+
+      const sceneList = scenes.map(s => `Scene ${s.scene}: ${s.text}`).join('\n');
+      const prompt = `You are an expert at writing image generation prompts for video ads.
+
+Model description: ${modelDesc || 'Indonesian woman, natural look, warm smile'}
+
+For each scene narration below, write a short English image generation prompt (max 40 words).
+Each prompt must include: the model's appearance, her action in that scene, the product if mentioned, setting, and lighting.
+Keep the model description consistent across all prompts.
+
+Scenes:
+${sceneList}
+
+Output JSON only:
+{"prompts":[{"scene":1,"prompt":"..."},{"scene":2,"prompt":"..."},...]}`;
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Gagal.' });
+      const raw = d.content?.[0]?.text || '{}';
+      try {
+        const match = raw.match(/\{[\s\S]*\}/);
+        const parsed = match ? JSON.parse(match[0]) : { prompts: [] };
+        return res.status(200).json(parsed);
+      } catch(e) { return res.status(500).json({ error: 'Format tidak valid.' }); }
+    }
+
     // ── GENERATE SCRIPT VARIATIONS ──────────────────────────
     if (action === 'rewriteScript') {
       if (req.method !== 'POST') return res.status(405).end();
