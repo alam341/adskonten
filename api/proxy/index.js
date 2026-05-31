@@ -1424,7 +1424,7 @@ PENTING:
           aspectRatio: '16:9',
           sampleCount: 1,
           durationSeconds: durSec,
-          personGeneration: personGeneration || 'allow_adult',
+          personGeneration: personGeneration || 'allow_all',
         }
       };
 
