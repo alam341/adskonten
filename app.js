@@ -2223,7 +2223,7 @@ function switchDupStep(step) {
         refScenes.innerHTML = '';
         cards.forEach(function(el, i) {
           var row = document.createElement('div');
-          row.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 12px';
+          row.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px';
           row.innerHTML =
             '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (i+1) + '</div>' +
             '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.5">' + (el.value.trim().replace(/</g,'&lt;') || '') + '</div>';
@@ -2376,7 +2376,7 @@ function renderVariationCards(variations) {
 
     // Header row
     var header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg-card)';
+    header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg-hover)';
     header.innerHTML =
       '<div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (vi+1) + '</div>' +
       '<div style="font-size:13px;font-weight:600;flex:1;color:var(--text)">' + (v.label || 'Variasi ' + (vi+1)) + '</div>' +
