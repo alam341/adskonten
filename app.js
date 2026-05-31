@@ -2984,7 +2984,9 @@ async function generateDup4Video(idx, prompt, card) {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authToken || localStorage.getItem('adstudio_token') || '') },
       body: JSON.stringify({ prompt, duration: parseInt(duration), resolution, personGeneration: personGen })
     });
-    var d = await r.json();
+    var rawText = await r.text();
+    var d;
+    try { d = JSON.parse(rawText); } catch(e) { throw new Error('Response tidak valid: ' + rawText.slice(0, 200)); }
     if (!r.ok) throw new Error(d.error || 'Generate gagal.');
 
     var { operationName, googleKey } = d;
