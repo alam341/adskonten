@@ -3629,8 +3629,8 @@ async function generateMotModel() {
     var allImages = [];
     for (var ti = 0; ti < taskIds.length; ti++) {
       try {
-        var result = await pollStatus(taskIds[ti], d.taskType || 'jobs', 40);
-        if (result) allImages.push(result);
+        var imgUrl = await pollStatus(taskIds[ti], d.taskType || 'jobs', 40);
+        if (imgUrl) allImages.push(imgUrl);
       } catch(e) {}
     }
     var images = allImages;
