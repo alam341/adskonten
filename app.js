@@ -2644,8 +2644,8 @@ async function generateDup3BaseModel() {
   if (result) result.style.display = 'none';
 
   try {
-    // Upload foto produk ke storage (sebagai referensi visual)
-    var productUpload = await proxyPost('uploadImage', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg', filename: 'product_base_' + Date.now() });
+    // Upload foto produk ke kie.ai CDN (harus kie.ai CDN agar bisa diakses saat generate)
+    var productUpload = await proxyPost('upload', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg' });
     if (!productUpload.url) throw new Error('Upload produk gagal.');
 
     var d = await proxyPost('generate', {
