@@ -347,6 +347,11 @@ function setupTabs() {
       $('btnGenerateLabel') && ($('btnGenerateLabel').textContent = labels[activeTab]||'Generate');
       var titles = { image:'Generate Konten Iklan — Gambar', video:'Generate Konten Iklan — Video', music:'Generate Narasi / Voice Over', clone:'Clone Style Iklan Kompetitor', analyze:'Analisis Video Iklan Kompetitor' };
       $('emptyTitle') && ($('emptyTitle').textContent = titles[activeTab]||'');
+      var btnGen = $('btnGenerate');
+      if (btnGen) btnGen.style.display = activeTab === 'video' ? 'none' : '';
+      var videoCanvas = $('videoStepCanvas');
+      if (videoCanvas) videoCanvas.style.display = activeTab === 'video' ? 'block' : 'none';
+      if (activeTab === 'video') { switchDupStep(dupActiveStep); return; }
       showState('empty');
       if (activeTab === 'analyze') setupAnalyzeTab();
     });
@@ -2194,9 +2199,13 @@ var dupFileBase64 = null, dupFileMime = null;
 
 function switchDupStep(step) {
   dupActiveStep = step;
+  var pcts = { 1:'25%', 2:'50%', 3:'75%', 4:'100%' };
+  var fill = $('dupProgressFill'), pct = $('dupProgressPct');
+  if (fill) fill.style.width = pcts[step] || '25%';
+  if (pct) pct.textContent = pcts[step] || '25%';
   for (var i = 1; i <= 4; i++) {
     var btn = $('dupStepBtn' + i);
-    var panel = $('dupStepPanel' + i);
+    var panel = $('dupCanvasPanel' + i);
     if (btn) {
       btn.classList.remove('active', 'done');
       if (i === step) btn.classList.add('active');
@@ -2233,7 +2242,7 @@ function setupVideoMode() {
       var empty = $('dupUploadEmpty'), filled = $('dupUploadFilled'), nameEl = $('dupFileName');
       if (empty) empty.style.display = 'none';
       if (filled) filled.style.display = 'block';
-      if (nameEl) nameEl.textContent = file.name;
+      if (nameEl) { var n = file.name; nameEl.textContent = n.length > 30 ? n.slice(0,27)+'...' : n; }
     };
     reader.readAsDataURL(file);
   });
@@ -2251,9 +2260,11 @@ function setupVideoMode() {
   if (btnTranscribe) btnTranscribe.addEventListener('click', startTranscribe);
 
   var btnDupNext = $('btnDupNext');
-  if (btnDupNext) btnDupNext.addEventListener('click', function() {
-    switchDupStep(2);
-  });
+  if (btnDupNext) btnDupNext.addEventListener('click', function() { switchDupStep(2); });
+
+  $('dupBackBtn2') && $('dupBackBtn2').addEventListener('click', function() { switchDupStep(1); });
+  $('dupBackBtn3') && $('dupBackBtn3').addEventListener('click', function() { switchDupStep(2); });
+  $('dupBackBtn4') && $('dupBackBtn4').addEventListener('click', function() { switchDupStep(3); });
 }
 
 async function startTranscribe() {
