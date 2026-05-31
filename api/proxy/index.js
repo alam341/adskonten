@@ -230,45 +230,38 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // ── TRANSCRIBE ───────────────────────────────────────────
+    // ── TRANSCRIBE (Groq Whisper — synchronous) ───────────────
     if (action === 'transcribe') {
       if (req.method !== 'POST') return res.status(405).end();
-      const apiKey = getKey('speech');
-      if (!apiKey) return res.status(500).json({ error: 'API key belum diset.' });
+      const GROQ_KEY = process.env.GROQ_API_KEY;
+      if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY belum diset di environment.' });
 
       const { fileBase64, mimeType, language } = req.body;
       if (!fileBase64) return res.status(400).json({ error: 'fileBase64 diperlukan.' });
 
-      // Step 1: Upload file ke kie.ai storage untuk dapat URL
-      const uploadRes = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64Data: fileBase64, uploadPath: 'audio' }),
-      });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) return res.status(uploadRes.status).json({ error: 'Upload file gagal: ' + JSON.stringify(uploadData) });
-      const audioUrl = uploadData.data?.downloadUrl || uploadData.data?.fileUrl || uploadData.data?.url;
-      if (!audioUrl) return res.status(500).json({ error: 'URL file tidak ditemukan setelah upload.' });
+      const extMap = { 'audio/mpeg':'mp3','audio/mp3':'mp3','audio/wav':'wav','audio/wave':'wav','audio/x-wav':'wav','audio/mp4':'m4a','audio/m4a':'m4a','audio/ogg':'ogg','audio/webm':'webm','video/mp4':'mp4','video/webm':'webm','video/quicktime':'mov' };
+      const ext = extMap[mimeType] || 'mp3';
+      const fileName = `file.${ext}`;
 
-      // Step 2: Submit transcription task
-      const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+      const buf = Buffer.from(fileBase64, 'base64');
+      const blob = new Blob([buf], { type: mimeType || 'audio/mpeg' });
+      const formData = new FormData();
+      formData.append('file', blob, fileName);
+      formData.append('model', 'whisper-large-v3-turbo');
+      formData.append('response_format', 'text');
+      if (language && language !== 'auto') formData.append('language', language);
+
+      const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'elevenlabs/speech-to-text',
-          input: {
-            audio_url: audioUrl,
-            language_code: language || 'id',
-            diarize: false,
-            tag_audio_events: false
-          }
-        })
+        headers: { 'Authorization': `Bearer ${GROQ_KEY}` },
+        body: formData,
       });
-      const d = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: 'Transcribe error: ' + JSON.stringify(d) });
-      const taskId = d.data?.taskId || d.data?.task_id || d.taskId || d.task_id || d.data?.id || d.id;
-      if (!taskId) return res.status(500).json({ error: 'taskId tidak ada. Response: ' + JSON.stringify(d).slice(0, 200) });
-      return res.status(200).json({ taskId });
+      if (!r.ok) {
+        const err = await r.text();
+        return res.status(r.status).json({ error: 'Groq error: ' + err.slice(0, 200) });
+      }
+      const transcriptText = await r.text();
+      return res.status(200).json({ transcriptText: transcriptText.trim() });
     }
 
     // ── UPLOAD ────────────────────────────────────────────
