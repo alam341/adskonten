@@ -2644,8 +2644,10 @@ async function generateDup3BaseModel() {
   if (result) result.style.display = 'none';
 
   try {
-    // Upload produk ke kie.ai CDN dulu
-    var productUpload = await proxyPost('upload', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg' });
+    // Upload produk ke kie.ai CDN dulu (kirim full data URL dengan prefix agar kie.ai tahu file type)
+    var mime = dupProductMime || 'image/jpeg';
+    var fullBase64 = 'data:' + mime + ';base64,' + dupProductBase64;
+    var productUpload = await proxyPost('upload', { imageBase64: fullBase64, mimeType: mime });
     if (!productUpload.url) throw new Error('Upload produk gagal.');
 
     var d = await proxyPost('generate', {
