@@ -758,10 +758,13 @@
                   <p class="upload-empty-label">Upload video atau audio</p>
                   <p class="upload-empty-sub">MP4 · MP3 · WAV · M4A · maks 20MB</p>
                 </div>
-                <div class="upload-filled" id="dupUploadFilled" style="display:none;padding:16px;text-align:center">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="margin:0 auto 8px;display:block"><path d="M9 12l2 2 4-4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="var(--accent)" stroke-width="1.5"/></svg>
-                  <p id="dupFileName" style="font-size:12px;color:var(--text);margin:0 0 8px;word-break:break-all"></p>
-                  <button class="remove-btn" id="dupFileRemove" style="position:relative;inset:auto"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+                <div class="upload-filled" id="dupUploadFilled" style="display:none;padding:10px">
+                  <video id="dupVideoPreview" controls style="display:none;width:100%;max-height:180px;border-radius:8px;background:#000;margin-bottom:8px"></video>
+                  <audio id="dupAudioPreview" controls style="display:none;width:100%;margin-bottom:8px"></audio>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <p id="dupFileName" style="font-size:11px;color:var(--text-muted);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></p>
+                    <button class="remove-btn" id="dupFileRemove" style="position:relative;inset:auto;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+                  </div>
                 </div>
               </div>
               <div class="qty-hint" style="margin-top:6px">Download dari Ads Library lalu upload di sini</div>
@@ -795,13 +798,16 @@
           <!-- Transcript result -->
           <div id="dupTranscriptResult" style="display:none">
             <div class="divider"></div>
-            <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
-              <div class="panel-label" style="margin:0">Hasil Transkripsi</div>
-              <span class="badge badge-teal">Edit bebas</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div>
+                <div class="panel-label" style="margin:0">Hasil Transkripsi</div>
+                <div class="qty-hint" style="margin-top:3px">Edit tiap scene sebelum lanjut ke Step 2</div>
+              </div>
+              <span class="badge badge-teal">Edit per scene</span>
             </div>
-            <textarea id="dupTranscriptText" class="textarea-field" rows="8" style="width:100%;box-sizing:border-box" placeholder="Hasil transkripsi muncul di sini..."></textarea>
-            <div class="qty-hint" style="margin-top:6px">Edit transkripsi di atas sebelum lanjut ke Step 2</div>
-            <div style="display:flex;justify-content:flex-end;margin-top:16px">
+            <!-- Scene cards — diisi oleh JS -->
+            <div id="dupScenesContainer" style="display:flex;flex-direction:column;gap:12px"></div>
+            <div style="display:flex;justify-content:flex-end;margin-top:20px">
               <button class="btn-generate" id="btnDupNext" style="width:auto;padding:10px 28px">Lanjut Step 2 →</button>
             </div>
           </div>

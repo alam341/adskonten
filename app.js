@@ -2232,26 +2232,37 @@ function setupVideoMode() {
     if (e.target.id === 'dupFileRemove' || e.target.closest('#dupFileRemove')) return;
     if (fileInput) fileInput.click();
   });
+  var dupObjectUrl = null;
   if (fileInput) fileInput.addEventListener('change', function() {
     var file = fileInput.files[0];
     if (!file) return;
     if (file.size > 20 * 1024 * 1024) { showToast('File terlalu besar. Maks 20MB.', 'error'); return; }
     dupFileMime = file.type || 'video/mp4';
+    // Preview
+    if (dupObjectUrl) URL.revokeObjectURL(dupObjectUrl);
+    dupObjectUrl = URL.createObjectURL(file);
+    var isVideo = file.type.startsWith('video/');
+    var vidEl = $('dupVideoPreview'), audEl = $('dupAudioPreview');
+    if (isVideo && vidEl) { vidEl.src = dupObjectUrl; vidEl.style.display = 'block'; if (audEl) audEl.style.display = 'none'; }
+    else if (audEl) { audEl.src = dupObjectUrl; audEl.style.display = 'block'; if (vidEl) vidEl.style.display = 'none'; }
+    var empty = $('dupUploadEmpty'), filled = $('dupUploadFilled'), nameEl = $('dupFileName');
+    if (empty) empty.style.display = 'none';
+    if (filled) filled.style.display = 'block';
+    if (nameEl) { var n = file.name; nameEl.textContent = n.length > 35 ? n.slice(0,32)+'...' : n; }
+    // Read base64
     var reader = new FileReader();
-    reader.onload = function(e) {
-      dupFileBase64 = e.target.result.replace(/^data:[^;]+;base64,/, '');
-      var empty = $('dupUploadEmpty'), filled = $('dupUploadFilled'), nameEl = $('dupFileName');
-      if (empty) empty.style.display = 'none';
-      if (filled) filled.style.display = 'block';
-      if (nameEl) { var n = file.name; nameEl.textContent = n.length > 30 ? n.slice(0,27)+'...' : n; }
-    };
+    reader.onload = function(e) { dupFileBase64 = e.target.result.replace(/^data:[^;]+;base64,/, ''); };
     reader.readAsDataURL(file);
   });
   var removeBtn = $('dupFileRemove');
   if (removeBtn) removeBtn.addEventListener('click', function(e) {
     e.stopPropagation();
     dupFileBase64 = null; dupFileMime = null;
+    if (dupObjectUrl) { URL.revokeObjectURL(dupObjectUrl); dupObjectUrl = null; }
     if (fileInput) fileInput.value = '';
+    var vidEl = $('dupVideoPreview'), audEl = $('dupAudioPreview');
+    if (vidEl) { vidEl.src=''; vidEl.style.display='none'; }
+    if (audEl) { audEl.src=''; audEl.style.display='none'; }
     var empty = $('dupUploadEmpty'), filled = $('dupUploadFilled');
     if (empty) empty.style.display = '';
     if (filled) filled.style.display = 'none';
@@ -2266,6 +2277,30 @@ function setupVideoMode() {
   $('dupBackBtn2') && $('dupBackBtn2').addEventListener('click', function() { switchDupStep(1); });
   $('dupBackBtn3') && $('dupBackBtn3').addEventListener('click', function() { switchDupStep(2); });
   $('dupBackBtn4') && $('dupBackBtn4').addEventListener('click', function() { switchDupStep(3); });
+}
+
+function renderSceneCards(scenes) {
+  var container = $('dupScenesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  scenes.forEach(function(s, idx) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;overflow:hidden';
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)">' +
+        '<div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + s.scene + '</div>' +
+        '<div style="font-size:12px;font-weight:600;color:var(--text);flex:1">' + (s.title || 'Scene ' + s.scene) + '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted)">Scene ' + s.scene + '/' + scenes.length + '</div>' +
+      '</div>' +
+      '<textarea class="dup-scene-text textarea-field" data-scene="' + (idx+1) + '" rows="3" style="width:100%;box-sizing:border-box;border:none;border-radius:0;resize:vertical;background:var(--bg-surface)">' + (s.text || '') + '</textarea>';
+    container.appendChild(card);
+  });
+}
+
+function getScenesText() {
+  var texts = [];
+  document.querySelectorAll('.dup-scene-text').forEach(function(el) { texts.push(el.value.trim()); });
+  return texts.join('\n\n');
 }
 
 async function startTranscribe() {
@@ -2285,11 +2320,14 @@ async function startTranscribe() {
     var d = await proxyPost('transcribe', { fileBase64: dupFileBase64, mimeType: dupFileMime, language: lang });
     if (!d.transcriptText) throw new Error('Hasil transkripsi kosong.');
 
+    if (loadingText) loadingText.textContent = 'Memecah scene...';
+    var sd = await proxyPost('breakScenes', { transcript: d.transcriptText });
+    var scenes = (sd.scenes && sd.scenes.length) ? sd.scenes : [{ scene: 1, title: 'Scene 1', text: d.transcriptText }];
+
     if (loading) loading.style.display = 'none';
     if (result) result.style.display = 'block';
-    var textArea = $('dupTranscriptText');
-    if (textArea) textArea.value = d.transcriptText;
-    showToast('Transkripsi selesai!', 'success');
+    renderSceneCards(scenes);
+    showToast('Transkripsi selesai! ' + scenes.length + ' scene terdeteksi.', 'success');
 
   } catch(err) {
     if (loading) loading.style.display = 'none';
