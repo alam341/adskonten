@@ -2214,6 +2214,24 @@ function switchDupStep(step) {
     }
     if (panel) panel.style.display = i === step ? '' : 'none';
   }
+  // Saat masuk Step 2, populate referensi dari scene Step 1
+  if (step === 2) {
+    var refScenes = $('dup2RefScenes');
+    if (refScenes) {
+      var cards = document.querySelectorAll('#dupScenesContainer .dup-scene-text');
+      if (cards.length) {
+        refScenes.innerHTML = '';
+        cards.forEach(function(el, i) {
+          var row = document.createElement('div');
+          row.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 12px';
+          row.innerHTML =
+            '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (i+1) + '</div>' +
+            '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.5">' + (el.value.trim().replace(/</g,'&lt;') || '') + '</div>';
+          refScenes.appendChild(row);
+        });
+      }
+    }
+  }
 }
 
 function setupVideoMode() {
@@ -2277,6 +2295,139 @@ function setupVideoMode() {
   $('dupBackBtn2') && $('dupBackBtn2').addEventListener('click', function() { switchDupStep(1); });
   $('dupBackBtn3') && $('dupBackBtn3').addEventListener('click', function() { switchDupStep(2); });
   $('dupBackBtn4') && $('dupBackBtn4').addEventListener('click', function() { switchDupStep(3); });
+
+  $('btnRewriteScript')  && $('btnRewriteScript').addEventListener('click', startRewriteScript);
+  $('btnRewriteAgain')   && $('btnRewriteAgain').addEventListener('click', function() {
+    var result = $('dup2Result'), btn = $('btnRewriteScript'), nextBtn = $('btnDupNext2');
+    if (result) result.style.display = 'none';
+    if (btn) btn.style.display = '';
+    if (nextBtn) nextBtn.style.display = 'none';
+  });
+  $('btnDupNext2')       && $('btnDupNext2').addEventListener('click', function() { switchDupStep(3); });
+
+  // Count selector buttons
+  document.querySelectorAll('.dup2-count-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.dup2-count-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      dup2SelectedCount = parseInt(btn.dataset.count) || 2;
+    });
+  });
+
+  // Step 1 ref collapsible
+  var refToggle = $('dup2RefToggle');
+  var refBody   = $('dup2RefBody');
+  var refArrow  = $('dup2RefArrow');
+  if (refToggle) refToggle.addEventListener('click', function() {
+    var open = refBody && refBody.style.display !== 'none';
+    if (refBody) refBody.style.display = open ? 'none' : 'block';
+    if (refArrow) refArrow.style.transform = open ? '' : 'rotate(180deg)';
+  });
+}
+
+var dupStep1Scenes = []; // simpan scenes dari step 1
+var dupStep2Scenes = []; // simpan scenes hasil rewrite (variasi terpilih)
+var dup2SelectedCount = 2; // jumlah variasi yang dipilih
+
+async function startRewriteScript() {
+  // Ambil scenes dari step 1
+  var step1Cards = document.querySelectorAll('#dupScenesContainer .dup-scene-text');
+  var scenes = [];
+  step1Cards.forEach(function(el, i) {
+    scenes.push({ scene: i+1, title: 'Scene ' + (i+1), text: el.value.trim() });
+  });
+  if (!scenes.length) { showToast('Selesaikan Step 1 dulu.', 'error'); switchDupStep(1); return; }
+
+  var btn     = $('btnRewriteScript');
+  var loading = $('dup2Loading');
+  var result  = $('dup2Result');
+  var nextBtn = $('btnDupNext2');
+
+  if (btn) btn.style.display = 'none';
+  if (loading) loading.style.display = 'block';
+  if (result) result.style.display = 'none';
+  if (nextBtn) nextBtn.style.display = 'none';
+
+  try {
+    var d = await proxyPost('rewriteScript', { scenes: scenes, count: dup2SelectedCount });
+    if (!d.variations || !d.variations.length) throw new Error('Variasi script tidak dihasilkan.');
+
+    if (loading) loading.style.display = 'none';
+    if (result) result.style.display = 'block';
+    renderVariationCards(d.variations);
+    showToast(d.variations.length + ' variasi script siap!', 'success');
+
+  } catch(err) {
+    if (loading) loading.style.display = 'none';
+    if (btn) btn.style.display = '';
+    showToast(err.message, 'error');
+  }
+}
+
+function renderVariationCards(variations) {
+  var container = $('dup2VariationsContainer');
+  var nextBtn   = $('btnDupNext2');
+  if (!container) return;
+  container.innerHTML = '';
+
+  variations.forEach(function(v, vi) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden';
+
+    // Header row
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg-card)';
+    header.innerHTML =
+      '<div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (vi+1) + '</div>' +
+      '<div style="font-size:13px;font-weight:600;flex:1;color:var(--text)">' + (v.label || 'Variasi ' + (vi+1)) + '</div>' +
+      '<button class="dup2-pakai-btn" data-vi="' + vi + '" style="font-size:11px;padding:5px 14px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">Pakai ini</button>' +
+      '<button class="dup2-expand-btn" data-vi="' + vi + '" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;margin-left:4px">' +
+        '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="dup2-arrow-' + vi + '" style="transition:transform 0.2s;transform:rotate(-90deg)"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
+      '</button>';
+    card.appendChild(header);
+
+    // Scene list (collapsed by default)
+    var body = document.createElement('div');
+    body.id = 'dup2VarBody' + vi;
+    body.style.display = 'none';
+    v.scenes.forEach(function(s, si) {
+      var row = document.createElement('div');
+      row.style.cssText = 'border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;align-items:flex-start';
+      row.innerHTML =
+        '<div style="width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.7;color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">' + s.scene + '</div>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px">' + (s.title || 'Scene ' + s.scene) + '</div>' +
+          '<div style="font-size:13px;color:var(--text);line-height:1.5">' + (s.text || '').replace(/\n/g, '<br>') + '</div>' +
+        '</div>';
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+    container.appendChild(card);
+
+    // Expand/collapse toggle
+    card.querySelector('.dup2-expand-btn').addEventListener('click', function() {
+      var isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : 'block';
+      var arrow = card.querySelector('.dup2-arrow-' + vi);
+      if (arrow) arrow.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+    });
+
+    // Pakai ini — copy scenes to step2 selection and enable next
+    card.querySelector('.dup2-pakai-btn').addEventListener('click', function() {
+      dupStep2Scenes = v.scenes;
+      // Highlight selected card, reset others
+      container.querySelectorAll('.dup2-pakai-btn').forEach(function(b) {
+        b.style.background = 'var(--accent)'; b.textContent = 'Pakai ini';
+      });
+      this.style.background = '#16a34a'; this.textContent = 'Dipilih ✓';
+      container.querySelectorAll('[style*="border:1.5px solid"]').forEach(function(c) {
+        c.style.borderColor = 'var(--border)';
+      });
+      card.style.borderColor = '#16a34a';
+      if (nextBtn) nextBtn.style.display = '';
+      showToast('Variasi "' + (v.label || 'Variasi ' + (vi+1)) + '" dipilih.', 'success');
+    });
+  });
 }
 
 function renderSceneCards(scenes) {

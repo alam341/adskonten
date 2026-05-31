@@ -1949,3 +1949,18 @@ audio { height: 36px; filter: invert(0.85) hue-rotate(220deg) brightness(0.9); }
 .dup-step-v.active .dup-step-v-sub { opacity: 1; }
 .dup-step-v.done .dup-step-v-num { background: var(--accent); border-color: var(--accent); color: white; opacity: 0.5; }
 .dup-step-v.done .dup-step-v-title { color: var(--text-muted); }
+
+/* ── Dup Step 2 count selector ── */
+.dup2-count-btn {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.dup2-count-btn:hover { border-color: var(--accent); color: var(--accent); }
+.dup2-count-btn.active { border-color: var(--accent); background: var(--accent); color: white; }
