@@ -230,6 +230,44 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // ── TRANSCRIBE ───────────────────────────────────────────
+    if (action === 'transcribe') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const apiKey = getKey('speech');
+      if (!apiKey) return res.status(500).json({ error: 'API key belum diset.' });
+
+      const { driveUrl, language } = req.body;
+      if (!driveUrl) return res.status(400).json({ error: 'driveUrl diperlukan.' });
+
+      // Convert Google Drive share URL ke direct download URL
+      let audioUrl = driveUrl;
+      const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      const openIdMatch = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      const fileId = (fileIdMatch && fileIdMatch[1]) || (openIdMatch && openIdMatch[1]);
+      if (fileId) {
+        audioUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
+      }
+
+      const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'elevenlabs/speech-to-text',
+          input: {
+            audio_url: audioUrl,
+            language_code: language || 'id',
+            diarize: false,
+            tag_audio_events: false
+          }
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: 'Transcribe error: ' + JSON.stringify(d) });
+      const taskId = d.data?.taskId || d.data?.task_id || d.taskId || d.task_id || d.data?.id || d.id;
+      if (!taskId) return res.status(500).json({ error: 'taskId tidak ada. Response: ' + JSON.stringify(d).slice(0, 200) });
+      return res.status(200).json({ taskId });
+    }
+
     // ── UPLOAD ────────────────────────────────────────────
     if (action === 'upload') {
       if (req.method !== 'POST') return res.status(405).end();
@@ -368,6 +406,30 @@ module.exports = async function handler(req, res) {
       const d = await r.json();
       data = d.data;
       const status = data?.state || data?.status || 'waiting';
+
+      // Transcribe type: extract text from resultJson
+      if (type === 'transcribe' && DONE.includes(status)) {
+        let transcriptText = '';
+        if (data?.resultJson) {
+          try {
+            const rj = JSON.parse(data.resultJson);
+            transcriptText = rj?.text || rj?.transcript || rj?.transcription || '';
+            if (!transcriptText && Array.isArray(rj?.words)) {
+              transcriptText = rj.words.map(function(w) { return w.text || w.word || ''; }).join(' ');
+            }
+            if (!transcriptText && Array.isArray(rj?.resultUrls)) {
+              transcriptText = rj.resultUrls[0] || '';
+            }
+          } catch(e) {}
+        }
+        return res.status(200).json({ status: 'success', transcriptText, imageUrl: null, imageUrls: [], videoUrl: null, audioUrl: null, isFail: false });
+      }
+      if (type === 'transcribe' && FAIL.includes(status)) {
+        return res.status(200).json({ status, transcriptText: '', imageUrl: null, imageUrls: [], videoUrl: null, audioUrl: null, isFail: true });
+      }
+      if (type === 'transcribe') {
+        return res.status(200).json({ status, transcriptText: '', imageUrl: null, imageUrls: [], videoUrl: null, audioUrl: null, isFail: false });
+      }
       let imageUrl=null, videoUrl=null, audioUrl=null, imageUrls=[];
       if (DONE.includes(status)) {
         if (data?.resultJson) {
