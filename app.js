@@ -2795,10 +2795,23 @@ function checkDup3Ready() {
   if (!dupModelFrameBase64 || !dupProductBase64) return;
   var modelSec = $('dup3ModelSection');
   if (modelSec) modelSec.style.display = '';
-  // Auto-isi prompt model dengan template yang proper
+  // Auto-generate prompt berdasarkan foto produk via Claude Vision
   var ta = $('dup3ModelPrompt');
   if (ta && !ta.value.trim()) {
-    ta.value = 'Indonesian woman with long hair and warm smile, holding shampoo bottle, looking at camera, clean white background, beauty advertisement style, soft studio lighting, 9:16 vertical';
+    ta.placeholder = 'Menganalisis produk...';
+    ta.disabled = true;
+    proxyPost('suggestModelPrompt', { productBase64: dupProductBase64, productMime: dupProductMime || 'image/jpeg' })
+      .then(function(r) {
+        if (r.prompt) { ta.value = r.prompt; }
+        else { ta.value = ''; }
+        ta.placeholder = 'Contoh: man holding bottle, smiling, clean white background, beauty ad style';
+        ta.disabled = false;
+      })
+      .catch(function() {
+        ta.value = '';
+        ta.placeholder = 'Contoh: man holding bottle, smiling, clean white background, beauty ad style';
+        ta.disabled = false;
+      });
   }
 }
 
@@ -2806,7 +2819,7 @@ async function generateDup3BaseModel() {
   var btn = $('btnDup3GenModel');
   var loading = $('dup3ModelLoading');
   var result  = $('dup3ModelResult');
-  var prompt  = ($('dup3ModelPrompt') || {}).value || 'Indonesian woman holding shampoo bottle, beauty ad, clean white background';
+  var prompt  = ($('dup3ModelPrompt') || {}).value || 'person holding product, looking at camera, clean white background, advertisement style';
 
   if (btn) btn.style.display = 'none';
   if (loading) loading.style.display = 'block';
@@ -2890,7 +2903,8 @@ async function generateDup3Prompts() {
       }); return arr;
     })();
     if (!scenes.length) { showToast('Tidak ada scene.', 'error'); return; }
-    var d = await proxyPost('generateScenePrompts', { scenes: scenes, modelDesc: 'Indonesian woman with natural look' });
+    var modelDesc = ($('dup3ModelPrompt') || {}).value || 'person with natural look';
+    var d = await proxyPost('generateScenePrompts', { scenes: scenes, modelDesc: modelDesc });
     dup3ScenePrompts = d.prompts || [];
     if (loading) loading.style.display = 'none';
     if (sec) sec.style.display = '';
