@@ -502,7 +502,10 @@ Output JSON saja (tanpa penjelasan):
         }).then(r=>r.json())
       ));
       const taskIds = tasks.map(d=>d.data?.taskId).filter(Boolean);
-      if (!taskIds.length) return res.status(500).json({ error: 'Semua task gagal.' });
+      if (!taskIds.length) {
+        const firstErr = JSON.stringify(tasks[0]).slice(0, 300);
+        return res.status(500).json({ error: 'Task gagal: ' + firstErr });
+      }
       return res.status(200).json({ taskIds, taskType: 'jobs' });
     }
 
