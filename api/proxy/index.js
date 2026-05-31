@@ -1387,10 +1387,14 @@ PENTING:
         `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:generateVideos?key=${googleKey}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
       );
-      const d = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: 'Google Veo error: ' + (d.error?.message || JSON.stringify(d).slice(0,200)) });
+      const rawText = await r.text();
+      let d;
+      try { d = JSON.parse(rawText); } catch(e) {
+        return res.status(500).json({ error: 'Google response tidak valid: ' + rawText.slice(0, 300) });
+      }
+      if (!r.ok) return res.status(r.status).json({ error: 'Google Veo error: ' + (d.error?.message || JSON.stringify(d).slice(0,300)) });
       const operationName = d.name;
-      if (!operationName) return res.status(500).json({ error: 'operationName tidak ada. Response: ' + JSON.stringify(d).slice(0,200) });
+      if (!operationName) return res.status(500).json({ error: 'operationName tidak ada. Response: ' + JSON.stringify(d).slice(0,300) });
       return res.status(200).json({ operationName, googleKey });
     }
 
