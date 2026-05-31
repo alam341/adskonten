@@ -508,14 +508,15 @@ Output JSON saja (tanpa penjelasan):
         if (model === 'kling-2.6/image-to-video') input.sound = false;
         else if (model === 'grok-imagine/image-to-video') { input.mode='normal'; input.resolution=resolution||'720p'; input.aspect_ratio='16:9'; }
         else if (model.startsWith('wan')) input.resolution = resolution||'720p';
-        else if (model === 'kling-3-motion-control') {
-          // Motion control: image + video referensi gerakan
+        else if (model === 'kling-3.0/motion-control') {
+          // Motion control: image + video referensi gerakan (official spec)
           input = {
             prompt: prompt || 'natural motion, smooth movement',
-            image_urls: [imageUrl],
-            motion_video_url: secondImageUrl, // video referensi gerakan
-            duration: String(duration || '10'),
-            aspect_ratio: ratio || '9:16',
+            input_urls: [imageUrl],           // gambar referensi model
+            video_urls: [secondImageUrl],     // video referensi gerakan
+            mode: resolution || '720p',       // '720p' atau '1080p'
+            character_orientation: 'video',
+            background_source: 'input_video',
           };
         }
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
