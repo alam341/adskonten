@@ -1372,13 +1372,14 @@ PENTING:
       const { prompt, duration, resolution, personGeneration } = req.body;
       if (!prompt) return res.status(400).json({ error: 'prompt diperlukan.' });
 
+      const durSec = Math.min(Math.max(parseInt(duration) || 8, 5), 8);
       const body = {
-        prompt: prompt,
+        contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           personGeneration: personGeneration || 'allow_adult',
           aspectRatio: '16:9',
           numberOfVideos: 1,
-          durationSeconds: Math.min(Math.max(parseInt(duration) || 8, 5), 8),
+          durationSeconds: durSec,
           resolution: resolution || '720p',
         }
       };
@@ -1390,7 +1391,7 @@ PENTING:
       const rawText = await r.text();
       let d;
       try { d = JSON.parse(rawText); } catch(e) {
-        return res.status(500).json({ error: 'Google response tidak valid: ' + rawText.slice(0, 300) });
+        return res.status(500).json({ error: 'Google HTTP ' + r.status + ' — ' + (rawText.slice(0, 300) || '(empty body)') });
       }
       if (!r.ok) return res.status(r.status).json({ error: 'Google Veo error: ' + (d.error?.message || JSON.stringify(d).slice(0,300)) });
       const operationName = d.name;
