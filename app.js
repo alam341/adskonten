@@ -3048,6 +3048,7 @@ async function generateDup4Video(idx, prompt, card) {
   var duration = ($('dup4Duration') || {}).value || '8';
   var resolution = ($('dup4Resolution') || {}).value || '720p';
   var personGen = ($('dup4PersonGen') || {}).value || 'allow_adult';
+  var veoModel = ($('dup4VeoModel') || {}).value || 'veo-3.0-fast-generate-001';
 
   if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
   if (resultDiv) { resultDiv.style.display = ''; resultDiv.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px">Mengirim ke Veo 3... (estimasi 2-3 menit)</div>'; }
@@ -3056,7 +3057,7 @@ async function generateDup4Video(idx, prompt, card) {
     var r = await fetch('/api/proxy?action=googleVideo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authToken || localStorage.getItem('adstudio_token') || '') },
-      body: JSON.stringify({ prompt, duration: parseInt(duration), resolution, personGeneration: personGen })
+      body: JSON.stringify({ prompt, duration: parseInt(duration), resolution, personGeneration: personGen, model: veoModel })
     });
     var rawText = await r.text();
     var d;
