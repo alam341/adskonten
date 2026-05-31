@@ -484,11 +484,13 @@ Output JSON saja (tanpa penjelasan):
       const ratioVal = ratio||'1:1';
       const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
 
+      // gpt-image size map: pakai format pixel OpenAI (bukan aspect_ratio string)
+      const gptSizeMap = { '1:1':'1024x1024','9:16':'1024x1536','16:9':'1536x1024','4:5':'1024x1280','2:3':'1024x1536','3:4':'1024x1280' };
       let input = { prompt };
       if (model === 'gpt-image/1.5-image-to-image') {
         // GPT Image support multiple input_urls - kirim referensi + produk
         input.input_urls = secondImageUrl ? [imageUrl, secondImageUrl] : [imageUrl];
-        // gpt-image hanya terima size tertentu, pakai default (tanpa aspect_ratio)
+        input.size = gptSizeMap[ratioVal] || '1024x1024';
         input.quality = 'medium';
       }
       else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
