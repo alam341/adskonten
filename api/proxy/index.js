@@ -277,6 +277,55 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Transkripsi gagal: ' + lastErr });
     }
 
+    // ── GENERATE SCRIPT VARIATIONS ──────────────────────────
+    if (action === 'rewriteScript') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+      const { scenes, count } = req.body;
+      if (!scenes || !scenes.length) return res.status(400).json({ error: 'scenes diperlukan.' });
+
+      const jumlah = Math.min(Math.max(parseInt(count) || 3, 2), 4);
+      const sceneList = scenes.map(s => `Scene ${s.scene} - ${s.title}:\n${s.text}`).join('\n\n');
+
+      const tones = ['Emosional & Menyentuh', 'Energik & Antusias', 'Santai & Relatable', 'Profesional & Terpercaya'];
+      const selectedTones = tones.slice(0, jumlah);
+
+      const prompt = `Kamu adalah copywriter video iklan Indonesia. Berikut adalah script iklan yang sudah diedit:
+
+${sceneList}
+
+Buat ${jumlah} variasi script dengan tone yang berbeda: ${selectedTones.join(', ')}.
+Setiap variasi HARUS punya jumlah scene yang sama (${scenes.length} scene).
+Pertahankan isi/pesan utama, hanya ubah gaya bahasa & penyampaiannya.
+Tiap scene max 2-3 kalimat.
+
+Output JSON saja:
+{
+  "variations": [
+    {
+      "label": "Emosional & Menyentuh",
+      "scenes": [{"scene":1,"title":"judul","text":"narasi"},...]
+    },
+    ...
+  ]
+}`;
+
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4000, messages: [{ role: 'user', content: prompt }] })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Gagal.' });
+      const raw = d.content?.[0]?.text || '{}';
+      try {
+        const match = raw.match(/\{[\s\S]*\}/);
+        const parsed = match ? JSON.parse(match[0]) : { variations: [] };
+        return res.status(200).json(parsed);
+      } catch(e) { return res.status(500).json({ error: 'Format tidak valid.' }); }
+    }
+
     // ── BREAK SCENES ────────────────────────────────────────
     if (action === 'breakScenes') {
       if (req.method !== 'POST') return res.status(405).end();
