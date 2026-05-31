@@ -2774,7 +2774,7 @@ async function generateDup3Image(idx, prompt, card) {
       model: 'gpt-image/1.5-image-to-image',
       imageUrl: dup3LockedModelUrl,
       prompt: prompt,
-      ratio: '9:16',
+      ratio: '1:1',
       quantity: 1
     });
     if (!d.taskIds || !d.taskIds.length) throw new Error('Generate gagal.');
