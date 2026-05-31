@@ -2551,6 +2551,8 @@ var dupModelFrameBase64 = null; // frame yang dipilih
 var dupProductBase64    = null;
 var dupProductMime      = null;
 var dup3ScenePrompts    = [];   // [{scene, prompt}]
+var dup3LockedModelUrl  = null; // URL gambar model yang sudah di-lock
+var dup3LockedImgIdx    = 0;    // index gambar yang dipilih dari hasil generate
 
 // Auto-capture 4 frame dari video
 function autoCaptureFrames(videoEl) {
@@ -2619,12 +2621,95 @@ function renderFrameThumbnails() {
   checkDup3Ready();
 }
 
-// Cek apakah model + produk sudah siap → tampilkan scenes
+// Cek apakah frame + produk sudah siap → tampilkan section Generate Model
 function checkDup3Ready() {
   if (!dupModelFrameBase64 || !dupProductBase64) return;
-  var sec = $('dup3ScenesSection'), loading = $('dup3LoadingPrompts');
-  if (!sec) return;
-  if (sec.style.display !== 'none') return; // sudah tampil
+  var modelSec = $('dup3ModelSection');
+  if (modelSec) modelSec.style.display = '';
+  // Auto-isi prompt model dari script jika kosong
+  var ta = $('dup3ModelPrompt');
+  if (ta && !ta.value.trim()) {
+    var scenes = dupStep2Scenes.length ? dupStep2Scenes : [];
+    var hint = scenes.length ? scenes[0].text.slice(0, 80) : 'woman holding shampoo bottle, smiling, clean background, beauty ad style';
+    ta.value = 'Indonesian woman with natural look, ' + hint;
+  }
+}
+
+async function generateDup3BaseModel() {
+  var btn = $('btnDup3GenModel');
+  var loading = $('dup3ModelLoading');
+  var result  = $('dup3ModelResult');
+  var prompt  = ($('dup3ModelPrompt') || {}).value || 'Indonesian woman holding shampoo bottle, beauty ad, clean white background';
+
+  if (btn) btn.style.display = 'none';
+  if (loading) loading.style.display = 'block';
+  if (result) result.style.display = 'none';
+
+  try {
+    // Upload frame model ke storage
+    var modelUpload  = await proxyPost('uploadImage', { imageBase64: dupModelFrameBase64, mimeType: 'image/jpeg', filename: 'model_base_' + Date.now() });
+    // Upload foto produk ke storage
+    var productUpload = await proxyPost('uploadImage', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg', filename: 'product_base_' + Date.now() });
+
+    var d = await proxyPost('generate', {
+      type: 'image',
+      model: 'gpt-image/1.5-image-to-image',
+      imageUrl: modelUpload.url,
+      secondImageUrl: productUpload.url,
+      prompt: prompt,
+      ratio: '9:16',
+      quantity: 2
+    });
+    if (!d.taskIds || !d.taskIds.length) throw new Error('Generate gagal — coba lagi.');
+    var urls = await Promise.all(d.taskIds.map(function(id) { return pollStatus(id, 'image', 40); }));
+    urls = urls.flat ? urls.flat() : [].concat.apply([], urls);
+
+    if (loading) loading.style.display = 'none';
+    if (result) result.style.display = '';
+
+    var imgContainer = $('dup3ModelImgs');
+    if (imgContainer) {
+      imgContainer.innerHTML = '';
+      var selectedUrl = urls[0];
+      urls.forEach(function(url, i) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'cursor:pointer;border-radius:10px;overflow:hidden;border:2.5px solid ' + (i===0?'#16a34a':'var(--border)') + ';flex-shrink:0;transition:border-color 0.15s';
+        var img = document.createElement('img');
+        img.src = url;
+        img.style.cssText = 'width:120px;height:200px;object-fit:cover;display:block';
+        wrap.appendChild(img);
+        wrap.addEventListener('click', function() {
+          selectedUrl = url;
+          imgContainer.querySelectorAll('div').forEach(function(w) { w.style.borderColor = 'var(--border)'; });
+          wrap.style.borderColor = '#16a34a';
+        });
+        imgContainer.appendChild(wrap);
+      });
+      // Simpan selectedUrl lewat closure di lock button
+      var lockBtn = $('btnDup3LockModel');
+      if (lockBtn) lockBtn.onclick = function() { lockDup3Model(selectedUrl, urls[0]); };
+    }
+    showToast('Model berhasil digenerate!', 'success');
+  } catch(err) {
+    if (loading) loading.style.display = 'none';
+    if (btn) btn.style.display = '';
+    showToast('Gagal: ' + err.message, 'error');
+  }
+}
+
+function lockDup3Model(url, thumbUrl) {
+  dup3LockedModelUrl = url;
+  // Tampilkan locked indicator, sembunyikan generate section
+  var resultDiv = $('dup3ModelResult'), lockedDiv = $('dup3ModelLocked');
+  var genSection = $('btnDup3GenModel');
+  if (resultDiv) resultDiv.style.display = 'none';
+  if (lockedDiv) { lockedDiv.style.display = 'flex'; }
+  var thumb = $('dup3LockedThumb');
+  if (thumb) thumb.src = thumbUrl || url;
+
+  // Generate prompts untuk scene
+  var loading = $('dup3LoadingPrompts'), sec = $('dup3ScenesSection');
+  if (sec && sec.style.display !== 'none') return; // sudah ada
   if (loading) loading.style.display = 'block';
   generateDup3Prompts();
 }
@@ -2637,8 +2722,8 @@ async function generateDup3Prompts() {
         arr.push({ scene: i+1, text: el.value.trim() });
       }); return arr;
     })();
-    if (!scenes.length) { showToast('Tidak ada scene. Selesaikan Step 1 dulu.', 'error'); return; }
-    var d = await proxyPost('generateScenePrompts', { scenes: scenes, modelDesc: '' });
+    if (!scenes.length) { showToast('Tidak ada scene.', 'error'); return; }
+    var d = await proxyPost('generateScenePrompts', { scenes: scenes, modelDesc: 'Indonesian woman with natural look' });
     dup3ScenePrompts = d.prompts || [];
     if (loading) loading.style.display = 'none';
     if (sec) sec.style.display = '';
@@ -2681,22 +2766,17 @@ function renderDup3Scenes(scenes, prompts) {
 }
 
 async function generateDup3Image(idx, prompt, card) {
+  if (!dup3LockedModelUrl) { showToast('Lock model dulu di bagian atas.', 'error'); return; }
   var btn = card.querySelector('.dup3-gen-btn');
   var resultDiv = card.querySelector('.dup3-result-' + idx);
   if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
-  if (resultDiv) { resultDiv.style.display = ''; resultDiv.innerHTML = '<div class="qty-hint" style="padding:8px 0">Mengupload referensi...</div>'; }
+  if (resultDiv) { resultDiv.style.display = ''; resultDiv.innerHTML = '<div class="qty-hint" style="padding:8px 0">Generating gambar...</div>'; }
   try {
-    // Upload frame model
-    var modelUpload = await proxyPost('uploadImage', { imageBase64: dupModelFrameBase64, mimeType: 'image/jpeg', filename: 'model_' + Date.now() });
-    // Upload foto produk
-    var productUpload = await proxyPost('uploadImage', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg', filename: 'product_' + Date.now() });
-    if (resultDiv) resultDiv.innerHTML = '<div class="qty-hint" style="padding:8px 0">Generating gambar...</div>';
-    // Generate image-to-image dengan 2 referensi
+    // Pakai locked model URL sebagai referensi utama
     var d = await proxyPost('generate', {
       type: 'image',
       model: 'gpt-image/1.5-image-to-image',
-      imageUrl: modelUpload.url,
-      secondImageUrl: productUpload.url,
+      imageUrl: dup3LockedModelUrl,
       prompt: prompt,
       ratio: '9:16',
       quantity: 1
@@ -2762,5 +2842,21 @@ function setupStep3() {
     var empty = $('dup3ProductEmpty'), filled = $('dup3ProductFilled');
     if (empty) empty.style.display = '';
     if (filled) filled.style.display = 'none';
+  });
+
+  $('btnDup3GenModel') && $('btnDup3GenModel').addEventListener('click', generateDup3BaseModel);
+  $('btnDup3RegenModel') && $('btnDup3RegenModel').addEventListener('click', function() {
+    var result = $('dup3ModelResult'), btn = $('btnDup3GenModel');
+    if (result) result.style.display = 'none';
+    if (btn) btn.style.display = '';
+  });
+  $('btnDup3UnlockModel') && $('btnDup3UnlockModel').addEventListener('click', function() {
+    dup3LockedModelUrl = null;
+    var locked = $('dup3ModelLocked'), result = $('dup3ModelResult'), btn = $('btnDup3GenModel');
+    var sec = $('dup3ScenesSection'), lp = $('dup3LoadingPrompts');
+    if (locked) locked.style.display = 'none';
+    if (btn) btn.style.display = '';
+    if (sec) sec.style.display = 'none';
+    if (lp) lp.style.display = 'none';
   });
 }

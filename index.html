@@ -912,6 +912,45 @@
             <input type="file" id="dup3ProductInput" accept="image/*" style="display:none" />
           </div>
 
+          <!-- 3. Generate Model Utama -->
+          <div id="dup3ModelSection" style="display:none;margin-bottom:24px">
+            <div class="panel-label">3. Generate Model Utama</div>
+            <div class="qty-hint" style="margin-bottom:12px">Generate 1 gambar model dulu — setelah di-approve, gambar ini dipakai di semua scene.</div>
+            <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px">
+              <div style="flex:1">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Deskripsi Pose / Aksi Model</div>
+                <textarea id="dup3ModelPrompt" class="textarea-field" rows="2" style="width:100%;box-sizing:border-box;font-size:13px" placeholder="Contoh: woman holding shampoo bottle, smiling, clean white background, beauty ad style"></textarea>
+              </div>
+              <button class="btn-generate" id="btnDup3GenModel" style="width:auto;padding:10px 22px;flex-shrink:0">Generate Model</button>
+            </div>
+            <!-- Loading -->
+            <div id="dup3ModelLoading" style="display:none;text-align:center;padding:20px 0">
+              <div style="display:flex;gap:5px;justify-content:center;margin-bottom:8px">
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0s"></div>
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.2s"></div>
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.4s"></div>
+              </div>
+              <div class="qty-hint">Generating model...</div>
+            </div>
+            <!-- Hasil model -->
+            <div id="dup3ModelResult" style="display:none">
+              <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap" id="dup3ModelImgs"></div>
+              <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+                <button id="btnDup3LockModel" class="btn-generate" style="width:auto;padding:10px 24px;background:#16a34a">Pakai gambar ini untuk semua scene →</button>
+                <button id="btnDup3RegenModel" style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer">Generate ulang</button>
+              </div>
+            </div>
+            <!-- Model locked indicator -->
+            <div id="dup3ModelLocked" style="display:none;background:#f0fdf4;border:1.5px solid #16a34a;border-radius:10px;padding:12px 16px;display:none;align-items:center;gap:12px">
+              <img id="dup3LockedThumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px" />
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;color:#16a34a">Model dikunci ✓</div>
+                <div class="qty-hint">Gambar ini dipakai sebagai referensi di semua scene.</div>
+              </div>
+              <button id="btnDup3UnlockModel" style="font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer">Ganti</button>
+            </div>
+          </div>
+
           <!-- Loading prompts -->
           <div id="dup3LoadingPrompts" style="display:none;text-align:center;padding:20px 0">
             <div style="display:flex;gap:5px;justify-content:center;margin-bottom:8px">
@@ -922,10 +961,10 @@
             <div class="qty-hint">Menyiapkan prompt gambar per scene...</div>
           </div>
 
-          <!-- 3. Scene cards -->
+          <!-- 4. Scene cards -->
           <div id="dup3ScenesSection" style="display:none">
-            <div class="panel-label">3. Generate Gambar per Scene</div>
-            <div class="qty-hint" style="margin-bottom:14px">Prompt sudah disiapkan — edit jika perlu, lalu generate.</div>
+            <div class="panel-label">4. Generate Gambar per Scene</div>
+            <div class="qty-hint" style="margin-bottom:14px">Model sudah dikunci — generate tiap scene dengan pose berbeda.</div>
             <div id="dup3ScenesContainer" style="display:flex;flex-direction:column;gap:16px"></div>
           </div>
 
