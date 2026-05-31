@@ -2626,12 +2626,10 @@ function checkDup3Ready() {
   if (!dupModelFrameBase64 || !dupProductBase64) return;
   var modelSec = $('dup3ModelSection');
   if (modelSec) modelSec.style.display = '';
-  // Auto-isi prompt model dari script jika kosong
+  // Auto-isi prompt model dengan template yang proper
   var ta = $('dup3ModelPrompt');
   if (ta && !ta.value.trim()) {
-    var scenes = dupStep2Scenes.length ? dupStep2Scenes : [];
-    var hint = scenes.length ? scenes[0].text.slice(0, 80) : 'woman holding shampoo bottle, smiling, clean background, beauty ad style';
-    ta.value = 'Indonesian woman with natural look, ' + hint;
+    ta.value = 'Indonesian woman with long hair and warm smile, holding shampoo bottle, looking at camera, clean white background, beauty advertisement style, soft studio lighting, 9:16 vertical';
   }
 }
 
@@ -2646,16 +2644,14 @@ async function generateDup3BaseModel() {
   if (result) result.style.display = 'none';
 
   try {
-    // Upload frame model ke storage
-    var modelUpload  = await proxyPost('uploadImage', { imageBase64: dupModelFrameBase64, mimeType: 'image/jpeg', filename: 'model_base_' + Date.now() });
-    // Upload foto produk ke storage
+    // Upload foto produk ke storage (sebagai referensi visual)
     var productUpload = await proxyPost('uploadImage', { imageBase64: dupProductBase64, mimeType: dupProductMime || 'image/jpeg', filename: 'product_base_' + Date.now() });
+    if (!productUpload.url) throw new Error('Upload produk gagal.');
 
     var d = await proxyPost('generate', {
       type: 'image',
       model: 'gpt-image/1.5-image-to-image',
-      imageUrl: modelUpload.url,
-      secondImageUrl: productUpload.url,
+      imageUrl: productUpload.url,
       prompt: prompt,
       ratio: '9:16',
       quantity: 2
