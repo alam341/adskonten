@@ -3342,6 +3342,9 @@ async function startMotTranscribe() {
 
     if (loading) loading.style.display = 'none';
     if (result) result.style.display = 'block';
+    // Sembunyikan tombol Transkripsi setelah selesai
+    var btnT = $('btnMotTranscribe');
+    if (btnT) btnT.style.display = 'none';
     renderMotScenes(motScenes);
     showToast('Transkripsi selesai! ' + motScenes.length + ' scene.', 'success');
   } catch(err) {
@@ -3366,40 +3369,58 @@ function renderMotScenes(scenes) {
 }
 
 // ─── STEP 2: Script ──────────────────────────────────────────
+var mot2SelectedCount = 2;
+
 function setupMotionStep2() {
+  // Count selector
+  document.querySelectorAll('[data-mot-count]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      mot2SelectedCount = parseInt(btn.dataset.motCount) || 2;
+      document.querySelectorAll('[data-mot-count]').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
   var btnNext = $('btnMotNext2');
   if (btnNext) btnNext.addEventListener('click', function() { switchMotStep(3); });
 }
 
+function motUseStep1Scenes() {
+  // Pakai scenes dari Step 1 langsung
+  motScriptScenes = motScenes.map(function(s, i) { return { scene: s.scene || i+1, text: s.text || '' }; });
+  var btnNext = $('btnMotNext2');
+  if (btnNext) btnNext.style.display = '';
+  showToast('Menggunakan script Step 1.', 'success');
+}
+
 function renderMotStep2() {
-  // Pakai logic sama persis dengan Duplikasi Video Step 2
-  // Populate ref scenes dari motScenes
   var refScenes = $('motRefScenes');
-  if (refScenes) {
+  if (refScenes && motScenes.length) {
     refScenes.innerHTML = '';
     motScenes.forEach(function(s, i) {
       var row = document.createElement('div');
       row.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px';
-      row.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (s.scene || i+1) + '</div>' +
+      row.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (s.scene || i+1) + (s.title ? ' — ' + s.title : '') + '</div>' +
         '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.5">' + (s.text || '').replace(/</g,'&lt;') + '</div>';
       refScenes.appendChild(row);
     });
   }
-  // Auto-generate kalau belum ada hasil
+  // Auto-generate hanya kalau belum pernah (hasil belum ada)
   var result2 = $('motRewriteResult'), loading2 = $('motRewriteLoading');
   var alreadyDone = result2 && result2.style.display !== 'none';
   var isLoading = loading2 && loading2.style.display !== 'none';
-  if (!alreadyDone && !isLoading) startMotRewrite();
+  if (!alreadyDone && !isLoading && motScenes.length) startMotRewrite();
 }
 
 async function startMotRewrite() {
   if (!motScenes.length) { showToast('Selesaikan Step 1 dulu.', 'error'); switchMotStep(1); return; }
   var loading = $('motRewriteLoading'), result = $('motRewriteResult'), btnNext = $('btnMotNext2');
+  var btnGen = $('btnMotRewrite');
+  if (btnGen) btnGen.style.display = 'none';
   if (loading) loading.style.display = 'block';
   if (result) result.style.display = 'none';
   if (btnNext) btnNext.style.display = 'none';
   try {
-    var d = await proxyPost('rewriteScript', { scenes: motScenes, count: 2 });
+    var d = await proxyPost('rewriteScript', { scenes: motScenes, count: mot2SelectedCount });
     if (!d.variations || !d.variations.length) throw new Error('Variasi tidak dihasilkan.');
     if (loading) loading.style.display = 'none';
     if (result) result.style.display = 'block';
@@ -3407,6 +3428,7 @@ async function startMotRewrite() {
     showToast(d.variations.length + ' variasi script siap!', 'success');
   } catch(err) {
     if (loading) loading.style.display = 'none';
+    if (btnGen) btnGen.style.display = '';
     showToast(err.message, 'error');
   }
 }
@@ -3417,41 +3439,56 @@ function renderMotVariationCards(variations) {
   container.innerHTML = '';
   variations.forEach(function(v, vi) {
     var card = document.createElement('div');
-    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px';
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden';
+    // Header
     var header = document.createElement('div');
     header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg-hover)';
-    header.innerHTML = '<div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (vi+1) + '</div>' +
+    header.innerHTML =
+      '<div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (vi+1) + '</div>' +
       '<div style="font-size:13px;font-weight:600;flex:1;color:var(--text)">' + (v.label || 'Variasi ' + (vi+1)) + '</div>' +
-      '<button class="mot-pakai-btn" style="font-size:11px;padding:5px 14px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">Pakai ini</button>';
+      '<button class="mot-pakai-btn" style="font-size:11px;padding:5px 14px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">Pakai ini</button>' +
+      '<button class="mot-expand-btn" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;margin-left:4px">' +
+        '<svg class="mot-arrow-' + vi + '" width="14" height="14" viewBox="0 0 14 14" fill="none" style="transition:transform 0.2s;transform:rotate(0deg)"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
+      '</button>';
     card.appendChild(header);
+    // Body scenes
     var body = document.createElement('div');
-    body.style.padding = '12px 16px';
-    if (v.scenes && v.scenes.length) {
-      v.scenes.forEach(function(s) {
-        var row = document.createElement('div');
-        row.style.cssText = 'border-bottom:1px solid var(--border);padding:8px 0;font-size:12px;color:var(--text)';
-        row.innerHTML = '<span style="font-weight:600;color:var(--accent)">Scene ' + s.scene + ':</span> ';
-        var ta = document.createElement('textarea');
-        ta.className = 'textarea-field';
-        ta.rows = 2;
-        ta.style.cssText = 'width:100%;box-sizing:border-box;font-size:12px;margin-top:4px;resize:vertical';
-        ta.value = s.text || s.narasi || '';
-        row.appendChild(ta);
-        body.appendChild(row);
-      });
-    }
+    body.id = 'motVarBody' + vi;
+    body.style.display = 'block';
+    (v.scenes || []).forEach(function(s, si) {
+      var row = document.createElement('div');
+      row.style.cssText = 'border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;align-items:flex-start';
+      var num = document.createElement('div');
+      num.style.cssText = 'width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.7;color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px';
+      num.textContent = s.scene || si+1;
+      var right = document.createElement('div');
+      right.style.cssText = 'flex:1;min-width:0';
+      var ta = document.createElement('textarea');
+      ta.className = 'textarea-field';
+      ta.rows = 2;
+      ta.style.cssText = 'width:100%;box-sizing:border-box;font-size:12px;resize:vertical;margin:0';
+      ta.value = s.text || s.narasi || '';
+      right.appendChild(ta);
+      row.appendChild(num); row.appendChild(right);
+      body.appendChild(row);
+    });
     card.appendChild(body);
+    // Toggle expand
+    header.querySelector('.mot-expand-btn').addEventListener('click', function() {
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      card.querySelector('.mot-arrow-' + vi).style.transform = open ? 'rotate(-90deg)' : 'rotate(0deg)';
+    });
+    // Pakai ini
     header.querySelector('.mot-pakai-btn').addEventListener('click', function() {
-      // Kumpulkan scenes dari textarea card ini
       motScriptScenes = [];
       body.querySelectorAll('textarea').forEach(function(ta, si) {
         motScriptScenes.push({ scene: si+1, text: ta.value.trim() });
       });
+      container.querySelectorAll('& > div').forEach(function(c){ c.style.borderColor='var(--border)'; });
+      card.style.borderColor = 'var(--accent)';
       var btnNext = $('btnMotNext2');
       if (btnNext) btnNext.style.display = '';
-      // Highlight card yang dipilih
-      document.querySelectorAll('#motVariationsContainer > div').forEach(function(c){ c.style.borderColor='var(--border)'; });
-      card.style.borderColor = 'var(--accent)';
       showToast('Variasi dipilih! Lanjut ke Step 3.', 'success');
     });
     container.appendChild(card);

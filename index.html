@@ -1180,37 +1180,65 @@
           <button id="btnMotTranscribe" class="btn-generate" style="width:100%;margin-top:4px">Transkripsi Sekarang</button>
         </div>
 
-        <!-- STEP 2: Edit Script -->
+        <!-- STEP 2: Variasi Script -->
         <div id="motCanvasPanel2" style="display:none">
           <div style="margin-bottom:20px">
             <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 2</div>
             <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Variasi Script</h2>
-            <p style="color:var(--text-muted);font-size:13px;margin:0">AI membuat variasi script baru — pilih satu untuk dilanjutkan.</p>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Generate beberapa variasi dari script yang sudah kamu edit di Step 1.</p>
           </div>
 
-          <!-- Referensi scene Step 1 -->
-          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Script Kompetitor</div>
-            <div id="motRefScenes" style="display:flex;flex-direction:column;gap:8px"></div>
+          <!-- Referensi Step 1 -->
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;margin-bottom:20px;overflow:hidden">
+            <button id="motRefToggle" onclick="var b=$('motRefBody');var a=$('motRefArrow');b.style.display=b.style.display==='none'?'block':'none';a.style.transform=b.style.display==='none'?'':'rotate(180deg)'" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:none;border:none;cursor:pointer;color:var(--text)">
+              <span style="font-size:13px;font-weight:600">Referensi Script (Step 1)</span>
+              <svg id="motRefArrow" width="14" height="14" viewBox="0 0 14 14" fill="none" style="transition:transform 0.2s"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            <div id="motRefBody" style="display:none;padding:0 16px 16px">
+              <div id="motRefScenes" style="display:flex;flex-direction:column;gap:8px"></div>
+            </div>
+          </div>
+
+          <!-- Pilih jumlah variasi + generate -->
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:500;white-space:nowrap">Jumlah variasi:</div>
+            <div style="display:flex;gap:6px">
+              <button class="dup2-count-btn active" data-mot-count="2">2</button>
+              <button class="dup2-count-btn" data-mot-count="3">3</button>
+              <button class="dup2-count-btn" data-mot-count="4">4</button>
+            </div>
+            <button class="btn-generate" id="btnMotRewrite" onclick="startMotRewrite()" style="margin-left:auto;width:auto;padding:10px 24px;display:none">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M2 7h7M2 10h5" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Generate Variasi
+            </button>
           </div>
 
           <!-- Loading -->
-          <div id="motRewriteLoading" style="display:none;text-align:center;padding:24px">
-            <div class="loading-spinner" style="margin:0 auto 10px"></div>
-            <div style="font-size:13px;color:var(--text-muted)">AI sedang membuat variasi script...</div>
+          <div id="motRewriteLoading" style="display:none;text-align:center;padding:24px 0">
+            <div style="display:flex;gap:5px;justify-content:center;margin-bottom:8px">
+              <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0s"></div>
+              <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.2s"></div>
+              <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.4s"></div>
+            </div>
+            <div class="qty-hint">Membuat variasi script...</div>
           </div>
 
           <!-- Hasil variasi -->
           <div id="motRewriteResult" style="display:none">
-            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">Pilih Variasi Script:</div>
-            <div id="motVariationsContainer"></div>
-            <div style="display:flex;gap:10px;margin-top:12px">
-              <button class="btn-secondary" onclick="startMotRewrite()" style="padding:10px 20px">Generate Ulang</button>
-              <button id="btnMotNext2" class="btn-generate" style="flex:1;padding:10px;display:none">Lanjut Step 3 →</button>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div class="panel-label" style="margin:0">Pilih Variasi</div>
+              <button onclick="startMotRewrite()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0">Generate ulang</button>
             </div>
+            <div id="motVariationsContainer" style="display:flex;flex-direction:column;gap:16px"></div>
           </div>
 
-          <button class="btn-secondary" onclick="switchMotStep(1)" style="padding:10px 20px;margin-top:16px">← Kembali</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px">
+            <button class="btn-generate" onclick="switchMotStep(1)" style="width:auto;padding:10px 24px;background:var(--bg-surface);color:var(--text)">← Kembali</button>
+            <div style="display:flex;align-items:center;gap:12px">
+              <button onclick="motUseStep1Scenes()" style="font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px 8px;text-decoration:underline">Lewati, pakai script Step 1</button>
+              <button class="btn-generate" id="btnMotNext2" style="width:auto;padding:10px 28px;display:none">Lanjut Step 3 →</button>
+            </div>
+          </div>
         </div>
 
         <!-- STEP 3: Generate Model Image -->
