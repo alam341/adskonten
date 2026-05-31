@@ -3623,9 +3623,17 @@ async function generateMotModel() {
     var upload = await proxyPost('upload', { imageBase64: fullBase64, mimeType: mime });
     if (!upload.url) throw new Error('Upload gagal.');
     var d = await proxyPost('generate', { type: 'image', model: 'seedream/4.5-edit', imageUrl: upload.url, prompt: prompt, ratio: '1:1', quantity: 2 });
-    var taskId = d.data?.taskId || d.taskId;
-    if (!taskId) throw new Error('taskId tidak ada.');
-    var images = await pollKieImages(taskId);
+    var taskIds = d.taskIds || (d.taskId ? [d.taskId] : []);
+    if (!taskIds.length) throw new Error('taskId tidak ada. ' + (d.error || ''));
+    // Poll semua taskId pakai pollStatus yang sudah terbukti
+    var allImages = [];
+    for (var ti = 0; ti < taskIds.length; ti++) {
+      try {
+        var result = await pollStatus(taskIds[ti], d.taskType || 'jobs', 40);
+        if (result) allImages.push(result);
+      } catch(e) {}
+    }
+    var images = allImages;
     if (!images.length) throw new Error('Tidak ada gambar dihasilkan.');
 
     if (loading) loading.style.display = 'none';
