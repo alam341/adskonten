@@ -1404,17 +1404,17 @@ PENTING:
 
       const durSec = Math.min(Math.max(parseInt(duration) || 8, 5), 8);
       const body = {
-        instances: [{ prompt }],
-        parameters: {
-          aspectRatio: '16:9',
-          sampleCount: 1,
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          numberOfVideos: 1,
           durationSeconds: durSec,
+          aspectRatio: '16:9',
           personGeneration: personGeneration || 'allow_adult',
         }
       };
 
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-preview:predictLongRunning?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-preview:generateVideos?key=${googleKey}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
       );
       const rawText = await r.text();
