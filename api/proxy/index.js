@@ -1417,18 +1417,19 @@ PENTING:
       if (!prompt) return res.status(400).json({ error: 'prompt diperlukan.' });
 
       const durSec = Math.min(Math.max(parseInt(duration) || 8, 5), 8);
+      const veoModel = req.body.model || 'veo-3.0-fast-generate-001';
       const body = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          numberOfVideos: 1,
-          durationSeconds: durSec,
+        instances: [{ prompt }],
+        parameters: {
           aspectRatio: '16:9',
+          sampleCount: 1,
+          durationSeconds: durSec,
           personGeneration: personGeneration || 'allow_adult',
         }
       };
 
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-preview:generateVideos?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:predictLongRunning?key=${googleKey}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
       );
       const rawText = await r.text();
