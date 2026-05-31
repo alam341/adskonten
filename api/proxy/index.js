@@ -1393,6 +1393,20 @@ PENTING:
       }
     }
 
+    // ── LIST GOOGLE MODELS (DEBUG) ────────────────────────────
+    if (action === 'listGoogleModels') {
+      const googleKey = await getGoogleKey();
+      if (!googleKey) return res.status(500).json({ error: 'Belum ada Google API key.' });
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${googleKey}&pageSize=100`);
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: JSON.stringify(d).slice(0,300) });
+      const videoModels = (d.models || []).filter(m =>
+        (m.name || '').toLowerCase().includes('veo') ||
+        (m.supportedGenerationMethods || []).some(method => method.toLowerCase().includes('video'))
+      );
+      return res.status(200).json({ videoModels, all: (d.models || []).map(m => m.name) });
+    }
+
     // ── GOOGLE VEO VIDEO GENERATE ─────────────────────────────
     if (action === 'googleVideo') {
       if (req.method !== 'POST') return res.status(405).end();
