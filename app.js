@@ -2214,7 +2214,7 @@ function switchDupStep(step) {
     }
     if (panel) panel.style.display = i === step ? '' : 'none';
   }
-  // Saat masuk Step 2, populate referensi dari scene Step 1
+  // Saat masuk Step 2, populate referensi + auto-generate kalau belum ada hasil
   if (step === 2) {
     var refScenes = $('dup2RefScenes');
     if (refScenes) {
@@ -2230,6 +2230,13 @@ function switchDupStep(step) {
           refScenes.appendChild(row);
         });
       }
+    }
+    // Auto-generate kalau hasil belum ada
+    var result2 = $('dup2Result'), loading2 = $('dup2Loading');
+    var alreadyDone = result2 && result2.style.display !== 'none';
+    var isLoading   = loading2 && loading2.style.display !== 'none';
+    if (!alreadyDone && !isLoading) {
+      startRewriteScript();
     }
   }
 }
@@ -2300,10 +2307,24 @@ function setupVideoMode() {
   $('btnRewriteAgain')   && $('btnRewriteAgain').addEventListener('click', function() {
     var result = $('dup2Result'), btn = $('btnRewriteScript'), nextBtn = $('btnDupNext2');
     if (result) result.style.display = 'none';
-    if (btn) btn.style.display = '';
+    if (btn) btn.style.display = '';   // tampilkan tombol manual generate
     if (nextBtn) nextBtn.style.display = 'none';
   });
   $('btnDupNext2')       && $('btnDupNext2').addEventListener('click', function() { switchDupStep(3); });
+
+  // Lewati Step 2 — pakai langsung scenes dari Step 1
+  $('btnSkipToStep3') && $('btnSkipToStep3').addEventListener('click', function() {
+    var step1Cards = document.querySelectorAll('#dupScenesContainer .dup-scene-text');
+    if (!step1Cards.length) { showToast('Selesaikan Step 1 dulu.', 'error'); return; }
+    dupStep2Scenes = [];
+    step1Cards.forEach(function(el, i) {
+      dupStep2Scenes.push({ scene: i+1, title: 'Scene ' + (i+1), text: el.value.trim() });
+    });
+    var nextBtn = $('btnDupNext2');
+    if (nextBtn) nextBtn.style.display = '';
+    showToast('Pakai script dari Step 1 langsung.', 'success');
+    switchDupStep(3);
+  });
 
   // Count selector buttons
   document.querySelectorAll('.dup2-count-btn').forEach(function(btn) {
@@ -2382,23 +2403,36 @@ function renderVariationCards(variations) {
       '<div style="font-size:13px;font-weight:600;flex:1;color:var(--text)">' + (v.label || 'Variasi ' + (vi+1)) + '</div>' +
       '<button class="dup2-pakai-btn" data-vi="' + vi + '" style="font-size:11px;padding:5px 14px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">Pakai ini</button>' +
       '<button class="dup2-expand-btn" data-vi="' + vi + '" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;margin-left:4px">' +
-        '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="dup2-arrow-' + vi + '" style="transition:transform 0.2s;transform:rotate(-90deg)"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
+        '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="dup2-arrow-' + vi + '" style="transition:transform 0.2s;transform:rotate(0deg)"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
       '</button>';
     card.appendChild(header);
 
-    // Scene list (collapsed by default)
+    // Scene list (terbuka by default agar langsung bisa diedit)
     var body = document.createElement('div');
     body.id = 'dup2VarBody' + vi;
-    body.style.display = 'none';
+    body.style.display = 'block';
     v.scenes.forEach(function(s, si) {
       var row = document.createElement('div');
       row.style.cssText = 'border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;align-items:flex-start';
-      row.innerHTML =
-        '<div style="width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.7;color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">' + s.scene + '</div>' +
-        '<div style="flex:1">' +
-          '<div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px">' + (s.title || 'Scene ' + s.scene) + '</div>' +
-          '<div style="font-size:13px;color:var(--text);line-height:1.5">' + (s.text || '').replace(/\n/g, '<br>') + '</div>' +
-        '</div>';
+      var num = document.createElement('div');
+      num.style.cssText = 'width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:0.7;color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px';
+      num.textContent = s.scene;
+      var right = document.createElement('div');
+      right.style.cssText = 'flex:1;min-width:0';
+      var label = document.createElement('div');
+      label.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px';
+      label.textContent = s.title || 'Scene ' + s.scene;
+      var ta = document.createElement('textarea');
+      ta.className = 'textarea-field dup2-scene-edit';
+      ta.dataset.vi = vi;
+      ta.dataset.si = si;
+      ta.rows = 3;
+      ta.style.cssText = 'width:100%;box-sizing:border-box;resize:vertical;font-size:13px;line-height:1.5';
+      ta.value = s.text || '';
+      right.appendChild(label);
+      right.appendChild(ta);
+      row.appendChild(num);
+      row.appendChild(right);
       body.appendChild(row);
     });
     card.appendChild(body);
@@ -2412,17 +2446,20 @@ function renderVariationCards(variations) {
       if (arrow) arrow.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
     });
 
-    // Pakai ini — copy scenes to step2 selection and enable next
+
+    // Pakai ini — baca dari textarea (sudah diedit) lalu simpan
     card.querySelector('.dup2-pakai-btn').addEventListener('click', function() {
-      dupStep2Scenes = v.scenes;
+      // Kumpulkan teks terkini dari textarea dalam card ini
+      var editedScenes = [];
+      body.querySelectorAll('.dup2-scene-edit').forEach(function(ta, si) {
+        editedScenes.push({ scene: si+1, title: v.scenes[si] ? (v.scenes[si].title || 'Scene '+(si+1)) : 'Scene '+(si+1), text: ta.value.trim() });
+      });
+      dupStep2Scenes = editedScenes;
       // Highlight selected card, reset others
       container.querySelectorAll('.dup2-pakai-btn').forEach(function(b) {
         b.style.background = 'var(--accent)'; b.textContent = 'Pakai ini';
       });
       this.style.background = '#16a34a'; this.textContent = 'Dipilih ✓';
-      container.querySelectorAll('[style*="border:1.5px solid"]').forEach(function(c) {
-        c.style.borderColor = 'var(--border)';
-      });
       card.style.borderColor = '#16a34a';
       if (nextBtn) nextBtn.style.display = '';
       showToast('Variasi "' + (v.label || 'Variasi ' + (vi+1)) + '" dipilih.', 'success');
