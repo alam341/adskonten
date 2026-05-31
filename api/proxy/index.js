@@ -1411,7 +1411,13 @@ PENTING:
       if (d.error) return res.status(200).json({ status: 'failed', error: d.error.message });
 
       const videos = d.response?.generatedVideos || [];
-      const videoUrls = videos.map(v => v.video?.uri).filter(Boolean);
+      const videoUrls = videos.map(v => {
+        const uri = v.video?.uri;
+        if (!uri) return null;
+        // Append key + alt=media agar URL bisa diakses langsung
+        const sep = uri.includes('?') ? '&' : '?';
+        return uri + sep + 'alt=media&key=' + googleKey;
+      }).filter(Boolean);
       if (!videoUrls.length) return res.status(200).json({ status: 'failed', error: 'Tidak ada video.' });
       return res.status(200).json({ status: 'success', videoUrls });
     }
