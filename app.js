@@ -2269,19 +2269,15 @@ async function startTranscribe() {
   if (result) result.style.display = 'none';
 
   try {
-    if (loadingText) loadingText.textContent = 'Mengupload file...';
+    if (loadingText) loadingText.textContent = 'Mentranskripsi...';
     var d = await proxyPost('transcribe', { fileBase64: dupFileBase64, mimeType: dupFileMime, language: lang });
-    var taskId = d.taskId;
-    if (!taskId) throw new Error('taskId tidak ada dari server.');
-
-    if (loadingText) loadingText.textContent = 'Mentranskripsi audio...';
-    var transcript = await pollTranscript(taskId, loadingText);
+    if (!d.transcriptText) throw new Error('Hasil transkripsi kosong.');
 
     if (loading) loading.style.display = 'none';
     if (result) result.style.display = 'block';
     var textArea = $('dupTranscriptText');
-    if (textArea) textArea.value = transcript;
-    showToast('Transkripsi selesai! Edit dulu sebelum lanjut.', 'success');
+    if (textArea) textArea.value = d.transcriptText;
+    showToast('Transkripsi selesai!', 'success');
 
   } catch(err) {
     if (loading) loading.style.display = 'none';
@@ -2289,21 +2285,4 @@ async function startTranscribe() {
   } finally {
     if (btnTranscribe) btnTranscribe.disabled = false;
   }
-}
-
-async function pollTranscript(taskId, statusEl) {
-  var maxAttempts = 60;
-  var DONE = ['success','SUCCESS','completed','COMPLETED'];
-  var FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
-  for (var i = 0; i < maxAttempts; i++) {
-    await sleep(i < 5 ? 3000 : i < 15 ? 4000 : 6000);
-    if (statusEl) statusEl.textContent = 'Mentranskripsi... (' + (i + 1) + '/' + maxAttempts + ')';
-    var data = await proxyGet('status', { taskId: taskId, type: 'transcribe' });
-    if (DONE.indexOf(data.status) >= 0) {
-      if (!data.transcriptText) throw new Error('Teks transkripsi tidak ditemukan di hasil.');
-      return data.transcriptText;
-    }
-    if (data.isFail) throw new Error('Transkripsi gagal. Coba lagi.');
-  }
-  throw new Error('Timeout. Coba lagi.');
 }
