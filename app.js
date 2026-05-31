@@ -2994,6 +2994,43 @@ async function generateDup3Image(idx, prompt, card) {
 // ── STEP 4: GENERATE VIDEO VEO 3 ──────────────────────────
 var dup4SceneVideos = {}; // { idx: videoUrl }
 
+// Test Veo langsung dari console tanpa perlu step 1-3
+// Usage: testVeo("your prompt here")
+window.testVeo = async function(prompt, model) {
+  prompt = prompt || 'Indonesian man presenting product to camera, smiling, clean studio background, advertisement style';
+  model = model || 'veo-3.0-fast-generate-001';
+  console.log('[testVeo] Sending prompt:', prompt, '| model:', model);
+  try {
+    var r = await fetch('/api/proxy?action=googleVideo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('adstudio_token') || '') },
+      body: JSON.stringify({ prompt, duration: 5, personGeneration: 'allow_all', model })
+    });
+    var d = await r.json();
+    if (!r.ok) { console.error('[testVeo] Error:', d.error); return; }
+    console.log('[testVeo] Operation started:', d.operationName);
+    console.log('[testVeo] Polling every 10s...');
+    var tries = 0;
+    var poll = setInterval(async function() {
+      tries++;
+      var pr = await fetch('/api/proxy?action=googleVideoStatus&operationName=' + encodeURIComponent(d.operationName) + '&googleKey=' + encodeURIComponent(d.googleKey));
+      var pd = await pr.json();
+      console.log('[testVeo] Try ' + tries + ':', pd.status, pd.error || '');
+      if (pd.status === 'success') {
+        clearInterval(poll);
+        console.log('[testVeo] VIDEO READY:', pd.videoUrls);
+        pd.videoUrls.forEach(function(url) { window.open(url); });
+      } else if (pd.status === 'failed') {
+        clearInterval(poll);
+        console.error('[testVeo] Failed:', pd.error);
+      } else if (tries >= 40) {
+        clearInterval(poll);
+        console.warn('[testVeo] Timeout setelah 40 tries');
+      }
+    }, 10000);
+  } catch(e) { console.error('[testVeo] Exception:', e.message); }
+};
+
 function setupStep4() {
   $('btnDup4GenAll') && $('btnDup4GenAll').addEventListener('click', function() {
     var cards = document.querySelectorAll('.dup4-scene-card');
