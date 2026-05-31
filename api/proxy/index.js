@@ -503,11 +503,21 @@ Output JSON saja (tanpa penjelasan):
 
       if (type === 'video') {
         const apiKey = getKey('video');
-        const { model, imageUrl, prompt, duration, resolution } = body;
+        const { model, imageUrl, secondImageUrl, prompt, duration, resolution, ratio } = body;
         let input = { prompt, image_urls: [imageUrl], duration: String(duration||'5') };
         if (model === 'kling-2.6/image-to-video') input.sound = false;
         else if (model === 'grok-imagine/image-to-video') { input.mode='normal'; input.resolution=resolution||'720p'; input.aspect_ratio='16:9'; }
         else if (model.startsWith('wan')) input.resolution = resolution||'720p';
+        else if (model === 'kling-3-motion-control') {
+          // Motion control: image + video referensi gerakan
+          input = {
+            prompt: prompt || 'natural motion, smooth movement',
+            image_urls: [imageUrl],
+            motion_video_url: secondImageUrl, // video referensi gerakan
+            duration: String(duration || '10'),
+            aspect_ratio: ratio || '9:16',
+          };
+        }
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
