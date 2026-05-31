@@ -1404,18 +1404,17 @@ PENTING:
 
       const durSec = Math.min(Math.max(parseInt(duration) || 8, 5), 8);
       const body = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          personGeneration: personGeneration || 'allow_adult',
+        instances: [{ prompt }],
+        parameters: {
           aspectRatio: '16:9',
-          numberOfVideos: 1,
+          sampleCount: 1,
           durationSeconds: durSec,
-          resolution: resolution || '720p',
+          personGeneration: personGeneration || 'allow_adult',
         }
       };
 
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:generateVideos?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-preview:predictLongRunning?key=${googleKey}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
       );
       const rawText = await r.text();
@@ -1445,15 +1444,16 @@ PENTING:
       if (!d.done) return res.status(200).json({ status: 'processing' });
       if (d.error) return res.status(200).json({ status: 'failed', error: d.error.message });
 
-      const videos = d.response?.generatedVideos || [];
-      const videoUrls = videos.map(v => {
-        const uri = v.video?.uri;
+      // predictLongRunning: d.response.predictions[].video.uri
+      // generateVideos:     d.response.generatedVideos[].video.uri
+      const predictions = d.response?.predictions || d.response?.generatedVideos || [];
+      const videoUrls = predictions.map(v => {
+        const uri = v.video?.uri || v.uri;
         if (!uri) return null;
-        // Append key + alt=media agar URL bisa diakses langsung
         const sep = uri.includes('?') ? '&' : '?';
         return uri + sep + 'alt=media&key=' + googleKey;
       }).filter(Boolean);
-      if (!videoUrls.length) return res.status(200).json({ status: 'failed', error: 'Tidak ada video.' });
+      if (!videoUrls.length) return res.status(200).json({ status: 'failed', error: 'Tidak ada video. Response: ' + JSON.stringify(d.response).slice(0,200) });
       return res.status(200).json({ status: 'success', videoUrls });
     }
 
