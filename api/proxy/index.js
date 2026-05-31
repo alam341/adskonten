@@ -230,11 +230,12 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // ── TRANSCRIBE (Groq Whisper — synchronous) ───────────────
+    // ── TRANSCRIBE (Groq → fallback OpenAI Whisper) ───────────
     if (action === 'transcribe') {
       if (req.method !== 'POST') return res.status(405).end();
-      const GROQ_KEY = process.env.GROQ_API_KEY;
-      if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY belum diset di environment.' });
+      const GROQ_KEY   = process.env.GROQ_API_KEY;
+      const OPENAI_KEY = process.env.OPENAI_API_KEY;
+      if (!GROQ_KEY && !OPENAI_KEY) return res.status(500).json({ error: 'GROQ_API_KEY atau OPENAI_API_KEY belum diset.' });
 
       const { fileBase64, mimeType, language } = req.body;
       if (!fileBase64) return res.status(400).json({ error: 'fileBase64 diperlukan.' });
@@ -244,24 +245,36 @@ module.exports = async function handler(req, res) {
       const fileName = `file.${ext}`;
 
       const buf = Buffer.from(fileBase64, 'base64');
-      const blob = new Blob([buf], { type: mimeType || 'audio/mpeg' });
-      const formData = new FormData();
-      formData.append('file', blob, fileName);
-      formData.append('model', 'whisper-large-v3-turbo');
-      formData.append('response_format', 'text');
-      if (language && language !== 'auto') formData.append('language', language);
 
-      const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${GROQ_KEY}` },
-        body: formData,
-      });
-      if (!r.ok) {
-        const err = await r.text();
-        return res.status(r.status).json({ error: 'Groq error: ' + err.slice(0, 200) });
+      async function callWhisper(apiKey, endpoint, model) {
+        const blob = new Blob([buf], { type: mimeType || 'audio/mpeg' });
+        const formData = new FormData();
+        formData.append('file', blob, fileName);
+        formData.append('model', model);
+        formData.append('response_format', 'text');
+        if (language && language !== 'auto') formData.append('language', language);
+        const r = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+          body: formData,
+        });
+        if (!r.ok) { const e = await r.text(); throw new Error(e.slice(0, 200)); }
+        return (await r.text()).trim();
       }
-      const transcriptText = await r.text();
-      return res.status(200).json({ transcriptText: transcriptText.trim() });
+
+      // Coba Groq dulu (lebih cepat), fallback ke OpenAI
+      const providers = [];
+      if (GROQ_KEY)   providers.push({ key: GROQ_KEY,   url: 'https://api.groq.com/openai/v1/audio/transcriptions', model: 'whisper-large-v3-turbo' });
+      if (OPENAI_KEY) providers.push({ key: OPENAI_KEY, url: 'https://api.openai.com/v1/audio/transcriptions',      model: 'whisper-1' });
+
+      let lastErr = '';
+      for (const p of providers) {
+        try {
+          const transcriptText = await callWhisper(p.key, p.url, p.model);
+          return res.status(200).json({ transcriptText });
+        } catch(e) { lastErr = e.message; }
+      }
+      return res.status(500).json({ error: 'Transkripsi gagal: ' + lastErr });
     }
 
     // ── UPLOAD ────────────────────────────────────────────
