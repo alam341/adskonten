@@ -1184,21 +1184,33 @@
         <div id="motCanvasPanel2" style="display:none">
           <div style="margin-bottom:20px">
             <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 2</div>
-            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Edit Script</h2>
-            <p style="color:var(--text-muted);font-size:13px;margin:0">Buat variasi script baru berdasarkan transkrip kompetitor.</p>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Variasi Script</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">AI membuat variasi script baru — pilih satu untuk dilanjutkan.</p>
           </div>
-          <div id="motStep2Content"></div>
-          <div style="display:flex;gap:10px;margin-top:16px">
-            <button class="btn-secondary" onclick="switchMotStep(1)" style="padding:10px 20px">← Kembali</button>
-            <button id="btnMotRewrite" class="btn-generate" style="flex:1;padding:10px">Generate Variasi Script</button>
+
+          <!-- Referensi scene Step 1 -->
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Script Kompetitor</div>
+            <div id="motRefScenes" style="display:flex;flex-direction:column;gap:8px"></div>
           </div>
-          <div id="motRewriteResult" style="display:none;margin-top:16px">
-            <div id="motScriptVariants"></div>
+
+          <!-- Loading -->
+          <div id="motRewriteLoading" style="display:none;text-align:center;padding:24px">
+            <div class="loading-spinner" style="margin:0 auto 10px"></div>
+            <div style="font-size:13px;color:var(--text-muted)">AI sedang membuat variasi script...</div>
+          </div>
+
+          <!-- Hasil variasi -->
+          <div id="motRewriteResult" style="display:none">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">Pilih Variasi Script:</div>
+            <div id="motVariationsContainer"></div>
             <div style="display:flex;gap:10px;margin-top:12px">
-              <button class="btn-secondary" id="btnMotRewriteAgain" style="padding:10px 20px">Generate Ulang</button>
-              <button id="btnMotNext2" class="btn-generate" style="flex:1;padding:10px" style="display:none">Lanjut Step 3 →</button>
+              <button class="btn-secondary" onclick="startMotRewrite()" style="padding:10px 20px">Generate Ulang</button>
+              <button id="btnMotNext2" class="btn-generate" style="flex:1;padding:10px;display:none">Lanjut Step 3 →</button>
             </div>
           </div>
+
+          <button class="btn-secondary" onclick="switchMotStep(1)" style="padding:10px 20px;margin-top:16px">← Kembali</button>
         </div>
 
         <!-- STEP 3: Generate Model Image -->

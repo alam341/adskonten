@@ -3226,10 +3226,9 @@ function switchVideoMode(mode) {
     if (stepperDup) stepperDup.style.display='';
     if (stepperMot) stepperMot.style.display='none';
     if (canvasMot) canvasMot.style.display='none';
-    // Tampilkan canvas dup jika sudah aktif, else empty
-    if (canvasDup && canvasDup.style.display !== 'none') {
-      if (empty) empty.style.display='none';
-    }
+    // Restore canvas dup — selalu tampilkan dan sync ke step aktif
+    if (canvasDup) { canvasDup.style.display='block'; if (empty) empty.style.display='none'; }
+    switchDupStep(dupActiveStep);
   } else {
     if (btnMot) { btnMot.style.background='var(--accent)'; btnMot.style.color='white'; btnMot.style.borderColor='var(--accent)'; }
     if (btnDup) { btnDup.style.background='transparent'; btnDup.style.color='var(--text-muted)'; btnDup.style.borderColor='var(--border)'; }
@@ -3368,69 +3367,95 @@ function renderMotScenes(scenes) {
 
 // ─── STEP 2: Script ──────────────────────────────────────────
 function setupMotionStep2() {
-  var btnRewrite = $('btnMotRewrite');
-  if (btnRewrite) btnRewrite.addEventListener('click', startMotRewrite);
-
-  var btnAgain = $('btnMotRewriteAgain');
-  if (btnAgain) btnAgain.addEventListener('click', function() {
-    var result = $('motRewriteResult');
-    if (result) result.style.display = 'none';
-  });
-
   var btnNext = $('btnMotNext2');
   if (btnNext) btnNext.addEventListener('click', function() { switchMotStep(3); });
 }
 
 function renderMotStep2() {
-  var container = $('motStep2Content');
-  if (!container) return;
-  container.innerHTML = '';
-  motScenes.forEach(function(s, i) {
-    var div = document.createElement('div');
-    div.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px';
-    div.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (s.scene || i+1) + '</div>' +
-      '<div style="font-size:12px;color:var(--text-muted)">' + (s.text || '') + '</div>';
-    container.appendChild(div);
-  });
+  // Pakai logic sama persis dengan Duplikasi Video Step 2
+  // Populate ref scenes dari motScenes
+  var refScenes = $('motRefScenes');
+  if (refScenes) {
+    refScenes.innerHTML = '';
+    motScenes.forEach(function(s, i) {
+      var row = document.createElement('div');
+      row.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px';
+      row.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (s.scene || i+1) + '</div>' +
+        '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.5">' + (s.text || '').replace(/</g,'&lt;') + '</div>';
+      refScenes.appendChild(row);
+    });
+  }
+  // Auto-generate kalau belum ada hasil
+  var result2 = $('motRewriteResult'), loading2 = $('motRewriteLoading');
+  var alreadyDone = result2 && result2.style.display !== 'none';
+  var isLoading = loading2 && loading2.style.display !== 'none';
+  if (!alreadyDone && !isLoading) startMotRewrite();
 }
 
 async function startMotRewrite() {
-  if (!motScenes.length) { showToast('Selesaikan Step 1 dulu.', 'error'); return; }
-  var btn = $('btnMotRewrite');
-  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+  if (!motScenes.length) { showToast('Selesaikan Step 1 dulu.', 'error'); switchMotStep(1); return; }
+  var loading = $('motRewriteLoading'), result = $('motRewriteResult'), btnNext = $('btnMotNext2');
+  if (loading) loading.style.display = 'block';
+  if (result) result.style.display = 'none';
+  if (btnNext) btnNext.style.display = 'none';
   try {
-    var d = await proxyPost('rewriteScript', { scenes: motScenes, tone: 'persuasive', count: 2 });
-    var variants = d.variants || d.scripts || [];
-    if (!variants.length) throw new Error('Tidak ada variasi.');
-    var container = $('motScriptVariants');
-    if (container) {
-      container.innerHTML = '';
-      variants.forEach(function(v, i) {
-        var scriptText = typeof v === 'string' ? v : (v.script || v.text || JSON.stringify(v));
-        var card = document.createElement('div');
-        card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer';
-        card.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px">Variasi ' + (i+1) + '</div>' +
-          '<textarea class="textarea-field" rows="4" style="width:100%;box-sizing:border-box;font-size:12px;resize:vertical">' + scriptText + '</textarea>' +
-          '<button class="btn-generate" style="margin-top:8px;width:100%;padding:7px;font-size:12px">Pakai Variasi Ini</button>';
-        card.querySelector('button').addEventListener('click', function() {
-          motScript = card.querySelector('textarea').value;
-          // Pecah script jadi scenes
-          var lines = motScript.split('\n').filter(function(l){ return l.trim(); });
-          motScriptScenes = lines.map(function(l, idx) { return { scene: idx+1, text: l.trim() }; });
-          var btnNext = $('btnMotNext2');
-          if (btnNext) { btnNext.style.display=''; }
-          showToast('Script dipilih! Lanjut ke Step 3.', 'success');
-        });
-        container.appendChild(card);
+    var d = await proxyPost('rewriteScript', { scenes: motScenes, count: 2 });
+    if (!d.variations || !d.variations.length) throw new Error('Variasi tidak dihasilkan.');
+    if (loading) loading.style.display = 'none';
+    if (result) result.style.display = 'block';
+    renderMotVariationCards(d.variations);
+    showToast(d.variations.length + ' variasi script siap!', 'success');
+  } catch(err) {
+    if (loading) loading.style.display = 'none';
+    showToast(err.message, 'error');
+  }
+}
+
+function renderMotVariationCards(variations) {
+  var container = $('motVariationsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  variations.forEach(function(v, vi) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px';
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg-hover)';
+    header.innerHTML = '<div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (vi+1) + '</div>' +
+      '<div style="font-size:13px;font-weight:600;flex:1;color:var(--text)">' + (v.label || 'Variasi ' + (vi+1)) + '</div>' +
+      '<button class="mot-pakai-btn" style="font-size:11px;padding:5px 14px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">Pakai ini</button>';
+    card.appendChild(header);
+    var body = document.createElement('div');
+    body.style.padding = '12px 16px';
+    if (v.scenes && v.scenes.length) {
+      v.scenes.forEach(function(s) {
+        var row = document.createElement('div');
+        row.style.cssText = 'border-bottom:1px solid var(--border);padding:8px 0;font-size:12px;color:var(--text)';
+        row.innerHTML = '<span style="font-weight:600;color:var(--accent)">Scene ' + s.scene + ':</span> ';
+        var ta = document.createElement('textarea');
+        ta.className = 'textarea-field';
+        ta.rows = 2;
+        ta.style.cssText = 'width:100%;box-sizing:border-box;font-size:12px;margin-top:4px;resize:vertical';
+        ta.value = s.text || s.narasi || '';
+        row.appendChild(ta);
+        body.appendChild(row);
       });
     }
-    var result = $('motRewriteResult');
-    if (result) result.style.display = 'block';
-  } catch(err) {
-    showToast('Gagal: ' + err.message, 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Generate Variasi Script'; }
-  }
+    card.appendChild(body);
+    header.querySelector('.mot-pakai-btn').addEventListener('click', function() {
+      // Kumpulkan scenes dari textarea card ini
+      motScriptScenes = [];
+      body.querySelectorAll('textarea').forEach(function(ta, si) {
+        motScriptScenes.push({ scene: si+1, text: ta.value.trim() });
+      });
+      var btnNext = $('btnMotNext2');
+      if (btnNext) btnNext.style.display = '';
+      // Highlight card yang dipilih
+      document.querySelectorAll('#motVariationsContainer > div').forEach(function(c){ c.style.borderColor='var(--border)'; });
+      card.style.borderColor = 'var(--accent)';
+      showToast('Variasi dipilih! Lanjut ke Step 3.', 'success');
+    });
+    container.appendChild(card);
+  });
 }
 
 // ─── STEP 3: Generate Model Image ────────────────────────────
