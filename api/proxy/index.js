@@ -277,6 +277,43 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Transkripsi gagal: ' + lastErr });
     }
 
+    // ── BREAK SCENES ────────────────────────────────────────
+    if (action === 'breakScenes') {
+      if (req.method !== 'POST') return res.status(405).end();
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
+      const { transcript } = req.body;
+      if (!transcript) return res.status(400).json({ error: 'transcript diperlukan.' });
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: `Kamu adalah analis video iklan. Pecah transkrip berikut menjadi scene-scene yang logis. Setiap scene adalah 1 momen/bagian visual yang berbeda dalam video iklan.
+
+Transkrip:
+${transcript}
+
+Aturan:
+- Maksimal 8 scene, minimal 2 scene
+- Setiap scene berisi narasi/dialog yang relevan
+- Jangan ubah kata-katanya, hanya pisahkan
+- Beri judul singkat tiap scene (max 5 kata)
+
+Output JSON saja (tanpa penjelasan):
+[{"scene":1,"title":"judul scene","text":"narasi scene"},...]` }]
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: d.error?.message || 'Gagal.' });
+      const raw = d.content?.[0]?.text || '[]';
+      try {
+        const match = raw.match(/\[[\s\S]*\]/);
+        return res.status(200).json({ scenes: match ? JSON.parse(match[0]) : [] });
+      } catch(e) { return res.status(500).json({ error: 'Format tidak valid.' }); }
+    }
+
     // ── UPLOAD ────────────────────────────────────────────
     if (action === 'upload') {
       if (req.method !== 'POST') return res.status(405).end();
