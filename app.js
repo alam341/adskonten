@@ -2317,6 +2317,11 @@ function switchDupStep(step) {
     }
     if (panel) panel.style.display = i === step ? '' : 'none';
   }
+  // Saat masuk Step 4, render scene cards
+  if (step === 4) {
+    renderDup4Scenes();
+  }
+
   // Saat masuk Step 3, tampilkan frame thumbnails
   if (step === 3) {
     renderFrameThumbnails();
@@ -2425,6 +2430,7 @@ function setupVideoMode() {
   $('btnDupNext3') && $('btnDupNext3').addEventListener('click', function() { switchDupStep(4); });
 
   setupStep3();
+  setupStep4();
 
   $('btnRewriteScript')  && $('btnRewriteScript').addEventListener('click', startRewriteScript);
   $('btnRewriteAgain')   && $('btnRewriteAgain').addEventListener('click', function() {
@@ -2909,6 +2915,115 @@ async function generateDup3Image(idx, prompt, card) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Generate'; }
   }
+}
+
+// ── STEP 4: GENERATE VIDEO VEO 3 ──────────────────────────
+var dup4SceneVideos = {}; // { idx: videoUrl }
+
+function setupStep4() {
+  $('btnDup4GenAll') && $('btnDup4GenAll').addEventListener('click', function() {
+    var cards = document.querySelectorAll('.dup4-scene-card');
+    cards.forEach(function(card) {
+      var btn = card.querySelector('.dup4-gen-btn');
+      if (btn && !btn.disabled) btn.click();
+    });
+  });
+}
+
+function renderDup4Scenes() {
+  var scenes = dupStep2Scenes.length ? dupStep2Scenes : dupStep1Scenes;
+  var container = $('dup4ScenesContainer');
+  if (!container || !scenes.length) return;
+  container.innerHTML = '';
+
+  scenes.forEach(function(s, idx) {
+    var card = document.createElement('div');
+    card.className = 'dup4-scene-card';
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px';
+
+    // Default prompt: gabungan narasi + cinematic description
+    var defaultPrompt = s.text + '. Cinematic advertisement video, professional lighting, smooth camera movement, 16:9 landscape, high quality.';
+
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)">' +
+        '<div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + s.scene + '</div>' +
+        '<div style="font-size:12px;font-weight:600;flex:1;color:var(--text)">' + (s.title || 'Scene ' + s.scene) + '</div>' +
+        '<button class="dup4-gen-btn" style="font-size:11px;padding:5px 14px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">Generate ▶</button>' +
+      '</div>' +
+      '<div style="padding:12px 16px">' +
+        '<div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Narasi</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">' + (s.text || '') + '</div>' +
+        '<div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Prompt Video (bisa diedit)</div>' +
+        '<textarea class="textarea-field dup4-prompt-ta" rows="2" style="width:100%;box-sizing:border-box;font-size:12px;resize:vertical">' + defaultPrompt + '</textarea>' +
+      '</div>' +
+      '<div class="dup4-result-' + idx + '" style="display:none;padding:0 16px 16px"></div>';
+
+    container.appendChild(card);
+
+    card.querySelector('.dup4-gen-btn').addEventListener('click', function() {
+      var ta = card.querySelector('.dup4-prompt-ta');
+      var prompt = ta ? ta.value.trim() : defaultPrompt;
+      generateDup4Video(idx, prompt, card);
+    });
+  });
+}
+
+async function generateDup4Video(idx, prompt, card) {
+  var btn = card.querySelector('.dup4-gen-btn');
+  var resultDiv = card.querySelector('.dup4-result-' + idx);
+  var duration = ($('dup4Duration') || {}).value || '8';
+  var resolution = ($('dup4Resolution') || {}).value || '720p';
+  var personGen = ($('dup4PersonGen') || {}).value || 'allow_adult';
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+  if (resultDiv) { resultDiv.style.display = ''; resultDiv.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px">Mengirim ke Veo 3... (estimasi 2-3 menit)</div>'; }
+
+  try {
+    var r = await fetch('/api/proxy?action=googleVideo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authToken || localStorage.getItem('adstudio_token') || '') },
+      body: JSON.stringify({ prompt, duration: parseInt(duration), resolution, personGeneration: personGen })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Generate gagal.');
+
+    var { operationName, googleKey } = d;
+    if (resultDiv) resultDiv.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px">Video sedang diproses... polling status...</div>';
+
+    // Poll sampai selesai
+    var videoUrl = await pollGoogleVideo(operationName, googleKey, resultDiv);
+    dup4SceneVideos[idx] = videoUrl;
+
+    if (resultDiv) {
+      resultDiv.innerHTML =
+        '<div style="padding:0 0 12px">' +
+          '<video controls style="width:100%;border-radius:8px;max-height:300px;background:#000" src="' + videoUrl + '"></video>' +
+          '<a href="' + videoUrl + '" download="scene_' + (idx+1) + '.mp4" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);font-weight:600">⬇ Download Scene ' + (idx+1) + '</a>' +
+        '</div>';
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '↺ Regenerate'; }
+    showToast('Scene ' + (idx+1) + ' berhasil!', 'success');
+  } catch(err) {
+    if (resultDiv) resultDiv.innerHTML = '<div style="padding:12px;color:#dc2626;font-size:12px">Gagal: ' + err.message + '</div>';
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate ▶'; }
+    showToast('Gagal: ' + err.message, 'error');
+  }
+}
+
+async function pollGoogleVideo(operationName, googleKey, resultDiv) {
+  var maxTries = 40; // 40 x 10s = ~6.5 menit
+  for (var i = 0; i < maxTries; i++) {
+    await new Promise(function(r) { setTimeout(r, 10000); }); // tunggu 10 detik
+    var r = await fetch('/api/proxy?action=googleVideoStatus&operationName=' + encodeURIComponent(operationName) + '&googleKey=' + encodeURIComponent(googleKey));
+    var d = await r.json();
+    if (d.status === 'success' && d.videoUrls && d.videoUrls.length) {
+      return d.videoUrls[0];
+    }
+    if (d.status === 'failed') throw new Error(d.error || 'Generate gagal.');
+    var elapsed = (i + 1) * 10;
+    if (resultDiv) resultDiv.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px">Memproses... ' + elapsed + 's</div>';
+  }
+  throw new Error('Timeout — video terlalu lama diproses.');
 }
 
 function setupStep3() {

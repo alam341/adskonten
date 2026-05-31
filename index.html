@@ -976,18 +976,55 @@
 
         <!-- CANVAS STEP 4 -->
         <div id="dupCanvasPanel4" style="display:none">
-          <div style="margin-bottom:24px">
+          <div style="margin-bottom:20px">
             <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 4</div>
-            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Export untuk Veo 3</h2>
-            <p style="color:var(--text-muted);font-size:13px;margin:0">Kumpulkan semua aset — akan segera hadir.</p>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Generate Video Veo 3</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Generate video per scene menggunakan Google Veo 3.1. Aspect ratio: 16:9 (landscape).</p>
           </div>
-          <div style="background:var(--bg-surface);border:1.5px dashed var(--border);border-radius:12px;padding:48px;text-align:center">
-            <div style="font-size:36px;margin-bottom:12px">📦</div>
-            <div style="font-weight:600;margin-bottom:6px">Coming soon</div>
-            <div class="qty-hint">Fitur ini sedang dikembangkan</div>
+
+          <!-- Settings -->
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px">Pengaturan Video</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:120px">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Durasi</div>
+                <select id="dup4Duration" class="apikey-field" style="width:100%;padding:7px 10px">
+                  <option value="5">5 detik</option>
+                  <option value="6">6 detik</option>
+                  <option value="7">7 detik</option>
+                  <option value="8" selected>8 detik</option>
+                </select>
+              </div>
+              <div style="flex:1;min-width:120px">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Resolusi</div>
+                <select id="dup4Resolution" class="apikey-field" style="width:100%;padding:7px 10px">
+                  <option value="720p" selected>720p</option>
+                  <option value="1080p">1080p</option>
+                  <option value="4k">4K</option>
+                </select>
+              </div>
+              <div style="flex:1;min-width:160px">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Person Generation</div>
+                <select id="dup4PersonGen" class="apikey-field" style="width:100%;padding:7px 10px">
+                  <option value="allow_adult" selected>Allow Adult</option>
+                  <option value="allow_all">Allow All</option>
+                  <option value="dont_allow">Don't Allow</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div style="display:flex;justify-content:space-between;margin-top:20px">
+
+          <!-- Loading prompts -->
+          <div id="dup4LoadingPrompts" style="display:none;text-align:center;padding:24px;color:var(--text-muted);font-size:13px">
+            Membuat prompt video per scene...
+          </div>
+
+          <!-- Scenes -->
+          <div id="dup4ScenesContainer"></div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
             <button class="btn-generate" id="dupBackBtn4" style="width:auto;padding:10px 24px;background:var(--bg-surface);color:var(--text)">← Kembali</button>
+            <button class="btn-generate" id="btnDup4GenAll" style="width:auto;padding:10px 24px">Generate Semua ▶</button>
           </div>
         </div>
 
