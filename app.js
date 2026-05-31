@@ -3715,14 +3715,13 @@ async function generateMotKling() {
     if (loadingText) loadingText.textContent = 'Mengirim ke Kling...';
     var d = await proxyPost('generate', {
       type: 'video',
-      model: 'kling-3-motion-control',
+      model: 'kling-3.0/motion-control',
       imageUrl: motLockedModelUrl,
       secondImageUrl: vidUpload.url,
       prompt: prompt,
-      ratio: ratio,
-      duration: parseInt(duration)
+      resolution: ratio === '16:9' ? '1080p' : '720p'
     });
-    var taskId = d.data?.taskId || d.taskId;
+    var taskId = d.taskId || d.data?.taskId;
     if (!taskId) throw new Error('taskId tidak ada. Response: ' + JSON.stringify(d).slice(0,200));
 
     if (loadingText) loadingText.textContent = 'Memproses video... (estimasi 1-3 menit)';
