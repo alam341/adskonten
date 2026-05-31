@@ -236,18 +236,21 @@ module.exports = async function handler(req, res) {
       const apiKey = getKey('speech');
       if (!apiKey) return res.status(500).json({ error: 'API key belum diset.' });
 
-      const { driveUrl, language } = req.body;
-      if (!driveUrl) return res.status(400).json({ error: 'driveUrl diperlukan.' });
+      const { fileBase64, mimeType, language } = req.body;
+      if (!fileBase64) return res.status(400).json({ error: 'fileBase64 diperlukan.' });
 
-      // Convert Google Drive share URL ke direct download URL
-      let audioUrl = driveUrl;
-      const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      const openIdMatch = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-      const fileId = (fileIdMatch && fileIdMatch[1]) || (openIdMatch && openIdMatch[1]);
-      if (fileId) {
-        audioUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
-      }
+      // Step 1: Upload file ke kie.ai storage untuk dapat URL
+      const uploadRes = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Data: fileBase64, uploadPath: 'audio' }),
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) return res.status(uploadRes.status).json({ error: 'Upload file gagal: ' + JSON.stringify(uploadData) });
+      const audioUrl = uploadData.data?.downloadUrl || uploadData.data?.fileUrl || uploadData.data?.url;
+      if (!audioUrl) return res.status(500).json({ error: 'URL file tidak ditemukan setelah upload.' });
 
+      // Step 2: Submit transcription task
       const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -1148,4 +1151,4 @@ PENTING:
   }
 };
 
-module.exports.config = { api: { bodyParser: { sizeLimit: '15mb' } } };
+module.exports.config = { api: { bodyParser: { sizeLimit: '30mb' } } };
