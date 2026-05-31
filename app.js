@@ -2359,12 +2359,19 @@ function switchDupStep(step) {
 }
 
 function setupVideoMode() {
-  // Step navigator buttons
+  // Step navigator buttons — Duplikasi Video
   for (var s = 1; s <= 4; s++) {
     (function(step) {
       var btn = $('dupStepBtn' + step);
       if (btn) btn.addEventListener('click', function() { switchDupStep(step); });
     })(s);
+  }
+  // Step navigator buttons — Duplikat Motion
+  for (var ms = 1; ms <= 6; ms++) {
+    (function(step) {
+      var btn = $('motStepBtn' + step);
+      if (btn) btn.addEventListener('click', function() { switchMotStep(step); });
+    })(ms);
   }
 
   // File upload handler
@@ -2433,6 +2440,7 @@ function setupVideoMode() {
 
   setupStep3();
   setupStep4();
+  initMotion();
 
   $('btnRewriteScript')  && $('btnRewriteScript').addEventListener('click', startRewriteScript);
   $('btnRewriteAgain')   && $('btnRewriteAgain').addEventListener('click', function() {
@@ -3189,4 +3197,635 @@ function setupStep3() {
     if (sec) sec.style.display = 'none';
     if (lp) lp.style.display = 'none';
   });
+}
+
+// ═══════════════════════════════════════════════════════════
+// DUPLIKAT MOTION
+// ═══════════════════════════════════════════════════════════
+
+var motCurrentStep = 1;
+var motFileObj = null, motFileMime = null, motFileBase64 = null, motObjectUrl = null;
+var motScenes = [];       // [{scene, title, text}]
+var motScript = '';       // script yang dipilih
+var motScriptScenes = []; // [{scene, text}] dari script yang dilock
+var motProductBase64 = null, motProductMime = null;
+var motLockedModelUrl = null;  // URL gambar model yang di-lock
+var motKlingVideoUrl = null;   // URL video hasil Kling
+var motVoiceUrls = {};         // { sceneIdx: audioUrl }
+
+// Switch antara mode Duplikasi Video dan Duplikat Motion
+function switchVideoMode(mode) {
+  var btnDup = $('videoSubBtnDup'), btnMot = $('videoSubBtnMotion');
+  var stepperDup = $('dupStepperVideo'), stepperMot = $('dupStepperMotion');
+  var canvasDup = $('videoStepCanvas'), canvasMot = $('motionStepCanvas');
+  var empty = $('stateEmpty');
+
+  if (mode === 'dup') {
+    if (btnDup) { btnDup.style.background='var(--accent)'; btnDup.style.color='white'; btnDup.style.borderColor='var(--accent)'; }
+    if (btnMot) { btnMot.style.background='transparent'; btnMot.style.color='var(--text-muted)'; btnMot.style.borderColor='var(--border)'; }
+    if (stepperDup) stepperDup.style.display='';
+    if (stepperMot) stepperMot.style.display='none';
+    if (canvasMot) canvasMot.style.display='none';
+    // Tampilkan canvas dup jika sudah aktif, else empty
+    if (canvasDup && canvasDup.style.display !== 'none') {
+      if (empty) empty.style.display='none';
+    }
+  } else {
+    if (btnMot) { btnMot.style.background='var(--accent)'; btnMot.style.color='white'; btnMot.style.borderColor='var(--accent)'; }
+    if (btnDup) { btnDup.style.background='transparent'; btnDup.style.color='var(--text-muted)'; btnDup.style.borderColor='var(--border)'; }
+    if (stepperMot) stepperMot.style.display='';
+    if (stepperDup) stepperDup.style.display='none';
+    if (canvasDup) canvasDup.style.display='none';
+    if (empty) empty.style.display='none';
+    if (canvasMot) canvasMot.style.display='block';
+    switchMotStep(motCurrentStep);
+  }
+}
+
+function switchMotStep(step) {
+  motCurrentStep = step;
+  for (var i = 1; i <= 6; i++) {
+    var panel = $('motCanvasPanel' + i);
+    if (panel) panel.style.display = (i === step) ? '' : 'none';
+    var btn = $('motStepBtn' + i);
+    if (btn) {
+      btn.classList.remove('active');
+      if (i === step) btn.classList.add('active');
+    }
+  }
+  var pct = Math.round((step / 6) * 100);
+  if ($('motProgressFill')) $('motProgressFill').style.width = pct + '%';
+  if ($('motProgressPct')) $('motProgressPct').textContent = 'Step ' + step + '/6';
+  var canvas = $('motionStepCanvas');
+  if (canvas) canvas.scrollTo(0, 0);
+  // Render dynamic content saat masuk step tertentu
+  if (step === 2) renderMotStep2();
+  if (step === 5) renderMotVoiceScenes();
+  if (step === 6) renderMotMergeList();
+}
+
+// ─── STEP 1: Upload + Transkripsi ────────────────────────────
+function setupMotionStep1() {
+  var zone = $('motUploadZone'), fileInput = $('motFileInput');
+  if (zone) zone.addEventListener('click', function(e) {
+    if (e.target.id === 'motFileRemove' || e.target.closest && e.target.closest('#motFileRemove')) return;
+    if (fileInput) fileInput.click();
+  });
+
+  if (fileInput) fileInput.addEventListener('change', function() {
+    var file = fileInput.files[0];
+    if (!file) return;
+    if (file.size > 100 * 1024 * 1024) { showToast('File terlalu besar. Maks 100MB.', 'error'); return; }
+    motFileObj = file;
+    motFileMime = file.type || 'video/mp4';
+    if (motObjectUrl) URL.revokeObjectURL(motObjectUrl);
+    motObjectUrl = URL.createObjectURL(file);
+
+    var vidEl = $('motVideoPreview');
+    if (file.type.startsWith('video/') && vidEl) {
+      vidEl.src = motObjectUrl; vidEl.style.display = 'block';
+    }
+    var empty = $('motUploadEmpty'), filled = $('motUploadFilled'), nameEl = $('motFileName');
+    if (empty) empty.style.display = 'none';
+    if (filled) filled.style.display = 'block';
+    if (nameEl) { var n = file.name; nameEl.textContent = n.length > 35 ? n.slice(0,32)+'...' : n; }
+
+    // Simpan base64 untuk keperluan upload ke kie.ai (video referensi Kling)
+    var reader = new FileReader();
+    reader.onload = function(e) { motFileBase64 = e.target.result.replace(/^data:[^;]+;base64,/, ''); };
+    reader.readAsDataURL(file);
+  });
+
+  var removeBtn = $('motFileRemove');
+  if (removeBtn) removeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    motFileObj = null; motFileMime = null; motFileBase64 = null;
+    if (motObjectUrl) { URL.revokeObjectURL(motObjectUrl); motObjectUrl = null; }
+    if (fileInput) fileInput.value = '';
+    var vidEl = $('motVideoPreview');
+    if (vidEl) { vidEl.src=''; vidEl.style.display='none'; }
+    var empty = $('motUploadEmpty'), filled = $('motUploadFilled');
+    if (empty) empty.style.display='';
+    if (filled) filled.style.display='none';
+  });
+
+  var btnTranscribe = $('btnMotTranscribe');
+  if (btnTranscribe) btnTranscribe.addEventListener('click', startMotTranscribe);
+
+  var btnNext = $('btnMotNext1');
+  if (btnNext) btnNext.addEventListener('click', function() { switchMotStep(2); });
+}
+
+async function startMotTranscribe() {
+  if (!motFileObj && !motFileBase64) { showToast('Upload file video dulu.', 'error'); return; }
+  var lang = ($('motLang') || {}).value || 'id';
+  var btn = $('btnMotTranscribe'), loading = $('motLoading'), loadingText = $('motLoadingText'), result = $('motTranscriptResult');
+  if (btn) btn.disabled = true;
+  if (loading) loading.style.display = 'block';
+  if (result) result.style.display = 'none';
+  try {
+    if (loadingText) loadingText.textContent = 'Mengekstrak audio...';
+    var audioBase64, audioMime;
+    if (motFileObj && motFileMime && motFileMime.startsWith('video/')) {
+      audioBase64 = await extractAudioBase64(motFileObj);
+      audioMime = 'audio/wav';
+    } else {
+      audioBase64 = motFileBase64;
+      audioMime = motFileMime;
+    }
+    if (loadingText) loadingText.textContent = 'Mentranskripsi...';
+    var d = await proxyPost('transcribe', { fileBase64: audioBase64, mimeType: audioMime, language: lang });
+    if (!d.transcriptText) throw new Error('Transkripsi kosong.');
+
+    if (loadingText) loadingText.textContent = 'Memecah scene...';
+    var sd = await proxyPost('breakScenes', { transcript: d.transcriptText });
+    motScenes = (sd.scenes && sd.scenes.length) ? sd.scenes : [{ scene: 1, title: 'Scene 1', text: d.transcriptText }];
+
+    if (loading) loading.style.display = 'none';
+    if (result) result.style.display = 'block';
+    renderMotScenes(motScenes);
+    showToast('Transkripsi selesai! ' + motScenes.length + ' scene.', 'success');
+  } catch(err) {
+    if (loading) loading.style.display = 'none';
+    showToast('Gagal: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderMotScenes(scenes) {
+  var container = $('motScenesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  scenes.forEach(function(s, i) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px';
+    card.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (s.scene || i+1) + (s.title ? ' — ' + s.title : '') + '</div>' +
+      '<textarea class="textarea-field mot-scene-text" rows="2" style="width:100%;box-sizing:border-box;font-size:12px;resize:vertical">' + (s.text || '') + '</textarea>';
+    container.appendChild(card);
+  });
+}
+
+// ─── STEP 2: Script ──────────────────────────────────────────
+function setupMotionStep2() {
+  var btnRewrite = $('btnMotRewrite');
+  if (btnRewrite) btnRewrite.addEventListener('click', startMotRewrite);
+
+  var btnAgain = $('btnMotRewriteAgain');
+  if (btnAgain) btnAgain.addEventListener('click', function() {
+    var result = $('motRewriteResult');
+    if (result) result.style.display = 'none';
+  });
+
+  var btnNext = $('btnMotNext2');
+  if (btnNext) btnNext.addEventListener('click', function() { switchMotStep(3); });
+}
+
+function renderMotStep2() {
+  var container = $('motStep2Content');
+  if (!container) return;
+  container.innerHTML = '';
+  motScenes.forEach(function(s, i) {
+    var div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px';
+    div.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px">Scene ' + (s.scene || i+1) + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted)">' + (s.text || '') + '</div>';
+    container.appendChild(div);
+  });
+}
+
+async function startMotRewrite() {
+  if (!motScenes.length) { showToast('Selesaikan Step 1 dulu.', 'error'); return; }
+  var btn = $('btnMotRewrite');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+  try {
+    var d = await proxyPost('rewriteScript', { scenes: motScenes, tone: 'persuasive', count: 2 });
+    var variants = d.variants || d.scripts || [];
+    if (!variants.length) throw new Error('Tidak ada variasi.');
+    var container = $('motScriptVariants');
+    if (container) {
+      container.innerHTML = '';
+      variants.forEach(function(v, i) {
+        var scriptText = typeof v === 'string' ? v : (v.script || v.text || JSON.stringify(v));
+        var card = document.createElement('div');
+        card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer';
+        card.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px">Variasi ' + (i+1) + '</div>' +
+          '<textarea class="textarea-field" rows="4" style="width:100%;box-sizing:border-box;font-size:12px;resize:vertical">' + scriptText + '</textarea>' +
+          '<button class="btn-generate" style="margin-top:8px;width:100%;padding:7px;font-size:12px">Pakai Variasi Ini</button>';
+        card.querySelector('button').addEventListener('click', function() {
+          motScript = card.querySelector('textarea').value;
+          // Pecah script jadi scenes
+          var lines = motScript.split('\n').filter(function(l){ return l.trim(); });
+          motScriptScenes = lines.map(function(l, idx) { return { scene: idx+1, text: l.trim() }; });
+          var btnNext = $('btnMotNext2');
+          if (btnNext) { btnNext.style.display=''; }
+          showToast('Script dipilih! Lanjut ke Step 3.', 'success');
+        });
+        container.appendChild(card);
+      });
+    }
+    var result = $('motRewriteResult');
+    if (result) result.style.display = 'block';
+  } catch(err) {
+    showToast('Gagal: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate Variasi Script'; }
+  }
+}
+
+// ─── STEP 3: Generate Model Image ────────────────────────────
+function setupMotionStep3() {
+  var zone = $('motProductZone'), input = $('motProductInput');
+  if (zone) zone.addEventListener('click', function() { if (input) input.click(); });
+  if (input) input.addEventListener('change', function() {
+    var file = input.files[0];
+    if (!file) return;
+    motProductMime = file.type || 'image/jpeg';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      motProductBase64 = e.target.result.replace(/^data:[^;]+;base64,/, '');
+      var preview = $('motProductPreview'), name = $('motProductName');
+      if (preview) { preview.src = e.target.result; preview.style.display='block'; }
+      if (name) name.textContent = file.name;
+      var empty = $('motProductEmpty'), filled = $('motProductFilled');
+      if (empty) empty.style.display='none';
+      if (filled) filled.style.display='block';
+      // Auto-suggest prompt
+      var ta = $('motModelPrompt');
+      if (ta && !ta.value.trim()) {
+        ta.placeholder = 'Menganalisis produk...';
+        ta.disabled = true;
+        proxyPost('suggestModelPrompt', { productBase64: motProductBase64, productMime: motProductMime })
+          .then(function(r) { ta.value = r.prompt || ''; ta.placeholder = 'Deskripsi model...'; ta.disabled = false; })
+          .catch(function() { ta.placeholder = 'Deskripsi model...'; ta.disabled = false; });
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  var btnGen = $('btnMotGenModel');
+  if (btnGen) btnGen.addEventListener('click', generateMotModel);
+
+  var btnAgain = $('btnMotGenModelAgain');
+  if (btnAgain) btnAgain.addEventListener('click', function() {
+    motLockedModelUrl = null;
+    var result = $('motModelResult'), locked = $('motModelLocked'), next = $('btnMotNext3');
+    if (result) result.style.display='none';
+    if (locked) locked.style.display='none';
+    if (next) next.disabled = true;
+  });
+
+  var btnNext = $('btnMotNext3');
+  if (btnNext) btnNext.addEventListener('click', function() {
+    // Set preview di Step 4
+    var imgPrev = $('motKlingImgPreview');
+    if (imgPrev && motLockedModelUrl) imgPrev.src = motLockedModelUrl;
+    var vidPrev = $('motKlingVidPreview');
+    if (vidPrev && motObjectUrl) vidPrev.src = motObjectUrl;
+    switchMotStep(4);
+  });
+}
+
+async function generateMotModel() {
+  if (!motProductBase64) { showToast('Upload foto produk dulu.', 'error'); return; }
+  var prompt = ($('motModelPrompt') || {}).value || 'person holding product, looking at camera, clean white background, advertisement style';
+  var btn = $('btnMotGenModel'), result = $('motModelResult');
+  if (btn) btn.disabled = true;
+  if (result) result.style.display='none';
+  try {
+    var mime = motProductMime || 'image/jpeg';
+    var fullBase64 = 'data:' + mime + ';base64,' + motProductBase64;
+    var upload = await proxyPost('upload', { imageBase64: fullBase64, mimeType: mime });
+    if (!upload.url) throw new Error('Upload gagal.');
+    var d = await proxyPost('generate', { type: 'image', model: 'seedream/4.5-edit', imageUrl: upload.url, prompt: prompt, ratio: '1:1', quantity: 2 });
+    var taskId = d.data?.taskId || d.taskId;
+    if (!taskId) throw new Error('taskId tidak ada.');
+    // Poll
+    var images = await pollKieImages(taskId);
+    if (!images.length) throw new Error('Tidak ada gambar dihasilkan.');
+
+    var container = $('motModelImgs');
+    if (container) {
+      container.innerHTML = '';
+      images.forEach(function(url, i) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;cursor:pointer';
+        var img = document.createElement('img');
+        img.src = url; img.style.cssText = 'width:120px;height:120px;object-fit:cover;border-radius:8px;border:2px solid var(--border)';
+        img.addEventListener('click', function() {
+          motLockedModelUrl = url;
+          container.querySelectorAll('img').forEach(function(el){ el.style.borderColor='var(--border)'; });
+          img.style.borderColor='var(--accent)';
+          var locked = $('motModelLocked'), next = $('btnMotNext3');
+          if (locked) locked.style.display='';
+          if (next) next.disabled = false;
+        });
+        wrap.appendChild(img);
+        container.appendChild(wrap);
+      });
+    }
+    if (result) result.style.display='';
+  } catch(err) {
+    showToast('Gagal: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function pollKieImages(taskId, maxTries) {
+  maxTries = maxTries || 30;
+  for (var i = 0; i < maxTries; i++) {
+    await new Promise(function(r){ setTimeout(r, 4000); });
+    var r = await fetch('/api/proxy?action=status&taskId=' + taskId, { headers: { 'Authorization': 'Bearer ' + (authToken || localStorage.getItem('adstudio_token') || '') } });
+    var d = await r.json();
+    var status = d.data?.status || d.status || '';
+    if (['succeed', 'completed', 'success', 'done'].includes(status)) {
+      var works = d.data?.works || d.works || [];
+      return works.map(function(w){ return w.url || w.coverUrl || w; }).filter(Boolean);
+    }
+    if (['failed', 'error'].includes(status)) throw new Error(d.data?.failReason || 'Generate gagal.');
+  }
+  throw new Error('Timeout polling gambar.');
+}
+
+// ─── STEP 4: Kling Motion ────────────────────────────────────
+function setupMotionStep4() {
+  var btnGen = $('btnMotGenKling');
+  if (btnGen) btnGen.addEventListener('click', generateMotKling);
+  var btnNext = $('btnMotNext4');
+  if (btnNext) btnNext.addEventListener('click', function() {
+    renderMotVoiceScenes();
+    switchMotStep(5);
+  });
+}
+
+async function generateMotKling() {
+  if (!motLockedModelUrl) { showToast('Selesaikan Step 3 dulu — lock gambar model.', 'error'); return; }
+  if (!motFileBase64) { showToast('Video kompetitor dari Step 1 dibutuhkan.', 'error'); return; }
+
+  var btn = $('btnMotGenKling'), loading = $('motKlingLoading'), loadingText = $('motKlingLoadingText'), result = $('motKlingResult');
+  var duration = ($('motKlingDuration') || {}).value || '10';
+  var ratio = ($('motKlingRatio') || {}).value || '9:16';
+  var prompt = ($('motKlingPrompt') || {}).value || 'person moving naturally, smooth motion, advertisement style';
+
+  if (btn) btn.disabled = true;
+  if (loading) loading.style.display='block';
+  if (result) result.style.display='none';
+
+  try {
+    if (loadingText) loadingText.textContent = 'Upload video referensi...';
+    // Upload video ke kie.ai CDN
+    var mime = motFileMime || 'video/mp4';
+    var fullBase64 = 'data:' + mime + ';base64,' + motFileBase64;
+    var vidUpload = await proxyPost('upload', { imageBase64: fullBase64, mimeType: mime });
+    if (!vidUpload.url) throw new Error('Upload video gagal.');
+
+    if (loadingText) loadingText.textContent = 'Mengirim ke Kling...';
+    var d = await proxyPost('generate', {
+      type: 'video',
+      model: 'kling-3-motion-control',
+      imageUrl: motLockedModelUrl,
+      secondImageUrl: vidUpload.url,
+      prompt: prompt,
+      ratio: ratio,
+      duration: parseInt(duration)
+    });
+    var taskId = d.data?.taskId || d.taskId;
+    if (!taskId) throw new Error('taskId tidak ada. Response: ' + JSON.stringify(d).slice(0,200));
+
+    if (loadingText) loadingText.textContent = 'Memproses video... (estimasi 1-3 menit)';
+    // Poll video
+    var videoUrl = await pollKieVideo(taskId, loadingText);
+    motKlingVideoUrl = videoUrl;
+
+    if (loading) loading.style.display='none';
+    if (result) {
+      result.style.display='';
+      result.innerHTML = '<div style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--accent)">Video berhasil!</div>' +
+        '<video controls src="' + videoUrl + '" style="width:100%;max-height:200px;border-radius:8px;background:#000"></video>' +
+        '<a href="' + videoUrl + '" download target="_blank" style="display:block;margin-top:8px;font-size:12px;color:var(--accent);text-decoration:none">Download Video</a>';
+    }
+    var btnNext = $('btnMotNext4');
+    if (btnNext) btnNext.style.display='';
+    showToast('Video Kling berhasil!', 'success');
+  } catch(err) {
+    if (loading) loading.style.display='none';
+    showToast('Gagal: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function pollKieVideo(taskId, loadingText, maxTries) {
+  maxTries = maxTries || 40;
+  for (var i = 0; i < maxTries; i++) {
+    await new Promise(function(r){ setTimeout(r, 5000); });
+    if (loadingText && loadingText.textContent !== undefined) loadingText.textContent = 'Memproses... (' + ((i+1)*5) + 's)';
+    var r = await fetch('/api/proxy?action=status&taskId=' + taskId + '&type=video', { headers: { 'Authorization': 'Bearer ' + (authToken || localStorage.getItem('adstudio_token') || '') } });
+    var d = await r.json();
+    var status = d.data?.status || d.status || '';
+    if (['succeed', 'completed', 'success', 'done'].includes(status)) {
+      var works = d.data?.works || d.works || [];
+      var url = works[0]?.url || works[0];
+      if (url) return url;
+      throw new Error('URL video tidak ada di response.');
+    }
+    if (['failed', 'error'].includes(status)) throw new Error(d.data?.failReason || 'Video gagal.');
+  }
+  throw new Error('Timeout polling video.');
+}
+
+// ─── STEP 5: Voice Over ──────────────────────────────────────
+function setupMotionStep5() {
+  var btnAll = $('btnMotGenAllVoice');
+  if (btnAll) btnAll.addEventListener('click', generateAllMotVoice);
+  var btnNext = $('btnMotNext5');
+  if (btnNext) btnNext.addEventListener('click', function() {
+    renderMotMergeList();
+    switchMotStep(6);
+  });
+}
+
+function renderMotVoiceScenes() {
+  var scenes = motScriptScenes.length ? motScriptScenes : motScenes;
+  var container = $('motVoiceScenes');
+  if (!container) return;
+  container.innerHTML = '';
+  scenes.forEach(function(s, i) {
+    var card = document.createElement('div');
+    card.id = 'motVoiceCard' + i;
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px';
+    card.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px">Scene ' + (s.scene || i+1) + '</div>' +
+      '<textarea class="textarea-field mot-voice-text" rows="2" style="width:100%;box-sizing:border-box;font-size:12px;resize:vertical">' + (s.text || '') + '</textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:8px;align-items:center">' +
+        '<button class="btn-secondary mot-voice-btn" style="font-size:11px;padding:5px 12px">Generate</button>' +
+        '<div class="mot-voice-result-' + i + '"></div>' +
+      '</div>';
+    card.querySelector('.mot-voice-btn').addEventListener('click', function() {
+      var text = card.querySelector('.mot-voice-text').value.trim();
+      generateMotVoice(i, text, card);
+    });
+    container.appendChild(card);
+  });
+}
+
+async function generateMotVoice(idx, text, card) {
+  if (!text) { showToast('Teks scene kosong.', 'error'); return; }
+  var btn = card.querySelector('.mot-voice-btn');
+  var resultDiv = card.querySelector('.mot-voice-result-' + idx);
+  if (btn) { btn.disabled=true; btn.textContent='Generating...'; }
+  try {
+    var voiceId = ($('motVoiceId') || {}).value || '21m00Tcm4TlvDq8ikWAM';
+    var d = await proxyPost('tts', {
+      text: text,
+      model: 'elevenlabs/text-to-speech-multilingual-v2',
+      voice: voiceId,
+      speed: 1.0,
+      stability: 0.5
+    });
+    var taskId = d.data?.taskId || d.taskId;
+    if (!taskId) throw new Error('taskId TTS tidak ada.');
+    // Poll TTS
+    for (var i = 0; i < 30; i++) {
+      await new Promise(function(r){ setTimeout(r, 3000); });
+      var sr = await fetch('/api/proxy?action=ttsStatus&taskId=' + taskId, { headers: { 'Authorization': 'Bearer ' + (authToken || localStorage.getItem('adstudio_token') || '') } });
+      var sd = await sr.json();
+      if (sd.audioUrl) {
+        motVoiceUrls[idx] = sd.audioUrl;
+        if (resultDiv) resultDiv.innerHTML = '<audio controls src="' + sd.audioUrl + '" style="height:32px;max-width:200px"></audio>';
+        var allDone = Object.keys(motVoiceUrls).length;
+        var scenes = motScriptScenes.length ? motScriptScenes : motScenes;
+        if (allDone >= scenes.length) { var n = $('btnMotNext5'); if (n) n.style.display=''; }
+        break;
+      }
+      if (sd.status === 'failed') throw new Error('TTS gagal.');
+    }
+  } catch(err) {
+    showToast('Voice gagal: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='Generate'; }
+  }
+}
+
+async function generateAllMotVoice() {
+  var scenes = motScriptScenes.length ? motScriptScenes : motScenes;
+  for (var i = 0; i < scenes.length; i++) {
+    var card = $('motVoiceCard' + i);
+    if (!card) continue;
+    var text = (card.querySelector('.mot-voice-text') || {}).value || scenes[i].text || '';
+    await generateMotVoice(i, text, card);
+  }
+}
+
+// ─── STEP 6: Merge ───────────────────────────────────────────
+function setupMotionStep6() {
+  var btnMerge = $('btnMotMerge');
+  if (btnMerge) btnMerge.addEventListener('click', mergeMotVideo);
+}
+
+function renderMotMergeList() {
+  var scenes = motScriptScenes.length ? motScriptScenes : motScenes;
+  var container = $('motMergeList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  // Preview video Kling
+  var vidWrap = document.createElement('div');
+  vidWrap.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px';
+  vidWrap.innerHTML = '<div style="font-size:12px;font-weight:600;margin-bottom:8px">Video Motion (Kling)</div>' +
+    (motKlingVideoUrl ? '<video controls src="' + motKlingVideoUrl + '" style="width:100%;max-height:160px;border-radius:8px;background:#000"></video>' : '<div style="color:var(--text-muted);font-size:12px">Belum ada video.</div>');
+  container.appendChild(vidWrap);
+
+  // Preview audio per scene
+  var audioWrap = document.createElement('div');
+  audioWrap.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px';
+  audioWrap.innerHTML = '<div style="font-size:12px;font-weight:600;margin-bottom:8px">Voice Over</div>';
+  scenes.forEach(function(s, i) {
+    var url = motVoiceUrls[i];
+    var row = document.createElement('div');
+    row.style.cssText = 'margin-bottom:8px;font-size:12px;display:flex;align-items:center;gap:8px';
+    row.innerHTML = '<span style="color:var(--text-muted);min-width:60px">Scene ' + (s.scene || i+1) + '</span>' +
+      (url ? '<audio controls src="' + url + '" style="height:28px;flex:1"></audio>' : '<span style="color:var(--text-muted)">Belum digenerate</span>');
+    audioWrap.appendChild(row);
+  });
+  container.appendChild(audioWrap);
+}
+
+async function mergeMotVideo() {
+  if (!motKlingVideoUrl) { showToast('Video Kling belum ada. Selesaikan Step 4 dulu.', 'error'); return; }
+  var audioUrls = Object.values(motVoiceUrls);
+  if (!audioUrls.length) { showToast('Voice over belum ada. Selesaikan Step 5 dulu.', 'error'); return; }
+
+  var btn = $('btnMotMerge'), loading = $('motMergeLoading'), loadingText = $('motMergeLoadingText'), result = $('motMergeResult');
+  if (btn) btn.disabled=true;
+  if (loading) loading.style.display='block';
+  if (result) result.style.display='none';
+
+  try {
+    if (loadingText) loadingText.textContent = 'Memuat ffmpeg...';
+    // Dynamically load ffmpeg.wasm
+    if (!window.FFmpeg) {
+      await new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    var { FFmpeg } = window.FFmpeg || {};
+    if (!FFmpeg) throw new Error('ffmpeg.wasm gagal dimuat.');
+
+    if (loadingText) loadingText.textContent = 'Menggabungkan audio...';
+    // Gabungkan semua audio menjadi 1 dengan ffmpeg
+    var ffmpeg = new FFmpeg();
+    await ffmpeg.load();
+
+    // Fetch dan tulis video
+    var vidResp = await fetch(motKlingVideoUrl);
+    var vidBuf = await vidResp.arrayBuffer();
+    await ffmpeg.writeFile('video.mp4', new Uint8Array(vidBuf));
+
+    // Fetch, concat semua audio
+    var concatLines = [];
+    for (var i = 0; i < audioUrls.length; i++) {
+      var audResp = await fetch(audioUrls[i]);
+      var audBuf = await audResp.arrayBuffer();
+      await ffmpeg.writeFile('audio' + i + '.mp3', new Uint8Array(audBuf));
+      concatLines.push('file audio' + i + '.mp3');
+    }
+    await ffmpeg.writeFile('concat.txt', concatLines.join('\n'));
+    await ffmpeg.exec(['-f', 'concat', '-safe', '0', '-i', 'concat.txt', '-c', 'copy', 'combined_audio.mp3']);
+
+    // Merge video + audio
+    if (loadingText) loadingText.textContent = 'Merge video + audio...';
+    await ffmpeg.exec(['-i', 'video.mp4', '-i', 'combined_audio.mp3', '-c:v', 'copy', '-c:a', 'aac', '-shortest', 'output.mp4']);
+
+    var outData = await ffmpeg.readFile('output.mp4');
+    var blob = new Blob([outData.buffer], { type: 'video/mp4' });
+    var url = URL.createObjectURL(blob);
+
+    if (loading) loading.style.display='none';
+    if (result) {
+      result.style.display='';
+      result.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px">Video Final Siap!</div>' +
+        '<video controls src="' + url + '" style="width:100%;border-radius:8px;background:#000;margin-bottom:10px"></video>' +
+        '<a href="' + url + '" download="duplikat-motion-final.mp4" style="display:block;text-align:center;padding:10px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none">Download Video Final</a>';
+    }
+    showToast('Video final siap!', 'success');
+  } catch(err) {
+    if (loading) loading.style.display='none';
+    showToast('Merge gagal: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled=false;
+  }
+}
+
+// ─── Init semua step Motion ──────────────────────────────────
+function initMotion() {
+  setupMotionStep1();
+  setupMotionStep2();
+  setupMotionStep3();
+  setupMotionStep4();
+  setupMotionStep5();
+  setupMotionStep6();
 }

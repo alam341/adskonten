@@ -276,8 +276,14 @@
         <!-- ===== TAB: VIDEO ===== -->
         <div class="tab-panel" data-panel="video" style="display:none">
 
-          <!-- Vertical Stepper -->
-          <div class="dup-stepper-v">
+          <!-- Sub-menu Video -->
+          <div style="display:flex;gap:6px;margin-bottom:16px;padding:0 2px">
+            <button class="video-sub-btn active" id="videoSubBtnDup" onclick="switchVideoMode('dup')" style="flex:1;padding:7px 6px;font-size:11px;font-weight:600;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:white;cursor:pointer">Duplikasi Video</button>
+            <button class="video-sub-btn" id="videoSubBtnMotion" onclick="switchVideoMode('motion')" style="flex:1;padding:7px 6px;font-size:11px;font-weight:600;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer">Duplikat Motion</button>
+          </div>
+
+          <!-- Stepper: Duplikasi Video -->
+          <div class="dup-stepper-v" id="dupStepperVideo">
 
             <div class="dup-step-v active" id="dupStepBtn1" data-step="1">
               <div class="dup-step-v-left">
@@ -317,12 +323,82 @@
                 <div class="dup-step-v-num">4</div>
               </div>
               <div class="dup-step-v-body">
-                <div class="dup-step-v-title">Export</div>
-                <div class="dup-step-v-sub">Siap untuk Veo 3</div>
+                <div class="dup-step-v-title">Export Veo 3</div>
+                <div class="dup-step-v-sub">Generate video AI</div>
               </div>
             </div>
 
           </div><!-- /dup-stepper-v -->
+
+          <!-- Stepper: Duplikat Motion -->
+          <div class="dup-stepper-v" id="dupStepperMotion" style="display:none">
+
+            <div class="dup-step-v active" id="motStepBtn1" data-step="1">
+              <div class="dup-step-v-left">
+                <div class="dup-step-v-num">1</div>
+                <div class="dup-step-v-line"></div>
+              </div>
+              <div class="dup-step-v-body">
+                <div class="dup-step-v-title">Transkripsi</div>
+                <div class="dup-step-v-sub">Upload & transkripsi video</div>
+              </div>
+            </div>
+
+            <div class="dup-step-v" id="motStepBtn2" data-step="2">
+              <div class="dup-step-v-left">
+                <div class="dup-step-v-num">2</div>
+                <div class="dup-step-v-line"></div>
+              </div>
+              <div class="dup-step-v-body">
+                <div class="dup-step-v-title">Edit Script</div>
+                <div class="dup-step-v-sub">Variasi script baru</div>
+              </div>
+            </div>
+
+            <div class="dup-step-v" id="motStepBtn3" data-step="3">
+              <div class="dup-step-v-left">
+                <div class="dup-step-v-num">3</div>
+                <div class="dup-step-v-line"></div>
+              </div>
+              <div class="dup-step-v-body">
+                <div class="dup-step-v-title">Generate Model</div>
+                <div class="dup-step-v-sub">1 gambar model + produk</div>
+              </div>
+            </div>
+
+            <div class="dup-step-v" id="motStepBtn4" data-step="4">
+              <div class="dup-step-v-left">
+                <div class="dup-step-v-num">4</div>
+                <div class="dup-step-v-line"></div>
+              </div>
+              <div class="dup-step-v-body">
+                <div class="dup-step-v-title">Kling Motion</div>
+                <div class="dup-step-v-sub">Animate model image</div>
+              </div>
+            </div>
+
+            <div class="dup-step-v" id="motStepBtn5" data-step="5">
+              <div class="dup-step-v-left">
+                <div class="dup-step-v-num">5</div>
+                <div class="dup-step-v-line"></div>
+              </div>
+              <div class="dup-step-v-body">
+                <div class="dup-step-v-title">Voice Over</div>
+                <div class="dup-step-v-sub">Generate audio per scene</div>
+              </div>
+            </div>
+
+            <div class="dup-step-v" id="motStepBtn6" data-step="6">
+              <div class="dup-step-v-left">
+                <div class="dup-step-v-num">6</div>
+              </div>
+              <div class="dup-step-v-body">
+                <div class="dup-step-v-title">Gabungkan</div>
+                <div class="dup-step-v-sub">Merge video + audio</div>
+              </div>
+            </div>
+
+          </div><!-- /dup-stepper-motion -->
 
         </div>
 
@@ -1040,6 +1116,246 @@
         </div>
 
       </div><!-- /videoStepCanvas -->
+
+      <!-- MOTION STEP CANVAS -->
+      <div id="motionStepCanvas" style="display:none;width:100%;height:100%;overflow-y:auto;padding:32px 40px;box-sizing:border-box">
+
+        <!-- Progress bar -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px">
+          <div style="flex:1;height:4px;background:var(--border);border-radius:4px;overflow:hidden">
+            <div id="motProgressFill" style="height:100%;width:16%;background:var(--accent);border-radius:4px;transition:width 0.4s"></div>
+          </div>
+          <span id="motProgressPct" style="font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap">Step 1/6</span>
+        </div>
+
+        <!-- STEP 1: Upload + Transkripsi (reuse state dari dup tapi form sendiri) -->
+        <div id="motCanvasPanel1">
+          <div style="margin-bottom:20px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 1</div>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Transkripsi Video Kompetitor</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Upload video iklan kompetitor — otomatis ditranskripsi dan dipecah per scene.</p>
+          </div>
+
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div class="panel-label" style="margin-bottom:8px">Upload Video</div>
+            <div id="motUploadZone" style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s">
+              <input type="file" id="motFileInput" accept="video/*,audio/*" hidden />
+              <div id="motUploadEmpty">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:8px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p style="margin:0;font-size:13px;color:var(--text-muted)">Upload video atau audio</p>
+              </div>
+              <div id="motUploadFilled" style="display:none;text-align:left">
+                <video id="motVideoPreview" controls style="display:none;width:100%;max-height:160px;border-radius:8px;background:#000;margin-bottom:8px"></video>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span id="motFileName" style="font-size:13px;font-weight:600;flex:1"></span>
+                  <button id="motFileRemove" style="font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px">Hapus</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+            <div style="flex:1">
+              <div class="panel-label" style="margin-bottom:4px">Bahasa Video</div>
+              <select id="motLang" class="apikey-field" style="width:100%;padding:7px 10px">
+                <option value="id" selected>Indonesia</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="motLoading" style="display:none;text-align:center;padding:24px">
+            <div class="loading-spinner" style="margin:0 auto 10px"></div>
+            <div id="motLoadingText" style="font-size:13px;color:var(--text-muted)">Memproses...</div>
+          </div>
+
+          <div id="motTranscriptResult" style="display:none">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">Scene Terdeteksi:</div>
+            <div id="motScenesContainer"></div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <button id="btnMotNext1" class="btn-generate" style="flex:1;padding:10px">Lanjut Step 2 →</button>
+            </div>
+          </div>
+
+          <button id="btnMotTranscribe" class="btn-generate" style="width:100%;margin-top:4px">Transkripsi Sekarang</button>
+        </div>
+
+        <!-- STEP 2: Edit Script -->
+        <div id="motCanvasPanel2" style="display:none">
+          <div style="margin-bottom:20px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 2</div>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Edit Script</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Buat variasi script baru berdasarkan transkrip kompetitor.</p>
+          </div>
+          <div id="motStep2Content"></div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn-secondary" onclick="switchMotStep(1)" style="padding:10px 20px">← Kembali</button>
+            <button id="btnMotRewrite" class="btn-generate" style="flex:1;padding:10px">Generate Variasi Script</button>
+          </div>
+          <div id="motRewriteResult" style="display:none;margin-top:16px">
+            <div id="motScriptVariants"></div>
+            <div style="display:flex;gap:10px;margin-top:12px">
+              <button class="btn-secondary" id="btnMotRewriteAgain" style="padding:10px 20px">Generate Ulang</button>
+              <button id="btnMotNext2" class="btn-generate" style="flex:1;padding:10px" style="display:none">Lanjut Step 3 →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Generate Model Image -->
+        <div id="motCanvasPanel3" style="display:none">
+          <div style="margin-bottom:20px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 3</div>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Generate Model</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Generate 1 gambar model pegang produk — akan dipakai sebagai referensi Kling Motion.</p>
+          </div>
+
+          <!-- Upload produk -->
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div class="panel-label" style="margin-bottom:8px">Foto Produk</div>
+            <div id="motProductZone" style="border:2px dashed var(--border);border-radius:10px;padding:16px;cursor:pointer;text-align:center">
+              <input type="file" id="motProductInput" accept="image/*" hidden />
+              <div id="motProductEmpty"><p style="margin:0;font-size:13px;color:var(--text-muted)">Upload foto produk</p></div>
+              <div id="motProductFilled" style="display:none;text-align:left">
+                <img id="motProductPreview" style="max-height:80px;border-radius:6px;margin-bottom:6px" />
+                <div style="font-size:12px;color:var(--text-muted)" id="motProductName"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prompt -->
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div class="panel-label" style="margin-bottom:6px">Deskripsi Model</div>
+            <textarea id="motModelPrompt" class="textarea-field" rows="2" style="width:100%;box-sizing:border-box;font-size:13px" placeholder="Contoh: man holding shampoo bottle, smiling, clean white background, ad style"></textarea>
+            <button id="btnMotGenModel" class="btn-generate" style="width:100%;margin-top:10px">Generate Model</button>
+          </div>
+
+          <!-- Result -->
+          <div id="motModelResult" style="display:none;background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div class="panel-label" style="margin-bottom:8px">Pilih Gambar Model</div>
+            <div id="motModelImgs" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            <div id="motModelLocked" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--accent);font-weight:600">✓ Model terkunci — siap untuk Kling</div>
+            <div style="display:flex;gap:10px;margin-top:12px">
+              <button id="btnMotGenModelAgain" class="btn-secondary" style="padding:8px 16px;font-size:12px">Generate Ulang</button>
+              <button id="btnMotNext3" class="btn-generate" style="flex:1;padding:8px" disabled>Lanjut Step 4 →</button>
+            </div>
+          </div>
+
+          <button class="btn-secondary" onclick="switchMotStep(2)" style="padding:10px 20px">← Kembali</button>
+        </div>
+
+        <!-- STEP 4: Kling Motion -->
+        <div id="motCanvasPanel4" style="display:none">
+          <div style="margin-bottom:20px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 4</div>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Kling Motion</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Animasikan gambar model menggunakan gerakan dari video kompetitor.</p>
+          </div>
+
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:120px">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Durasi Video</div>
+                <select id="motKlingDuration" class="apikey-field" style="width:100%;padding:7px 10px">
+                  <option value="5">5 detik</option>
+                  <option value="10" selected>10 detik</option>
+                </select>
+              </div>
+              <div style="flex:1;min-width:160px">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Aspect Ratio</div>
+                <select id="motKlingRatio" class="apikey-field" style="width:100%;padding:7px 10px">
+                  <option value="9:16" selected>9:16 (Vertikal)</option>
+                  <option value="16:9">16:9 (Landscape)</option>
+                  <option value="1:1">1:1 (Square)</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Prompt Gerakan (opsional)</div>
+              <textarea id="motKlingPrompt" class="textarea-field" rows="2" style="width:100%;box-sizing:border-box;font-size:12px" placeholder="Contoh: person walking naturally, smooth motion, talking to camera"></textarea>
+            </div>
+          </div>
+
+          <!-- Preview referensi -->
+          <div style="display:flex;gap:12px;margin-bottom:16px">
+            <div style="flex:1;text-align:center">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Gambar Model</div>
+              <img id="motKlingImgPreview" style="max-height:120px;border-radius:8px;border:1.5px solid var(--border)" />
+            </div>
+            <div style="flex:1;text-align:center">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Video Referensi</div>
+              <video id="motKlingVidPreview" controls style="max-height:120px;border-radius:8px;border:1.5px solid var(--border);background:#000"></video>
+            </div>
+          </div>
+
+          <div id="motKlingLoading" style="display:none;text-align:center;padding:20px">
+            <div class="loading-spinner" style="margin:0 auto 10px"></div>
+            <div id="motKlingLoadingText" style="font-size:13px;color:var(--text-muted)">Mengirim ke Kling AI...</div>
+          </div>
+          <div id="motKlingResult" style="display:none;padding:12px;background:var(--bg-surface);border-radius:10px;margin-bottom:16px"></div>
+
+          <div style="display:flex;gap:10px">
+            <button class="btn-secondary" onclick="switchMotStep(3)" style="padding:10px 20px">← Kembali</button>
+            <button id="btnMotGenKling" class="btn-generate" style="flex:1;padding:10px">Generate Motion Video</button>
+          </div>
+          <button id="btnMotNext4" class="btn-generate" style="width:100%;margin-top:10px;display:none">Lanjut Step 5 →</button>
+        </div>
+
+        <!-- STEP 5: Voice Over -->
+        <div id="motCanvasPanel5" style="display:none">
+          <div style="margin-bottom:20px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 5</div>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Voice Over</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Generate suara narasi per scene menggunakan ElevenLabs.</p>
+          </div>
+
+          <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:160px">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Voice ID (ElevenLabs)</div>
+                <input id="motVoiceId" class="apikey-field" style="width:100%;box-sizing:border-box;padding:7px 10px" placeholder="Kosong = default voice" />
+              </div>
+              <div style="flex:1;min-width:120px">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Bahasa Output</div>
+                <select id="motVoiceLang" class="apikey-field" style="width:100%;padding:7px 10px">
+                  <option value="id" selected>Indonesia</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="motVoiceScenes" style="margin-bottom:16px"></div>
+
+          <div style="display:flex;gap:10px">
+            <button class="btn-secondary" onclick="switchMotStep(4)" style="padding:10px 20px">← Kembali</button>
+            <button id="btnMotGenAllVoice" class="btn-generate" style="flex:1;padding:10px">Generate Semua Voice Over</button>
+          </div>
+          <button id="btnMotNext5" class="btn-generate" style="width:100%;margin-top:10px;display:none">Lanjut Step 6 →</button>
+        </div>
+
+        <!-- STEP 6: Gabungkan -->
+        <div id="motCanvasPanel6" style="display:none">
+          <div style="margin-bottom:20px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Step 6</div>
+            <h2 style="font-size:22px;font-weight:700;margin:0 0 6px">Gabungkan Video + Audio</h2>
+            <p style="color:var(--text-muted);font-size:13px;margin:0">Merge video motion + voice over menjadi 1 file video final.</p>
+          </div>
+
+          <div id="motMergeList" style="margin-bottom:16px"></div>
+
+          <div id="motMergeLoading" style="display:none;text-align:center;padding:20px">
+            <div class="loading-spinner" style="margin:0 auto 10px"></div>
+            <div id="motMergeLoadingText" style="font-size:13px;color:var(--text-muted)">Menggabungkan...</div>
+          </div>
+          <div id="motMergeResult" style="display:none;margin-bottom:16px"></div>
+
+          <div style="display:flex;gap:10px">
+            <button class="btn-secondary" onclick="switchMotStep(5)" style="padding:10px 20px">← Kembali</button>
+            <button id="btnMotMerge" class="btn-generate" style="flex:1;padding:10px">Gabungkan Sekarang</button>
+          </div>
+        </div>
+
+      </div><!-- /motionStepCanvas -->
 
       <!-- Empty -->
       <div class="state-empty" id="stateEmpty">
