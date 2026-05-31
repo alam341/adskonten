@@ -1330,22 +1330,13 @@
           </div>
 
           <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
-            <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <div style="flex:1;min-width:120px">
-                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Durasi Video</div>
-                <select id="motKlingDuration" class="apikey-field" style="width:100%;padding:7px 10px">
-                  <option value="5">5 detik</option>
-                  <option value="10" selected>10 detik</option>
-                </select>
-              </div>
-              <div style="flex:1;min-width:160px">
-                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Aspect Ratio</div>
-                <select id="motKlingRatio" class="apikey-field" style="width:100%;padding:7px 10px">
-                  <option value="9:16" selected>9:16 (Vertikal)</option>
-                  <option value="16:9">16:9 (Landscape)</option>
-                  <option value="1:1">1:1 (Square)</option>
-                </select>
-              </div>
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Kualitas Output</div>
+              <select id="motKlingRatio" class="apikey-field" style="width:100%;padding:7px 10px">
+                <option value="9:16" selected>720p (Standar)</option>
+                <option value="16:9">1080p (HD)</option>
+              </select>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Durasi mengikuti video referensi secara otomatis.</div>
             </div>
             <div style="margin-top:12px">
               <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Prompt Gerakan (opsional)</div>

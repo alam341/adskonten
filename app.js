@@ -3719,7 +3719,7 @@ async function generateMotKling() {
       imageUrl: motLockedModelUrl,
       secondImageUrl: vidUpload.url,
       prompt: prompt,
-      resolution: ratio === '16:9' ? '1080p' : '720p'
+      resolution: ratio === '16:9' ? '1080p' : '720p'  // '9:16' → 720p, '16:9' → 1080p
     });
     var taskId = d.taskId || d.data?.taskId;
     if (!taskId) throw new Error('taskId tidak ada. Response: ' + JSON.stringify(d).slice(0,200));
