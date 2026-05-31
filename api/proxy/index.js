@@ -484,12 +484,12 @@ Output JSON saja (tanpa penjelasan):
       const ratioVal = ratio||'1:1';
       const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
 
-      const gptSizeMap = { '1:1':'1:1','9:16':'portrait','16:9':'landscape','4:5':'4:5','2:3':'2:3','3:2':'3:2','4:3':'4:3','3:4':'3:4' };
       let input = { prompt };
       if (model === 'gpt-image/1.5-image-to-image') {
         // GPT Image support multiple input_urls - kirim referensi + produk
         input.input_urls = secondImageUrl ? [imageUrl, secondImageUrl] : [imageUrl];
-        input.aspect_ratio = gptSizeMap[ratioVal] || ratioVal; input.quality = 'medium';
+        // gpt-image hanya terima size tertentu, pakai default (tanpa aspect_ratio)
+        input.quality = 'medium';
       }
       else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
       else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
@@ -500,11 +500,14 @@ Output JSON saja (tanpa penjelasan):
         fetch('https://api.kie.ai/api/v1/jobs/createTask', {
           method:'POST', headers:{'Authorization':`Bearer ${apiKey}`,'Content-Type':'application/json'},
           body: JSON.stringify({model,input}),
-        }).then(r=>r.json())
+        }).then(async r => {
+          const text = await r.text();
+          try { return JSON.parse(text); } catch(e) { return { _raw: text.slice(0,300) }; }
+        }).catch(e => ({ _err: e.message }))
       ));
       const taskIds = tasks.map(d=>d.data?.taskId).filter(Boolean);
       if (!taskIds.length) {
-        const firstErr = JSON.stringify(tasks[0]).slice(0, 300);
+        const firstErr = JSON.stringify(tasks[0]).slice(0, 400);
         return res.status(500).json({ error: 'Task gagal: ' + firstErr });
       }
       return res.status(200).json({ taskIds, taskType: 'jobs' });
