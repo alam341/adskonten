@@ -123,7 +123,7 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 13l4-4 3.5 3.5L14 8l4 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="icon-tab-label">Gambar</span>
         </button>
-        <button class="tab-btn icon-tab" data-tab="video" title="Video" style="opacity:0.4;pointer-events:none;cursor:not-allowed" disabled>
+        <button class="tab-btn icon-tab" data-tab="video" title="Video">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 7.5l6-3v11l-6-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="icon-tab-label">Video</span>
         </button>
@@ -276,75 +276,137 @@
         <!-- ===== TAB: VIDEO ===== -->
         <div class="tab-panel" data-panel="video" style="display:none">
 
-          <div class="panel-group">
-            <div class="panel-label">Gambar Referensi</div>
-            <div class="upload-zone" id="vidUploadZone">
-              <input type="file" id="vidInput" accept="image/*" hidden />
-              <div class="upload-empty" id="vidUploadEmpty">
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <p class="upload-empty-label">Upload gambar untuk dijadikan video</p>
-                <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+          <!-- Mode Toggle -->
+          <div class="auth-tabs" style="margin-bottom:16px">
+            <button class="auth-tab active" id="vidModeImgBtn">Image to Video</button>
+            <button class="auth-tab" id="vidModeDupBtn">Duplikasi</button>
+          </div>
+
+          <!-- MODE: Image to Video -->
+          <div id="vidModeImageToVideo">
+
+            <div class="panel-group">
+              <div class="panel-label">Gambar Referensi</div>
+              <div class="upload-zone" id="vidUploadZone">
+                <input type="file" id="vidInput" accept="image/*" hidden />
+                <div class="upload-empty" id="vidUploadEmpty">
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/><path d="M14 18v-8M14 10l-3 3M14 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <p class="upload-empty-label">Upload gambar untuk dijadikan video</p>
+                  <p class="upload-empty-sub">PNG · JPG · WEBP · maks 10MB</p>
+                </div>
+                <div class="upload-filled" id="vidUploadFilled" style="display:none">
+                  <img id="vidPreview" src="" alt="preview" />
+                  <button class="remove-btn" id="vidRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+                </div>
               </div>
-              <div class="upload-filled" id="vidUploadFilled" style="display:none">
-                <img id="vidPreview" src="" alt="preview" />
-                <button class="remove-btn" id="vidRemove"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+            </div>
+
+            <div class="panel-group">
+              <div class="panel-label">Prompt Gerakan</div>
+              <textarea id="vidPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan gerakan yang diinginkan...&#10;&#10;Contoh: kamera perlahan zoom in ke produk, cahaya berkilau dari kiri, efek partikel mengambang..."></textarea>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="panel-group">
+              <div class="panel-label">Model Video</div>
+              <div class="model-list" id="vidModelList">
+                <label class="model-row active" data-model="kling-2.6/image-to-video">
+                  <input type="radio" name="vidModel" value="kling-2.6/image-to-video" checked hidden />
+                  <div class="model-row-dot"></div>
+                  <div class="model-row-body">
+                    <div class="model-row-top"><span class="model-row-name">Kling 2.6</span><span class="badge badge-purple">Realistis</span></div>
+                  </div>
+                </label>
+                <label class="model-row" data-model="grok-imagine/image-to-video">
+                  <input type="radio" name="vidModel" value="grok-imagine/image-to-video" hidden />
+                  <div class="model-row-dot"></div>
+                  <div class="model-row-body">
+                    <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
+                  </div>
+                </label>
+                <label class="model-row" data-model="wan-2.6/image-to-video">
+                  <input type="radio" name="vidModel" value="wan-2.6/image-to-video" hidden />
+                  <div class="model-row-dot"></div>
+                  <div class="model-row-body">
+                    <div class="model-row-top"><span class="model-row-name">Wan 2.6</span><span class="badge badge-teal">Cepat</span></div>
+                  </div>
+                </label>
               </div>
             </div>
-          </div>
 
-          <div class="panel-group">
-            <div class="panel-label">Prompt Gerakan</div>
-            <textarea id="vidPrompt" class="textarea-field" rows="4" placeholder="Deskripsikan gerakan yang diinginkan...&#10;&#10;Contoh: kamera perlahan zoom in ke produk, cahaya berkilau dari kiri, efek partikel mengambang..."></textarea>
-          </div>
+            <div class="divider"></div>
 
-          <div class="divider"></div>
-
-          <div class="panel-group">
-            <div class="panel-label">Model Video</div>
-            <div class="model-list" id="vidModelList">
-              <label class="model-row active" data-model="kling-2.6/image-to-video">
-                <input type="radio" name="vidModel" value="kling-2.6/image-to-video" checked hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Kling 2.6</span><span class="badge badge-purple">Realistis</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="grok-imagine/image-to-video">
-                <input type="radio" name="vidModel" value="grok-imagine/image-to-video" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Grok Imagine</span><span class="badge badge-pink">Sinematik</span></div>
-                </div>
-              </label>
-              <label class="model-row" data-model="wan-2.6/image-to-video">
-                <input type="radio" name="vidModel" value="wan-2.6/image-to-video" hidden />
-                <div class="model-row-dot"></div>
-                <div class="model-row-body">
-                  <div class="model-row-top"><span class="model-row-name">Wan 2.6</span><span class="badge badge-teal">Cepat</span></div>
-                </div>
-              </label>
+            <div class="panel-group">
+              <div class="panel-label">Durasi</div>
+              <div class="ratio-grid" id="vidDurationGrid" style="grid-template-columns: repeat(3, 1fr)">
+                <button class="ratio-cell active" data-dur="5"><span>5s</span></button>
+                <button class="ratio-cell" data-dur="10"><span>10s</span></button>
+                <button class="ratio-cell" data-dur="15"><span>15s</span></button>
+              </div>
             </div>
-          </div>
 
-          <div class="divider"></div>
-
-          <div class="panel-group">
-            <div class="panel-label">Durasi</div>
-            <div class="ratio-grid" id="vidDurationGrid" style="grid-template-columns: repeat(3, 1fr)">
-              <button class="ratio-cell active" data-dur="5"><span>5s</span></button>
-              <button class="ratio-cell" data-dur="10"><span>10s</span></button>
-              <button class="ratio-cell" data-dur="15"><span>15s</span></button>
+            <div class="panel-group">
+              <div class="panel-label">Resolusi</div>
+              <div class="ratio-grid" style="grid-template-columns: repeat(3, 1fr)">
+                <button class="ratio-cell" data-res="480p"><span>480p</span></button>
+                <button class="ratio-cell active" data-res="720p"><span>720p</span></button>
+                <button class="ratio-cell" data-res="1080p"><span>1080p</span></button>
+              </div>
             </div>
-          </div>
 
-          <div class="panel-group">
-            <div class="panel-label">Resolusi</div>
-            <div class="ratio-grid" style="grid-template-columns: repeat(3, 1fr)">
-              <button class="ratio-cell" data-res="480p"><span>480p</span></button>
-              <button class="ratio-cell active" data-res="720p"><span>720p</span></button>
-              <button class="ratio-cell" data-res="1080p"><span>1080p</span></button>
+          </div><!-- /vidModeImageToVideo -->
+
+          <!-- MODE: Duplikasi Kompetitor -->
+          <div id="vidModeDuplikasi" style="display:none">
+
+            <!-- Step indicator -->
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+              <div id="dupStep1Badge" style="background:var(--accent);color:white;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:600">Step 1</div>
+              <div style="font-size:12px;color:var(--text-muted);font-weight:500">Transkripsi Video Kompetitor</div>
             </div>
-          </div>
+
+            <div class="panel-group">
+              <div class="panel-label">Link Google Drive Video</div>
+              <input type="text" id="dupDriveUrl" class="apikey-field" style="width:100%" placeholder="https://drive.google.com/file/d/..." />
+              <div class="qty-hint" style="margin-top:5px">Share video sebagai "Anyone with link" di Google Drive</div>
+            </div>
+
+            <div class="panel-group">
+              <div class="panel-label">Bahasa Video</div>
+              <select id="dupLang" class="apikey-field" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
+                <option value="id">Bahasa Indonesia</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+
+            <button class="btn-generate" id="btnTranscribe">Mulai Transkripsi</button>
+
+            <!-- Inline loading -->
+            <div id="dupLoading" style="display:none;text-align:center;padding:18px 0">
+              <div style="display:flex;gap:5px;justify-content:center;margin-bottom:8px">
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0s"></div>
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.2s"></div>
+                <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dupDot 1.2s infinite 0.4s"></div>
+              </div>
+              <div class="qty-hint" id="dupLoadingText">Mengirim ke server...</div>
+            </div>
+
+            <!-- Transcript result -->
+            <div id="dupTranscriptResult" style="display:none">
+              <div class="divider"></div>
+              <div class="panel-group">
+                <div class="panel-label-row">
+                  <span class="panel-label" style="margin:0">Hasil Transkripsi</span>
+                  <span class="badge badge-teal">Edit bebas</span>
+                </div>
+                <textarea id="dupTranscriptText" class="textarea-field" rows="9" placeholder="Hasil transkripsi muncul di sini..."></textarea>
+                <div class="qty-hint" style="margin-top:5px">Edit transkripsi di atas sebelum lanjut ke Step 2</div>
+              </div>
+              <button class="btn-generate" id="btnDupNext">Lanjut Step 2 →</button>
+            </div>
+
+          </div><!-- /vidModeDuplikasi -->
 
         </div>
 

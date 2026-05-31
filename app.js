@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setupAudience();
   setupCharCounter();
   setupAuth();
+  setupVideoMode();
   showState('empty');
 
   setupUpload('cloneRef', function(v){ cloneRefBase64=v; }, function(m){ cloneRefMime=m; }, null, null);
@@ -2186,3 +2187,91 @@ async function lpDownloadAll() {
   if (btn) btn.addEventListener('click',function(){ setTheme(html.dataset.theme==='dark'?'light':'dark'); });
   function setTheme(t){ html.dataset.theme=t; localStorage.setItem('adstudio_theme',t); if(sunIcon) sunIcon.style.display=t==='dark'?'block':'none'; if(moonIcon) moonIcon.style.display=t==='light'?'block':'none'; }
 })();
+
+// ── Video Mode Toggle + Duplikasi ────────────────────────────
+var videoMode = 'img2vid';
+
+function setupVideoMode() {
+  var btnImg = $('vidModeImgBtn');
+  var btnDup = $('vidModeDupBtn');
+  var divImg = $('vidModeImageToVideo');
+  var divDup = $('vidModeDuplikasi');
+  if (!btnImg || !btnDup) return;
+
+  btnImg.addEventListener('click', function() {
+    videoMode = 'img2vid';
+    btnImg.classList.add('active'); btnDup.classList.remove('active');
+    if (divImg) divImg.style.display = '';
+    if (divDup) divDup.style.display = 'none';
+  });
+  btnDup.addEventListener('click', function() {
+    videoMode = 'duplikasi';
+    btnDup.classList.add('active'); btnImg.classList.remove('active');
+    if (divImg) divImg.style.display = 'none';
+    if (divDup) divDup.style.display = '';
+  });
+
+  var btnTranscribe = $('btnTranscribe');
+  if (btnTranscribe) btnTranscribe.addEventListener('click', startTranscribe);
+
+  var btnDupNext = $('btnDupNext');
+  if (btnDupNext) btnDupNext.addEventListener('click', function() {
+    showToast('Step 2 (breakdown scene) akan segera hadir!', 'info');
+  });
+}
+
+async function startTranscribe() {
+  var urlInput = $('dupDriveUrl');
+  var driveUrl = urlInput ? urlInput.value.trim() : '';
+  if (!driveUrl) { showToast('Paste link Google Drive dulu.', 'error'); return; }
+  if (!driveUrl.includes('drive.google.com')) { showToast('URL harus dari Google Drive.', 'error'); return; }
+
+  var lang = $('dupLang') ? $('dupLang').value : 'id';
+  var btnTranscribe = $('btnTranscribe');
+  var loading = $('dupLoading');
+  var loadingText = $('dupLoadingText');
+  var result = $('dupTranscriptResult');
+
+  if (btnTranscribe) btnTranscribe.disabled = true;
+  if (loading) loading.style.display = 'block';
+  if (result) result.style.display = 'none';
+
+  try {
+    if (loadingText) loadingText.textContent = 'Mengirim ke server...';
+    var d = await proxyPost('transcribe', { driveUrl: driveUrl, language: lang });
+    var taskId = d.taskId;
+    if (!taskId) throw new Error('taskId tidak ada dari server.');
+
+    if (loadingText) loadingText.textContent = 'Mentranskripsi audio... (1/60)';
+    var transcript = await pollTranscript(taskId, loadingText);
+
+    if (loading) loading.style.display = 'none';
+    if (result) result.style.display = 'block';
+    var textArea = $('dupTranscriptText');
+    if (textArea) textArea.value = transcript;
+    showToast('Transkripsi selesai! Edit dulu sebelum lanjut.', 'success');
+
+  } catch(err) {
+    if (loading) loading.style.display = 'none';
+    showToast(err.message, 'error');
+  } finally {
+    if (btnTranscribe) btnTranscribe.disabled = false;
+  }
+}
+
+async function pollTranscript(taskId, statusEl) {
+  var maxAttempts = 60;
+  var DONE = ['success','SUCCESS','completed','COMPLETED'];
+  var FAIL = ['fail','FAIL','failed','FAILED','error','ERROR'];
+  for (var i = 0; i < maxAttempts; i++) {
+    await sleep(i < 5 ? 3000 : i < 15 ? 4000 : 6000);
+    if (statusEl) statusEl.textContent = 'Mentranskripsi... (' + (i + 1) + '/' + maxAttempts + ')';
+    var data = await proxyGet('status', { taskId: taskId, type: 'transcribe' });
+    if (DONE.indexOf(data.status) >= 0) {
+      if (!data.transcriptText) throw new Error('Teks transkripsi tidak ditemukan di hasil.');
+      return data.transcriptText;
+    }
+    if (data.isFail) throw new Error('Transkripsi gagal. Coba lagi.');
+  }
+  throw new Error('Timeout. Coba lagi.');
+}
