@@ -2299,7 +2299,7 @@ async function lpDownloadAll() {
 
 // ── Video Stepper + Duplikasi ────────────────────────────────
 var dupActiveStep = 1;
-var dupFileBase64 = null, dupFileMime = null;
+var dupFileBase64 = null, dupFileMime = null, dupFileObj = null;
 
 function switchDupStep(step) {
   dupActiveStep = step;
@@ -2399,7 +2399,9 @@ function setupVideoMode() {
     if (empty) empty.style.display = 'none';
     if (filled) filled.style.display = 'block';
     if (nameEl) { var n = file.name; nameEl.textContent = n.length > 35 ? n.slice(0,32)+'...' : n; }
-    // Read base64
+    // Simpan referensi File asli untuk audio extraction
+    dupFileObj = file;
+    // Read base64 (fallback untuk audio file kecil)
     var reader = new FileReader();
     reader.onload = function(e) { dupFileBase64 = e.target.result.replace(/^data:[^;]+;base64,/, ''); };
     reader.readAsDataURL(file);
@@ -2407,7 +2409,7 @@ function setupVideoMode() {
   var removeBtn = $('dupFileRemove');
   if (removeBtn) removeBtn.addEventListener('click', function(e) {
     e.stopPropagation();
-    dupFileBase64 = null; dupFileMime = null;
+    dupFileBase64 = null; dupFileMime = null; dupFileObj = null;
     if (dupObjectUrl) { URL.revokeObjectURL(dupObjectUrl); dupObjectUrl = null; }
     if (fileInput) fileInput.value = '';
     var vidEl = $('dupVideoPreview'), audEl = $('dupAudioPreview');
@@ -2620,8 +2622,55 @@ function getScenesText() {
   return texts.join('\n\n');
 }
 
+// Extract audio from video/audio file dan encode sebagai WAV 8kHz mono
+// untuk menghindari Vercel 4.5MB payload limit
+async function extractAudioBase64(file) {
+  var arrayBuf = await file.arrayBuffer();
+  var ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 8000 });
+  var decoded;
+  try { decoded = await ctx.decodeAudioData(arrayBuf); }
+  finally { ctx.close(); }
+
+  // Mix down ke mono, resample sudah dilakukan oleh AudioContext (sampleRate: 8000)
+  var numSamples = decoded.length;
+  var numChannels = decoded.numberOfChannels;
+  var samples = new Float32Array(numSamples);
+  for (var c = 0; c < numChannels; c++) {
+    var ch = decoded.getChannelData(c);
+    for (var i = 0; i < numSamples; i++) samples[i] += ch[i];
+  }
+  if (numChannels > 1) { for (var i = 0; i < numSamples; i++) samples[i] /= numChannels; }
+
+  // Encode sebagai WAV 16-bit PCM
+  var pcm = new Int16Array(numSamples);
+  for (var i = 0; i < numSamples; i++) {
+    var s = Math.max(-1, Math.min(1, samples[i]));
+    pcm[i] = s < 0 ? s * 32768 : s * 32767;
+  }
+  var wavBuf = new ArrayBuffer(44 + pcm.byteLength);
+  var view = new DataView(wavBuf);
+  var sr = 8000, nc = 1, bps = 16;
+  var writeStr = function(off, str) { for (var i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); };
+  writeStr(0, 'RIFF'); view.setUint32(4, 36 + pcm.byteLength, true);
+  writeStr(8, 'WAVE'); writeStr(12, 'fmt '); view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); view.setUint16(22, nc, true);
+  view.setUint32(24, sr, true); view.setUint32(28, sr * nc * bps / 8, true);
+  view.setUint16(32, nc * bps / 8, true); view.setUint16(34, bps, true);
+  writeStr(36, 'data'); view.setUint32(40, pcm.byteLength, true);
+  new Int16Array(wavBuf, 44).set(pcm);
+
+  // Convert ke base64
+  var bytes = new Uint8Array(wavBuf);
+  var binary = '';
+  var chunk = 8192;
+  for (var i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 async function startTranscribe() {
-  if (!dupFileBase64) { showToast('Upload file video atau audio dulu.', 'error'); return; }
+  if (!dupFileObj && !dupFileBase64) { showToast('Upload file video atau audio dulu.', 'error'); return; }
   var lang = $('dupLang') ? $('dupLang').value : 'id';
   var btnTranscribe = $('btnTranscribe');
   var loading = $('dupLoading');
@@ -2633,8 +2682,19 @@ async function startTranscribe() {
   if (result) result.style.display = 'none';
 
   try {
+    if (loadingText) loadingText.textContent = 'Mengekstrak audio...';
+    var audioBase64, audioMime;
+    if (dupFileObj && dupFileMime && dupFileMime.startsWith('video/')) {
+      // Ekstrak audio dari video untuk menghindari 413 payload too large
+      audioBase64 = await extractAudioBase64(dupFileObj);
+      audioMime = 'audio/wav';
+    } else {
+      audioBase64 = dupFileBase64;
+      audioMime = dupFileMime;
+    }
+
     if (loadingText) loadingText.textContent = 'Mentranskripsi...';
-    var d = await proxyPost('transcribe', { fileBase64: dupFileBase64, mimeType: dupFileMime, language: lang });
+    var d = await proxyPost('transcribe', { fileBase64: audioBase64, mimeType: audioMime, language: lang });
     if (!d.transcriptText) throw new Error('Hasil transkripsi kosong.');
 
     if (loadingText) loadingText.textContent = 'Memecah scene...';
