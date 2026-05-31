@@ -479,19 +479,24 @@ Output JSON saja (tanpa penjelasan):
 
       // Image
       const apiKey = getKey('image');
-      const { model, imageUrl, secondImageUrl, prompt, ratio, negPrompt, strength, quantity } = body;
+      const { model, imageUrl, secondImageUrl, imageBase64, imageMime, prompt, ratio, negPrompt, strength, quantity } = body;
       const qty = Math.min(Math.max(parseInt(quantity)||1,1),20);
       const ratioVal = ratio||'1:1';
       const nanaSizeMap = { '1:1':'square_hd','9:16':'portrait','16:9':'landscape','4:5':'portrait','2:3':'portrait','3:2':'landscape' };
 
-      // gpt-image size map: pakai format pixel OpenAI (bukan aspect_ratio string)
-      const gptSizeMap = { '1:1':'1024x1024','9:16':'1024x1536','16:9':'1536x1024','4:5':'1024x1280','2:3':'1024x1536','3:4':'1024x1280' };
       let input = { prompt };
       if (model === 'gpt-image/1.5-image-to-image') {
-        // GPT Image support multiple input_urls - kirim referensi + produk
-        input.input_urls = secondImageUrl ? [imageUrl, secondImageUrl] : [imageUrl];
-        input.size = gptSizeMap[ratioVal] || '1024x1024';
+        // Gpt-image bisa terima base64 langsung atau URL
+        if (imageBase64) {
+          const mime = imageMime || 'image/jpeg';
+          input.image = `data:${mime};base64,${imageBase64}`;
+        } else {
+          input.image = imageUrl;
+          if (secondImageUrl) input.mask = secondImageUrl;
+        }
+        input.aspect_ratio = '1:1';
         input.quality = 'medium';
+        input.n = 1;
       }
       else if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
       else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
@@ -510,7 +515,7 @@ Output JSON saja (tanpa penjelasan):
       const taskIds = tasks.map(d=>d.data?.taskId).filter(Boolean);
       if (!taskIds.length) {
         const firstErr = JSON.stringify(tasks[0]).slice(0, 400);
-        return res.status(500).json({ error: 'Task gagal: ' + firstErr });
+        return res.status(500).json({ error: 'Task gagal: ' + firstErr, debug: { model, input: JSON.stringify(input).slice(0,300) } });
       }
       return res.status(200).json({ taskIds, taskType: 'jobs' });
     }
