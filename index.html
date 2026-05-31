@@ -1182,10 +1182,33 @@
         <button class="admin-tab" id="adminTabApproved" onclick="loadAdminUsers('approved')">Approved</button>
         <button class="admin-tab" id="adminTabRejected" onclick="loadAdminUsers('rejected')">Rejected</button>
         <button class="admin-tab" id="adminTabStats" onclick="loadAdminStats()">📊 Statistik</button>
+        <button class="admin-tab" id="adminTabGoogleKeys" onclick="loadGoogleKeys()">🔑 Google Keys</button>
       </div>
     </div>
     <div class="admin-user-list" id="adminUserList">
       <div style="text-align:center;padding:40px;color:#555">Memuat...</div>
+    </div>
+
+    <!-- Google Keys View -->
+    <div id="adminGoogleKeysView" style="display:none;flex:1;overflow-y:auto;padding:20px 24px">
+      <div style="max-width:600px;margin:0 auto">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Google API Keys (Veo 3)</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px">Key dirotasi otomatis saat generate video. Tambah sebanyak akun Gmail Pro yang kamu punya.</div>
+
+        <!-- Form tambah key -->
+        <div style="background:var(--bg-surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px">Tambah API Key Baru</div>
+          <input id="googleKeyLabel" class="apikey-field" placeholder="Label (contoh: Gmail sufiruhana)" style="width:100%;box-sizing:border-box;margin-bottom:8px" />
+          <input id="googleKeyValue" class="apikey-field" placeholder="API Key dari aistudio.google.com" style="width:100%;box-sizing:border-box;margin-bottom:12px" type="password" />
+          <div style="display:flex;gap:8px">
+            <button class="btn-solid" onclick="addGoogleKey()" style="flex:1;padding:8px">Simpan Key</button>
+            <button class="btn-ghost" onclick="document.getElementById('googleKeyValue').type = document.getElementById('googleKeyValue').type==='password'?'text':'password'" style="padding:8px 14px;font-size:12px">👁</button>
+          </div>
+        </div>
+
+        <!-- List keys -->
+        <div id="googleKeysList"></div>
+      </div>
     </div>
 
     <!-- Stats View -->

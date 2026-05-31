@@ -904,8 +904,11 @@ async function loadAdminUsers(status) {
     var tab = $('adminTab'+s);
     if (tab) tab.classList.toggle('active', s.toLowerCase()===status);
   });
+  $('adminStatsView') && ($('adminStatsView').style.display = 'none');
+  $('adminGoogleKeysView') && ($('adminGoogleKeysView').style.display = 'none');
   var list = $('adminUserList');
   if (!list) return;
+  list.style.display = '';
   list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-5)">Memuat...</div>';
   try {
     var d = await proxyGet('adminUsers', { status });
@@ -946,6 +949,105 @@ async function loadAdminUsers(status) {
 }
 
 
+// ── GOOGLE API KEYS ADMIN ─────────────────────────────────
+async function loadGoogleKeys() {
+  ['Pending','Approved','Rejected','Stats','GoogleKeys'].forEach(function(s) {
+    var t = $('adminTab'+s); if (t) t.classList.remove('active');
+  });
+  var t = $('adminTabGoogleKeys'); if (t) t.classList.add('active');
+  $('adminUserList') && ($('adminUserList').style.display = 'none');
+  $('adminStatsView') && ($('adminStatsView').style.display = 'none');
+  var view = $('adminGoogleKeysView');
+  if (view) view.style.display = 'flex';
+
+  var list = $('googleKeysList');
+  if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Memuat...</div>';
+
+  try {
+    var r = await fetch('/api/proxy?action=adminGoogleKeys', {
+      headers: { 'Authorization': 'Bearer ' + (authToken || '') }
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Gagal memuat.');
+    renderGoogleKeys(d.keys || []);
+  } catch(e) {
+    if (list) list.innerHTML = '<div style="color:red;padding:20px">' + e.message + '</div>';
+  }
+}
+
+function renderGoogleKeys(keys) {
+  var list = $('googleKeysList');
+  if (!list) return;
+  if (!keys.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px">Belum ada key. Tambahkan di atas.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  keys.forEach(function(k) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-surface);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px';
+    card.innerHTML =
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">' + escHtml(k.label) + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);font-family:monospace">' + escHtml(k.api_key) + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
+        '<span style="font-size:11px;padding:3px 8px;border-radius:20px;background:' + (k.is_active ? '#dcfce7' : '#fee2e2') + ';color:' + (k.is_active ? '#16a34a' : '#dc2626') + ';font-weight:600">' + (k.is_active ? 'Aktif' : 'Nonaktif') + '</span>' +
+        '<button onclick="toggleGoogleKey(\'' + k.id + '\',' + !k.is_active + ')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);cursor:pointer">' + (k.is_active ? 'Nonaktifkan' : 'Aktifkan') + '</button>' +
+        '<button onclick="deleteGoogleKey(\'' + k.id + '\')" style="font-size:11px;padding:4px 10px;border:1px solid #fca5a5;border-radius:6px;background:transparent;color:#dc2626;cursor:pointer">Hapus</button>' +
+      '</div>';
+    list.appendChild(card);
+  });
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function addGoogleKey() {
+  var label = ($('googleKeyLabel') || {}).value.trim();
+  var apiKey = ($('googleKeyValue') || {}).value.trim();
+  if (!label || !apiKey) { showToast('Label dan API key wajib diisi.', 'error'); return; }
+  try {
+    var r = await fetch('/api/proxy?action=adminGoogleKeys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authToken || '') },
+      body: JSON.stringify({ label, api_key: apiKey })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Gagal.');
+    showToast('Key berhasil disimpan!', 'success');
+    $('googleKeyLabel').value = '';
+    $('googleKeyValue').value = '';
+    loadGoogleKeys();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteGoogleKey(id) {
+  if (!confirm('Hapus API key ini?')) return;
+  try {
+    var r = await fetch('/api/proxy?action=adminGoogleKeys&id=' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + (authToken || '') }
+    });
+    if (!r.ok) throw new Error('Gagal hapus.');
+    showToast('Key dihapus.', 'success');
+    loadGoogleKeys();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function toggleGoogleKey(id, isActive) {
+  try {
+    var r = await fetch('/api/proxy?action=adminGoogleKeys', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authToken || '') },
+      body: JSON.stringify({ id, is_active: isActive })
+    });
+    if (!r.ok) throw new Error('Gagal update.');
+    loadGoogleKeys();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
 async function loadAdminStats() {
   // Switch tabs
   ['Pending','Approved','Rejected','Stats'].forEach(function(s) {
@@ -953,6 +1055,7 @@ async function loadAdminStats() {
   });
   var st = $('adminTabStats'); if (st) st.classList.add('active');
   $('adminUserList') && ($('adminUserList').style.display = 'none');
+  $('adminGoogleKeysView') && ($('adminGoogleKeysView').style.display = 'none');
   var statsView = $('adminStatsView'); if (!statsView) return;
   statsView.style.display = 'block';
 
