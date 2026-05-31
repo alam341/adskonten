@@ -514,7 +514,7 @@ Output JSON saja (tanpa penjelasan):
             prompt: prompt || 'natural motion, smooth movement',
             input_urls: [imageUrl],           // gambar referensi model
             video_urls: [secondImageUrl],     // video referensi gerakan
-            mode: resolution || '720p',       // '720p' atau '1080p'
+            mode: (resolution === '1080p' ? '1080p' : '720p'),
             character_orientation: 'video',
             background_source: 'input_video',
           };
