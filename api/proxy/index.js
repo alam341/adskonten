@@ -486,11 +486,11 @@ Output JSON saja (tanpa penjelasan):
       if (req.method !== 'POST') return res.status(405).end();
       const apiKey = getKey('image');
       if (!apiKey) return res.status(500).json({ error: 'API key belum diset.' });
-      const { imageBase64 } = req.body;
+      const { imageBase64, uploadPath } = req.body;
       const r = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64Data: imageBase64, uploadPath: 'images' }),
+        body: JSON.stringify({ base64Data: imageBase64, uploadPath: uploadPath || 'images' }),
       });
       const d = await r.json();
       if (!r.ok) return res.status(r.status).json({ error: 'Upload error.' });
@@ -527,14 +527,13 @@ Output JSON saja (tanpa penjelasan):
         else if (model === 'grok-imagine/image-to-video') { input.mode='normal'; input.resolution=resolution||'720p'; input.aspect_ratio='16:9'; }
         else if (model.startsWith('wan')) input.resolution = resolution||'720p';
         else if (model === 'kling-3.0/motion-control') {
-          // Motion control: image + video referensi gerakan (official spec)
+          // Format resmi kie.ai — 5 field saja, tanpa background_source
           input = {
-            prompt: prompt || 'natural motion, smooth movement',
-            input_urls: [imageUrl],           // gambar referensi model
-            video_urls: [secondImageUrl],     // video referensi gerakan
-            mode: (resolution === '1080p' ? '1080p' : '720p'),
+            prompt: prompt || 'No distortion, the character\'s movements are consistent with the video.',
+            input_urls: [imageUrl],       // gambar model
+            video_urls: [secondImageUrl], // video referensi gerakan
             character_orientation: 'video',
-            background_source: 'input_video',
+            mode: (resolution === '1080p' ? '1080p' : '720p'),
           };
         }
         const r = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
@@ -544,8 +543,11 @@ Output JSON saja (tanpa penjelasan):
         });
         const d = await r.json();
         if (!r.ok) return res.status(r.status).json({ error: 'Video error: '+JSON.stringify(d) });
+        // kling-3.0/motion-control returns resultUrls directly (no polling)
+        const directUrls = d.data?.resultUrls || [];
+        if (directUrls.length) return res.status(200).json({ directUrls });
         const taskId = d.data?.taskId;
-        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada.' });
+        if (!taskId) return res.status(500).json({ error: 'taskId tidak ada. API response: ' + JSON.stringify(d).slice(0, 500), debug: { model, input } });
         return res.status(200).json({ taskId, taskType: 'jobs' });
       }
 
