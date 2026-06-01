@@ -3704,7 +3704,7 @@ async function generateMotKling() {
     // Upload video ke kie.ai CDN
     var mime = motFileMime || 'video/mp4';
     var fullBase64 = 'data:' + mime + ';base64,' + motFileBase64;
-    var vidUpload = await proxyPost('upload', { imageBase64: fullBase64, mimeType: mime });
+    var vidUpload = await proxyPost('upload', { imageBase64: fullBase64, mimeType: mime, uploadPath: 'videos' });
     if (!vidUpload.url) throw new Error('Upload video gagal.');
 
     if (loadingText) loadingText.textContent = 'Mengirim ke Kling...';
@@ -3714,14 +3714,19 @@ async function generateMotKling() {
       imageUrl: motLockedModelUrl,
       secondImageUrl: vidUpload.url,
       prompt: prompt,
-      resolution: ratio === '16:9' ? '1080p' : '720p'  // '9:16' → 720p, '16:9' → 1080p
+      resolution: ratio === '16:9' ? '1080p' : '720p'
     });
-    var taskId = d.taskId || d.data?.taskId;
-    if (!taskId) throw new Error('taskId tidak ada. Response: ' + JSON.stringify(d).slice(0,200));
 
-    if (loadingText) loadingText.textContent = 'Memproses video... (estimasi 1-3 menit)';
-    // Poll video
-    var videoUrl = await pollKieVideo(taskId, loadingText);
+    var videoUrl;
+    if (d.directUrls && d.directUrls.length) {
+      // Response langsung — tidak perlu polling
+      videoUrl = d.directUrls[0];
+    } else {
+      var taskId = d.taskId || d.data?.taskId;
+      if (!taskId) throw new Error('taskId tidak ada. Response: ' + JSON.stringify(d).slice(0,200));
+      if (loadingText) loadingText.textContent = 'Memproses video... (estimasi 1-3 menit)';
+      videoUrl = await pollKieVideo(taskId, loadingText);
+    }
     motKlingVideoUrl = videoUrl;
 
     if (loading) loading.style.display='none';
