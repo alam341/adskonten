@@ -350,9 +350,14 @@ function setupTabs() {
       var btnGen = $('btnGenerate');
       if (btnGen) btnGen.style.display = activeTab === 'video' ? 'none' : '';
       var videoCanvas = $('videoStepCanvas');
-      if (videoCanvas) videoCanvas.style.display = activeTab === 'video' ? 'block' : 'none';
-      if (activeTab === 'video') { showState('__video__'); switchDupStep(dupActiveStep); return; }
+      var motionCanvas = $('motionStepCanvas');
+      if (activeTab === 'video') {
+        showState('__video__');
+        switchDupStep(dupActiveStep);
+        return;
+      }
       if (videoCanvas) videoCanvas.style.display = 'none';
+      if (motionCanvas) motionCanvas.style.display = 'none';
       showState('empty');
       if (activeTab === 'analyze') setupAnalyzeTab();
     });
