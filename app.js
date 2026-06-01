@@ -2803,21 +2803,29 @@ function checkDup3Ready() {
   if (!dupModelFrameBase64 || !dupProductBase64) return;
   var modelSec = $('dup3ModelSection');
   if (modelSec) modelSec.style.display = '';
-  // Auto-generate prompt berdasarkan foto produk via Claude Vision
+  // Auto-generate prompt: Claude lihat frame kompetitor → describe model → kombinasikan dengan produk
   var ta = $('dup3ModelPrompt');
   if (ta && !ta.value.trim()) {
-    ta.placeholder = 'Menganalisis produk...';
+    ta.placeholder = 'Menganalisis frame & produk...';
     ta.disabled = true;
-    proxyPost('suggestModelPrompt', { productBase64: dupProductBase64, productMime: dupProductMime || 'image/jpeg' })
+    var payload = { productBase64: dupProductBase64, productMime: dupProductMime || 'image/jpeg' };
+    if (dupModelFrameBase64) {
+      // Kirim frame (tanpa prefix data:...) — proxy terima raw base64
+      var rawFrame = dupModelFrameBase64;
+      if (rawFrame.indexOf(',') !== -1) rawFrame = rawFrame.split(',')[1];
+      payload.frameBase64 = rawFrame;
+      payload.frameMime = 'image/jpeg';
+    }
+    proxyPost('suggestModelPrompt', payload)
       .then(function(r) {
         if (r.prompt) { ta.value = r.prompt; }
         else { ta.value = ''; }
-        ta.placeholder = 'Contoh: man holding bottle, smiling, clean white background, beauty ad style';
+        ta.placeholder = 'Contoh: woman with long black hair holding bottle, clean white background, beauty ad style';
         ta.disabled = false;
       })
       .catch(function() {
         ta.value = '';
-        ta.placeholder = 'Contoh: man holding bottle, smiling, clean white background, beauty ad style';
+        ta.placeholder = 'Contoh: woman with long black hair holding bottle, clean white background, beauty ad style';
         ta.disabled = false;
       });
   }
