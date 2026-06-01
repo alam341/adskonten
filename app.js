@@ -527,19 +527,10 @@ async function generateImage() {
     var neg=$('imgNegPrompt')?$('imgNegPrompt').value.trim():'';
     var str=$('imgStrength')?parseFloat($('imgStrength').value):0.8;
     var gen=await proxyPost('generate',{type:'image',model:imgModel,imageUrl:up.url,prompt,ratio:imgRatio,negPrompt:neg,strength:str,quantity:imgQty});
-    var taskIds=gen.taskIds||(gen.taskId?[gen.taskId]:[]);
-    if (!taskIds.length) throw new Error('taskId tidak ditemukan.');
-    var urls=[];
-    for (var ti=0;ti<taskIds.length;ti++) {
-      updateSub('Mengambil gambar '+(ti+1)+' dari '+taskIds.length+'...');
-      try {
-        var result=await pollStatus(taskIds[ti],gen.taskType||'jobs',90);
-        if (Array.isArray(result)) urls=urls.concat(result);
-        else if (result) urls.push(result);
-        if (urls.length>0) showImageResult(urls);
-      } catch(e) { console.warn('Task gagal:',e.message); }
-    }
+    updateSub('Memproses gambar...');
+    var urls = await resolveGenerate(gen, 90);
     if (!urls.length) throw new Error('Semua generate gagal.');
+    showImageResult(urls);
     showImageResult(urls);
     saveToHistory('image',imgModel,prompt,imgRatio,urls);
     incrementCounter('image');
@@ -682,6 +673,17 @@ async function parseRes(res) {
   if (!res.ok) throw new Error(data.error||'Error '+res.status);
   return data;
 }
+// Helper: handle generate response — bisa directUrls (gpt-image) atau taskIds (model lain)
+async function resolveGenerate(gen, maxPoll) {
+  if (gen.directUrls && gen.directUrls.length) return gen.directUrls;
+  var taskIds = gen.taskIds || (gen.taskId ? [gen.taskId] : []);
+  if (!taskIds.length) throw new Error('Generate gagal — coba lagi.');
+  var results = await Promise.all(taskIds.map(function(id) {
+    return pollStatus(id, gen.taskType || 'jobs', maxPoll || 40);
+  }));
+  return results.flat ? results.flat() : [].concat.apply([], results);
+}
+
 async function pollStatus(taskId, type, maxAttempts) {
   maxAttempts=maxAttempts||60;
   for (var i=0;i<maxAttempts;i++) {
@@ -2850,15 +2852,13 @@ async function generateDup3BaseModel() {
 
     var d = await proxyPost('generate', {
       type: 'image',
-      model: 'seedream/4.5-edit',
+      model: 'gpt-image/1.5-image-to-image',
       imageUrl: productUpload.url,
       prompt: prompt,
       ratio: '1:1',
       quantity: 2
     });
-    if (!d.taskIds || !d.taskIds.length) throw new Error('Generate gagal — coba lagi.');
-    var urls = await Promise.all(d.taskIds.map(function(id) { return pollStatus(id, 'image', 40); }));
-    urls = urls.flat ? urls.flat() : [].concat.apply([], urls);
+    var urls = await resolveGenerate(d, 60);
 
     if (loading) loading.style.display = 'none';
     if (result) result.style.display = '';
@@ -2972,16 +2972,13 @@ async function generateDup3Image(idx, prompt, card) {
     // Pakai locked model URL sebagai referensi utama
     var d = await proxyPost('generate', {
       type: 'image',
-      model: 'seedream/4.5-edit',
+      model: 'gpt-image/1.5-image-to-image',
       imageUrl: dup3LockedModelUrl,
       prompt: prompt,
       ratio: '1:1',
       quantity: 1
     });
-    if (!d.taskIds || !d.taskIds.length) throw new Error('Generate gagal.');
-    // Poll result
-    var imageUrl = await pollStatus(d.taskIds[0], 'image', 40);
-    var urls = Array.isArray(imageUrl) ? imageUrl : [imageUrl];
+    var urls = await resolveGenerate(d, 60);
     if (resultDiv) {
       resultDiv.innerHTML = '';
       urls.forEach(function(url) {
@@ -3630,18 +3627,8 @@ async function generateMotModel() {
     var fullBase64 = 'data:' + mime + ';base64,' + motProductBase64;
     var upload = await proxyPost('upload', { imageBase64: fullBase64, mimeType: mime });
     if (!upload.url) throw new Error('Upload gagal.');
-    var d = await proxyPost('generate', { type: 'image', model: 'seedream/4.5-edit', imageUrl: upload.url, prompt: prompt, ratio: '1:1', quantity: 2 });
-    var taskIds = d.taskIds || (d.taskId ? [d.taskId] : []);
-    if (!taskIds.length) throw new Error('taskId tidak ada. ' + (d.error || ''));
-    // Poll semua taskId pakai pollStatus yang sudah terbukti
-    var allImages = [];
-    for (var ti = 0; ti < taskIds.length; ti++) {
-      try {
-        var imgUrl = await pollStatus(taskIds[ti], d.taskType || 'jobs', 40);
-        if (imgUrl) allImages.push(imgUrl);
-      } catch(e) {}
-    }
-    var images = allImages;
+    var d = await proxyPost('generate', { type: 'image', model: 'gpt-image/1.5-image-to-image', imageUrl: upload.url, prompt: prompt, ratio: '1:1', quantity: 2 });
+    var images = await resolveGenerate(d, 60);
     if (!images.length) throw new Error('Tidak ada gambar dihasilkan.');
 
     if (loading) loading.style.display = 'none';
