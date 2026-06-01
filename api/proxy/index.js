@@ -560,7 +560,14 @@ Output JSON saja (tanpa penjelasan):
       if (model === 'google/nano-banana') { input.image_input=[imageUrl]; input.image_size=nanaSizeMap[ratioVal]||'square_hd'; input.output_format='png'; }
       else if (model === 'nano-banana-2') { input.image_input=[imageUrl]; input.aspect_ratio=ratioVal; input.resolution='1K'; input.output_format='png'; }
       else if (model === 'grok-imagine/image-to-image') { input.image_urls=[imageUrl]; input.quality_mode=true; input.aspect_ratio=ratioVal; }
-      else if (model === 'gpt-image/1.5-image-to-image' || model === 'seedream/4.5-edit') {
+      else if (model === 'gpt-image/1.5-image-to-image') {
+        // Format resmi kie.ai untuk gpt-image: input_urls + quality medium/high
+        const gptiRatioMap = { '1:1':'1:1', '2:3':'2:3', '3:2':'3:2', '9:16':'2:3', '16:9':'3:2', '4:5':'2:3', '3:4':'2:3' };
+        input.input_urls = [imageUrl];
+        input.aspect_ratio = gptiRatioMap[ratioVal] || '1:1';
+        input.quality = 'medium';
+      }
+      else if (model === 'seedream/4.5-edit') {
         input.image_urls = secondImageUrl ? [imageUrl, secondImageUrl] : [imageUrl];
         input.aspect_ratio = ratioVal || '1:1';
         input.quality = 'basic';
@@ -577,6 +584,9 @@ Output JSON saja (tanpa penjelasan):
           try { return JSON.parse(text); } catch(e) { return { _raw: text.slice(0,300) }; }
         }).catch(e => ({ _err: e.message }))
       ));
+      // gpt-image-1 returns resultUrls directly (no polling needed)
+      const directUrls = tasks.flatMap(d => d.data?.resultUrls || []).filter(Boolean);
+      if (directUrls.length) return res.status(200).json({ directUrls });
       const taskIds = tasks.map(d=>d.data?.taskId).filter(Boolean);
       if (!taskIds.length) {
         const firstErr = JSON.stringify(tasks[0]).slice(0, 400);
