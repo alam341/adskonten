@@ -352,23 +352,41 @@ Output JSON only:
       if (req.method !== 'POST') return res.status(405).end();
       const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
       if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY belum diset.' });
-      const { productBase64, productMime } = req.body;
+      const { productBase64, productMime, frameBase64, frameMime } = req.body;
       if (!productBase64) return res.status(400).json({ error: 'productBase64 diperlukan.' });
 
-      const mediaType = (productMime || 'image/jpeg').replace('image/', '') === 'jpg' ? 'image/jpeg' : (productMime || 'image/jpeg');
+      const productMediaType = (productMime || 'image/jpeg').replace('image/', '') === 'jpg' ? 'image/jpeg' : (productMime || 'image/jpeg');
+
+      let messageContent;
+      if (frameBase64) {
+        // Ada frame dari video kompetitor → analisis model dari frame, kombinasikan dengan produk
+        const frameMediaType = (frameMime || 'image/jpeg').replace('image/', '') === 'jpg' ? 'image/jpeg' : (frameMime || 'image/jpeg');
+        messageContent = [
+          { type: 'image', source: { type: 'base64', media_type: frameMediaType, data: frameBase64 } },
+          { type: 'image', source: { type: 'base64', media_type: productMediaType, data: productBase64 } },
+          { type: 'text', text: `Image 1 is a frame from a competitor advertisement video. Image 2 is a product.
+
+From Image 1, observe the model's appearance: gender, hair color and style, skin tone, body type, clothing style, and pose.
+
+Write a short English image generation prompt (max 40 words) for a person with similar appearance to the model in Image 1, holding or using the product from Image 2, in a professional advertisement photo style with clean background and good lighting.
+
+Output ONLY the prompt text, nothing else.` }
+        ];
+      } else {
+        // Tidak ada frame → analisis produk saja untuk tentukan model yang sesuai
+        messageContent = [
+          { type: 'image', source: { type: 'base64', media_type: productMediaType, data: productBase64 } },
+          { type: 'text', text: `Look at this product image. Write a short English image generation prompt (max 30 words) for a professional advertisement photo where an Indonesian person holds or uses this product. Include: person description (gender/appearance appropriate to the product), their action with the product, clean background, ad style lighting. Output ONLY the prompt text, nothing else.` }
+        ];
+      }
+
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 200,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: mediaType, data: productBase64 } },
-              { type: 'text', text: `Look at this product image. Write a short English image generation prompt (max 30 words) for a professional advertisement photo where an Indonesian person holds or uses this product. Include: person description (gender/appearance appropriate to the product), their action with the product, clean background, ad style lighting. Output ONLY the prompt text, nothing else.` }
-            ]
-          }]
+          messages: [{ role: 'user', content: messageContent }]
         })
       });
       const d = await r.json();
